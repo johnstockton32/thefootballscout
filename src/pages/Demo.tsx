@@ -22,9 +22,14 @@ import {
   TrendingUp,
   CheckCircle,
   Footprints,
-  Weight,
   Ruler,
   X,
+  Clock,
+  Trophy,
+  Eye,
+  ThumbsUp,
+  AlertCircle,
+  ChevronRight,
 } from 'lucide-react';
 
 // Extended demo data with full attributes
@@ -102,32 +107,80 @@ const demoPlayers = [
 
 type DemoPlayer = typeof demoPlayers[0];
 
+// Extended demo reports with full match data
 const demoReports = [
   {
     id: '1',
     playerName: 'Marcus Johnson',
+    position: 'ST',
+    club: 'Manchester City U21',
     date: 'Jan 10, 2026',
     opposition: 'Liverpool U21',
     competition: 'PL2',
+    competitionLevel: 'Youth Academy',
+    minutesObserved: 90,
     rating: 85,
+    potential: 89,
+    recommendation: 'Sign',
+    attributes: {
+      technical: { passing: 16, dribbling: 19, shooting: 18, firstTouch: 17, crossing: 14, heading: 15 },
+      tactical: { positioning: 16, awareness: 15, decisionMaking: 16, offBallMovement: 18, defensiveContribution: 11 },
+      physical: { pace: 19, stamina: 17, strength: 14, agility: 18, balance: 16 },
+      mental: { composure: 16, concentration: 15, aggression: 14, workRate: 17, leadership: 13 },
+    },
+    strengths: 'Outstanding performance. Two goals and an assist. Electric pace caused problems all game. Clinical finishing when chances fell.',
+    weaknesses: 'Still needs to work on hold-up play and aerial duels. Lost possession when pressed high.',
+    matchNotes: 'Dominant display against a strong Liverpool U21 side. Showed maturity beyond his years in key moments. Ready for first-team consideration.',
   },
   {
     id: '2',
     playerName: 'André Silva',
+    position: 'CM',
+    club: 'Sporting CP B',
     date: 'Jan 8, 2026',
     opposition: 'Benfica B',
     competition: 'Liga Portugal 2',
+    competitionLevel: 'Semi-Pro',
+    minutesObserved: 75,
     rating: 79,
+    potential: 85,
+    recommendation: 'Monitor',
+    attributes: {
+      technical: { passing: 18, dribbling: 14, shooting: 13, firstTouch: 16, crossing: 14, heading: 11 },
+      tactical: { positioning: 18, awareness: 17, decisionMaking: 17, offBallMovement: 15, defensiveContribution: 17 },
+      physical: { pace: 15, stamina: 18, strength: 14, agility: 15, balance: 16 },
+      mental: { composure: 17, concentration: 18, aggression: 14, workRate: 19, leadership: 16 },
+    },
+    strengths: 'Controlled the tempo of the game exceptionally. Passing range was outstanding, completed 92% of passes. Covered every blade of grass.',
+    weaknesses: 'Missed a clear shooting opportunity. Could be more aggressive in the final third.',
+    matchNotes: 'Solid all-round performance in a tight derby match. Shows leadership qualities despite young age. Would benefit from a loan to top-flight football.',
   },
   {
     id: '3',
     playerName: 'Kenji Tanaka',
+    position: 'CB',
+    club: 'Yokohama Academy',
     date: 'Jan 5, 2026',
     opposition: 'Kawasaki Frontale',
     competition: 'J.League Cup',
+    competitionLevel: 'Professional',
+    minutesObserved: 90,
     rating: 77,
+    potential: 84,
+    recommendation: 'Monitor',
+    attributes: {
+      technical: { passing: 14, dribbling: 11, shooting: 8, firstTouch: 14, crossing: 10, heading: 18 },
+      tactical: { positioning: 17, awareness: 16, decisionMaking: 15, offBallMovement: 13, defensiveContribution: 19 },
+      physical: { pace: 14, stamina: 16, strength: 18, agility: 13, balance: 15 },
+      mental: { composure: 16, concentration: 17, aggression: 17, workRate: 16, leadership: 15 },
+    },
+    strengths: 'Won all aerial duels (7/7). Strong in the tackle and read the game superbly. Organized the backline effectively.',
+    weaknesses: 'Struggled with pace when isolated 1v1. Distribution under pressure needs work.',
+    matchNotes: 'Impressive debut against senior opposition. Despite the step up in quality, handled himself with composure. One to watch for European scouts.',
   },
 ];
+
+type DemoReport = typeof demoReports[0];
 
 const radarData = [
   { attribute: 'Passing', value: 16, fullMark: 20 },
@@ -211,6 +264,16 @@ function AttributeBar({ name, value }: { name: string; value: number }) {
 export default function Demo() {
   const [activeTab, setActiveTab] = useState('players');
   const [selectedPlayer, setSelectedPlayer] = useState<DemoPlayer | null>(null);
+  const [selectedReport, setSelectedReport] = useState<DemoReport | null>(null);
+
+  const getRecommendationColor = (rec: string) => {
+    switch (rec) {
+      case 'Sign': return 'bg-primary text-primary-foreground';
+      case 'Monitor': return 'bg-amber-500 text-white';
+      case 'Reject': return 'bg-destructive text-destructive-foreground';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -365,28 +428,39 @@ export default function Demo() {
 
             {/* Reports Tab */}
             <TabsContent value="reports" className="space-y-4">
+              <p className="text-sm text-muted-foreground text-center">
+                Click on a report to view detailed match observations and ratings
+              </p>
               <Card className="card-glass">
                 <CardHeader>
                   <CardTitle>Recent Scouting Reports</CardTitle>
                   <CardDescription>Latest match observations and evaluations</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {demoReports.map((report) => (
                       <div 
                         key={report.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted hover:border-primary/50 border border-transparent transition-all cursor-pointer group"
+                        onClick={() => setSelectedReport(report)}
                       >
-                        <div>
+                        <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <FileText className="w-4 h-4 text-primary" />
-                            <span className="font-medium">{report.playerName}</span>
+                            <span className="font-medium group-hover:text-primary transition-colors">{report.playerName}</span>
+                            <Badge variant="outline" className="text-xs">{report.position}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {report.date} • vs {report.opposition} • {report.competition}
                           </p>
                         </div>
-                        <div className="rating-badge-sm">{report.rating}</div>
+                        <div className="flex items-center gap-3">
+                          <Badge className={getRecommendationColor(report.recommendation)}>
+                            {report.recommendation}
+                          </Badge>
+                          <div className="rating-badge-sm">{report.rating}</div>
+                          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -642,7 +716,183 @@ export default function Demo() {
         </DialogContent>
       </Dialog>
 
-      {/* CTA Section */}
+      {/* Report Detail Modal */}
+      <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto animate-scale-in">
+          {selectedReport && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <FileText className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-2xl">{selectedReport.playerName}</DialogTitle>
+                      <p className="text-muted-foreground">{selectedReport.club} • {selectedReport.position}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 items-center">
+                    <Badge className={getRecommendationColor(selectedReport.recommendation)}>
+                      {selectedReport.recommendation}
+                    </Badge>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">Rating</p>
+                      <p className="text-2xl font-bold text-primary">{selectedReport.rating}</p>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Match Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-border">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Match Date</p>
+                    <p className="font-medium">{selectedReport.date}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Competition</p>
+                    <p className="font-medium">{selectedReport.competition}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Opposition</p>
+                    <p className="font-medium">{selectedReport.opposition}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Minutes Observed</p>
+                    <p className="font-medium">{selectedReport.minutesObserved}'</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Competition Level & Potential */}
+              <div className="flex items-center gap-4 py-3">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Eye className="w-3 h-3" />
+                  {selectedReport.competitionLevel}
+                </Badge>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">Potential:</span>
+                  <span className="font-bold text-gradient-gold">{selectedReport.potential}</span>
+                </div>
+              </div>
+
+              {/* Attributes Grid */}
+              <div className="grid md:grid-cols-2 gap-6 py-4">
+                {/* Technical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Technical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Passing" value={selectedReport.attributes.technical.passing} />
+                    <AttributeBar name="Dribbling" value={selectedReport.attributes.technical.dribbling} />
+                    <AttributeBar name="Shooting" value={selectedReport.attributes.technical.shooting} />
+                    <AttributeBar name="First Touch" value={selectedReport.attributes.technical.firstTouch} />
+                    <AttributeBar name="Crossing" value={selectedReport.attributes.technical.crossing} />
+                    <AttributeBar name="Heading" value={selectedReport.attributes.technical.heading} />
+                  </div>
+                </div>
+
+                {/* Tactical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Tactical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Positioning" value={selectedReport.attributes.tactical.positioning} />
+                    <AttributeBar name="Awareness" value={selectedReport.attributes.tactical.awareness} />
+                    <AttributeBar name="Decision Making" value={selectedReport.attributes.tactical.decisionMaking} />
+                    <AttributeBar name="Off-Ball Movement" value={selectedReport.attributes.tactical.offBallMovement} />
+                    <AttributeBar name="Def. Contribution" value={selectedReport.attributes.tactical.defensiveContribution} />
+                  </div>
+                </div>
+
+                {/* Physical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Physical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Pace" value={selectedReport.attributes.physical.pace} />
+                    <AttributeBar name="Stamina" value={selectedReport.attributes.physical.stamina} />
+                    <AttributeBar name="Strength" value={selectedReport.attributes.physical.strength} />
+                    <AttributeBar name="Agility" value={selectedReport.attributes.physical.agility} />
+                    <AttributeBar name="Balance" value={selectedReport.attributes.physical.balance} />
+                  </div>
+                </div>
+
+                {/* Mental */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Mental
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Composure" value={selectedReport.attributes.mental.composure} />
+                    <AttributeBar name="Concentration" value={selectedReport.attributes.mental.concentration} />
+                    <AttributeBar name="Aggression" value={selectedReport.attributes.mental.aggression} />
+                    <AttributeBar name="Work Rate" value={selectedReport.attributes.mental.workRate} />
+                    <AttributeBar name="Leadership" value={selectedReport.attributes.mental.leadership} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Strengths & Weaknesses */}
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                  <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                    <ThumbsUp className="w-4 h-4" />
+                    Strengths
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{selectedReport.strengths}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <h4 className="font-semibold text-amber-500 mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    Areas to Improve
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{selectedReport.weaknesses}</p>
+                </div>
+              </div>
+
+              {/* Match Notes */}
+              <div className="p-4 rounded-lg bg-muted/50 border border-border mt-4">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-muted-foreground" />
+                  Scout's Notes
+                </h4>
+                <p className="text-sm text-muted-foreground">{selectedReport.matchNotes}</p>
+              </div>
+
+              {/* CTA */}
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setSelectedReport(null)}>
+                  Close
+                </Button>
+                <Button variant="hero" asChild>
+                  <Link to="/auth">Create Your Own Reports</Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto text-center max-w-2xl">
           <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
