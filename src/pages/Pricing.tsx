@@ -127,7 +127,7 @@ export default function Pricing() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="text-center">
-                    <span className="text-5xl font-bold">${plan.price}</span>
+                    <span className="text-5xl font-bold">£{plan.price}</span>
                     <span className="text-muted-foreground">/{plan.period}</span>
                   </div>
                   
