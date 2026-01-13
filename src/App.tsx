@@ -18,6 +18,7 @@ import NewReport from "./pages/NewReport";
 import ReportDetail from "./pages/ReportDetail";
 import AdminDashboard from "./pages/AdminDashboard";
 import GdprConsent from "./pages/GdprConsent";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
             <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
             <Route path="/reports/new" element={<ProtectedRoute><NewReport /></ProtectedRoute>} />
             <Route path="/reports/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminDashboard /></ProtectedRoute>} />
             
             {/* Catch-all */}

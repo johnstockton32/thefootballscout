@@ -12,6 +12,11 @@ interface Profile {
   gdpr_consent_date: string | null;
 }
 
+interface ProfileUpdate {
+  full_name?: string | null;
+  organization?: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -23,6 +28,8 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateGdprConsent: (consent: boolean) => Promise<{ error: Error | null }>;
+  updateProfile: (data: ProfileUpdate) => Promise<{ error: Error | null }>;
+  deleteAccount: () => Promise<{ error: Error | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -151,6 +158,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error as Error | null };
   };
 
+  const updateProfile = async (data: ProfileUpdate) => {
+    if (!user) return { error: new Error('Not authenticated') };
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update(data)
+      .eq('id', user.id);
+    
+    if (!error && profile) {
+      setProfile({
+        ...profile,
+        ...data,
+      });
+    }
+    
+    return { error: error as Error | null };
+  };
+
+  const deleteAccount = async () => {
+    if (!user) return { error: new Error('Not authenticated') };
+    
+    try {
+      // Delete user's scouting reports first (due to foreign key)
+      await supabase.from('scouting_reports').delete().eq('scout_id', user.id);
+      
+      // Delete user's players
+      await supabase.from('players').delete().eq('scout_id', user.id);
+      
+      // Delete user's profile
+      await supabase.from('profiles').delete().eq('id', user.id);
+      
+      // Delete user roles
+      await supabase.from('user_roles').delete().eq('user_id', user.id);
+      
+      // Sign out the user (auth.users deletion requires admin/service role)
+      await signOut();
+      
+      return { error: null };
+    } catch (err) {
+      return { error: err as Error };
+    }
+  };
+
   const isAdmin = roles.includes('admin');
 
   return (
@@ -166,6 +216,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         updateGdprConsent,
+        updateProfile,
+        deleteAccount,
       }}
     >
       {children}
