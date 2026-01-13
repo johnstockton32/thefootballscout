@@ -1,15 +1,18 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Check, ArrowRight, Zap, Users, Building2 } from 'lucide-react';
 
 const plans = [
   {
     name: 'Free',
     description: 'Perfect for getting started',
-    price: '0',
+    monthlyPrice: '0',
+    annualPrice: '0',
     period: 'forever',
     icon: Zap,
     features: [
@@ -26,7 +29,8 @@ const plans = [
   {
     name: 'Pro',
     description: 'For serious scouts',
-    price: '29',
+    monthlyPrice: '29',
+    annualPrice: '24',
     period: 'month',
     icon: Users,
     features: [
@@ -45,7 +49,8 @@ const plans = [
   {
     name: 'Team',
     description: 'For scouting organizations',
-    price: '99',
+    monthlyPrice: '99',
+    annualPrice: '79',
     period: 'month',
     icon: Building2,
     features: [
@@ -66,6 +71,7 @@ const plans = [
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [isAnnual, setIsAnnual] = useState(false);
 
   return (
     <div className="min-h-screen bg-background pitch-pattern">
@@ -94,9 +100,27 @@ export default function Pricing() {
             <br />
             <span className="text-gradient-pitch">Pricing</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
             Choose the plan that fits your scouting needs. Start free and upgrade as you grow.
           </p>
+          
+          {/* Billing Toggle */}
+          <div className="flex items-center justify-center gap-4">
+            <span className={`text-sm font-medium ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Monthly
+            </span>
+            <Switch
+              checked={isAnnual}
+              onCheckedChange={setIsAnnual}
+              className="data-[state=checked]:bg-primary"
+            />
+            <span className={`text-sm font-medium ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Annual
+            </span>
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+              Save 20%
+            </Badge>
+          </div>
         </div>
       </section>
 
@@ -104,32 +128,36 @@ export default function Pricing() {
       <section className="pb-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-            {plans.map((plan) => (
-              <Card 
-                key={plan.name} 
-                className={`relative card-glass border-border/50 hover:border-primary/30 transition-all duration-300 ${
-                  plan.popular ? 'ring-2 ring-primary scale-105 md:scale-110' : ''
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="bg-primary text-primary-foreground px-4 py-1">
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
-                <CardHeader className="text-center pb-4">
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <plan.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-center">
-                    <span className="text-5xl font-bold">£{plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                  </div>
+            {plans.map((plan) => {
+              const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+              const period = plan.period === 'forever' ? 'forever' : isAnnual ? 'month (billed annually)' : 'month';
+              
+              return (
+                <Card 
+                  key={plan.name} 
+                  className={`relative card-glass border-border/50 hover:border-primary/30 transition-all duration-300 ${
+                    plan.popular ? 'ring-2 ring-primary scale-105 md:scale-110' : ''
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <Badge className="bg-primary text-primary-foreground px-4 py-1">
+                        Most Popular
+                      </Badge>
+                    </div>
+                  )}
+                  <CardHeader className="text-center pb-4">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                      <plan.icon className="w-6 h-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="text-center">
+                      <span className="text-5xl font-bold">£{price}</span>
+                      <span className="text-muted-foreground">/{period}</span>
+                    </div>
                   
                   <ul className="space-y-3">
                     {plan.features.map((feature) => (
@@ -151,7 +179,8 @@ export default function Pricing() {
                   </Button>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
