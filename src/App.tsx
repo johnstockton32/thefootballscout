@@ -12,8 +12,11 @@ import Dashboard from "./pages/Dashboard";
 import Players from "./pages/Players";
 import NewPlayer from "./pages/NewPlayer";
 import PlayerDetail from "./pages/PlayerDetail";
+import PlayerComparison from "./pages/PlayerComparison";
 import Reports from "./pages/Reports";
 import NewReport from "./pages/NewReport";
+import ReportDetail from "./pages/ReportDetail";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,54 +33,15 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             
             {/* Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/players"
-              element={
-                <ProtectedRoute>
-                  <Players />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/players/new"
-              element={
-                <ProtectedRoute>
-                  <NewPlayer />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/players/:id"
-              element={
-                <ProtectedRoute>
-                  <PlayerDetail />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute>
-                  <Reports />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/reports/new"
-              element={
-                <ProtectedRoute>
-                  <NewReport />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/players" element={<ProtectedRoute><Players /></ProtectedRoute>} />
+            <Route path="/players/new" element={<ProtectedRoute><NewPlayer /></ProtectedRoute>} />
+            <Route path="/players/compare" element={<ProtectedRoute><PlayerComparison /></ProtectedRoute>} />
+            <Route path="/players/:id" element={<ProtectedRoute><PlayerDetail /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/reports/new" element={<ProtectedRoute><NewReport /></ProtectedRoute>} />
+            <Route path="/reports/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
