@@ -84,8 +84,10 @@ export type Database = {
           id: string
           organization: string | null
           photo_url: string | null
+          subscription_started_at: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           team_id: string | null
+          trial_ends_at: string | null
           updated_at: string
         }
         Insert: {
@@ -97,8 +99,10 @@ export type Database = {
           id: string
           organization?: string | null
           photo_url?: string | null
+          subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Update: {
@@ -110,8 +114,10 @@ export type Database = {
           id?: string
           organization?: string | null
           photo_url?: string | null
+          subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
+          trial_ends_at?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -304,6 +310,7 @@ export type Database = {
     Functions: {
       can_create_player: { Args: { _user_id: string }; Returns: boolean }
       can_create_report: { Args: { _user_id: string }; Returns: boolean }
+      cancel_subscription: { Args: { _user_id: string }; Returns: boolean }
       get_comparison_limit: { Args: { _user_id: string }; Returns: number }
       get_monthly_report_count: { Args: { _user_id: string }; Returns: number }
       get_player_count: { Args: { _user_id: string }; Returns: number }
@@ -314,6 +321,15 @@ export type Database = {
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_in_trial: { Args: { _user_id: string }; Returns: boolean }
+      start_pro_trial: { Args: { _user_id: string }; Returns: boolean }
+      upgrade_subscription: {
+        Args: {
+          _tier: Database["public"]["Enums"]["subscription_tier"]
           _user_id: string
         }
         Returns: boolean
