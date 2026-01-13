@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   supabase, 
   COMPETITION_LEVEL_LABELS, 
@@ -17,8 +18,9 @@ import {
   calculateOverallRating
 } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud, AlertTriangle, Crown } from 'lucide-react';
 import { handleError } from '@/lib/errorUtils';
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -56,6 +58,7 @@ export default function NewReport() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { canCreateReport, usage, limits, tier, isLoading: subscriptionLoading } = useSubscription();
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState(searchParams.get('playerId') || '');
@@ -242,6 +245,34 @@ export default function NewReport() {
             )}
           </div>
         </div>
+
+        {/* Subscription Limit Warning */}
+        {!subscriptionLoading && !canCreateReport && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Monthly report limit reached</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                You've used all {limits.maxReportsPerMonth} reports this month on the Free plan.
+              </span>
+              <Button size="sm" variant="outline" onClick={() => navigate('/pricing')} className="ml-4">
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade to Pro
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Usage indicator for free tier */}
+        {!subscriptionLoading && tier === 'free' && canCreateReport && (
+          <Alert className="mb-6 border-primary/20 bg-primary/5">
+            <FileText className="h-4 w-4" />
+            <AlertTitle>Monthly report usage</AlertTitle>
+            <AlertDescription>
+              {usage.monthlyReportCount} of {limits.maxReportsPerMonth} reports used this month on Free plan
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Match Details */}
@@ -466,7 +497,7 @@ export default function NewReport() {
             <Button
               type="submit"
               variant="hero"
-              disabled={isSubmitting || !selectedPlayerId}
+              disabled={isSubmitting || !selectedPlayerId || !canCreateReport}
               className="flex-1"
             >
               {isSubmitting ? (

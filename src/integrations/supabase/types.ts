@@ -84,6 +84,8 @@ export type Database = {
           id: string
           organization: string | null
           photo_url: string | null
+          subscription_tier: Database["public"]["Enums"]["subscription_tier"]
+          team_id: string | null
           updated_at: string
         }
         Insert: {
@@ -95,6 +97,8 @@ export type Database = {
           id: string
           organization?: string | null
           photo_url?: string | null
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          team_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -106,9 +110,19 @@ export type Database = {
           id?: string
           organization?: string | null
           photo_url?: string | null
+          subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
+          team_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scouting_reports: {
         Row: {
@@ -238,6 +252,30 @@ export type Database = {
           },
         ]
       }
+      teams: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -264,6 +302,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_create_player: { Args: { _user_id: string }; Returns: boolean }
+      can_create_report: { Args: { _user_id: string }; Returns: boolean }
+      get_comparison_limit: { Args: { _user_id: string }; Returns: number }
+      get_monthly_report_count: { Args: { _user_id: string }; Returns: number }
+      get_player_count: { Args: { _user_id: string }; Returns: number }
+      get_subscription_tier: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["subscription_tier"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -289,6 +336,7 @@ export type Database = {
         | "attacking_midfielder"
         | "winger"
         | "striker"
+      subscription_tier: "free" | "pro" | "team"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -434,6 +482,7 @@ export const Constants = {
         "winger",
         "striker",
       ],
+      subscription_tier: ["free", "pro", "team"],
     },
   },
 } as const

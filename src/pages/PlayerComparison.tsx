@@ -6,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase, PlayerPosition, POSITION_LABELS, POSITION_ABBREV, calculateAge } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-import { Users, X, Plus, ArrowLeft } from 'lucide-react';
+import { Users, X, Plus, ArrowLeft, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Player {
@@ -45,11 +47,14 @@ const COLORS = [
 
 export default function PlayerComparison() {
   const { user } = useAuth();
+  const { limits, tier } = useSubscription();
   const navigate = useNavigate();
   const [allPlayers, setAllPlayers] = useState<Player[]>([]);
   const [selectedPlayers, setSelectedPlayers] = useState<PlayerWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSelector, setShowSelector] = useState(false);
+
+  const maxComparison = limits.maxComparisonPlayers;
 
   useEffect(() => {
     if (user) {
@@ -115,8 +120,8 @@ export default function PlayerComparison() {
   };
 
   const addPlayer = async (player: Player) => {
-    if (selectedPlayers.length >= 5) {
-      toast.error('Maximum 5 players can be compared');
+    if (selectedPlayers.length >= maxComparison) {
+      toast.error(`Maximum ${maxComparison} players can be compared on your plan`);
       return;
     }
 
@@ -199,10 +204,25 @@ export default function PlayerComparison() {
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Player Comparison</h1>
             <p className="text-muted-foreground mt-1">
-              Compare 2-5 players side by side
+              Compare up to {maxComparison} players side by side
             </p>
           </div>
         </div>
+
+        {/* Upgrade notice for free tier */}
+        {tier === 'free' && (
+          <Alert className="border-primary/20 bg-primary/5">
+            <Crown className="h-4 w-4" />
+            <AlertTitle>Limited comparison</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>Free plan allows comparing up to {maxComparison} players. Upgrade to Pro to compare up to 5.</span>
+              <Button size="sm" variant="outline" onClick={() => navigate('/pricing')} className="ml-4">
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Selected Players Bar */}
         <Card className="card-glass">
@@ -226,7 +246,7 @@ export default function PlayerComparison() {
                   </button>
                 </div>
               ))}
-              {selectedPlayers.length < 5 && (
+              {selectedPlayers.length < maxComparison && (
                 <Button
                   variant="outline"
                   size="sm"
