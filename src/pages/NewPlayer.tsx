@@ -7,10 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase, POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, User, AlertTriangle, Crown } from 'lucide-react';
 import { z } from 'zod';
 import { handleError } from '@/lib/errorUtils';
 import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
@@ -30,6 +32,7 @@ const playerSchema = z.object({
 export default function NewPlayer() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { canCreatePlayer, usage, limits, tier, isLoading: subscriptionLoading } = useSubscription();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -127,6 +130,34 @@ export default function NewPlayer() {
             Create a player profile to start scouting
           </p>
         </div>
+
+        {/* Subscription Limit Warning */}
+        {!subscriptionLoading && !canCreatePlayer && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Player limit reached</AlertTitle>
+            <AlertDescription className="flex items-center justify-between">
+              <span>
+                You've reached the maximum of {limits.maxPlayers} players on the Free plan.
+              </span>
+              <Button size="sm" variant="outline" onClick={() => navigate('/pricing')} className="ml-4">
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade to Pro
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Usage indicator for free tier */}
+        {!subscriptionLoading && tier === 'free' && canCreatePlayer && (
+          <Alert className="mb-6 border-primary/20 bg-primary/5">
+            <User className="h-4 w-4" />
+            <AlertTitle>Player usage</AlertTitle>
+            <AlertDescription>
+              {usage.playerCount} of {limits.maxPlayers} players used on Free plan
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit}>
           <Card className="card-glass">
@@ -320,7 +351,7 @@ export default function NewPlayer() {
                 <Button
                   type="submit"
                   variant="hero"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !canCreatePlayer}
                   className="flex-1"
                 >
                   {isSubmitting ? (
