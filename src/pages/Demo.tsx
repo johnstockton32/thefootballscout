@@ -924,74 +924,182 @@ export default function Demo() {
                   <BarChart3 className="w-4 h-4 text-primary" />
                   Attribute Overview
                 </h4>
-                <div className="grid md:grid-cols-2 gap-6 items-center">
-                  <div className="max-w-sm mx-auto w-full">
-                    <AttributeRadarChart
-                      data={[
-                        { attribute: 'Passing', value: selectedReport.attributes.technical.passing, fullMark: 20 },
-                        { attribute: 'Dribbling', value: selectedReport.attributes.technical.dribbling, fullMark: 20 },
-                        { attribute: 'Shooting', value: selectedReport.attributes.technical.shooting, fullMark: 20 },
-                        { attribute: 'Positioning', value: selectedReport.attributes.tactical.positioning, fullMark: 20 },
-                        { attribute: 'Awareness', value: selectedReport.attributes.tactical.awareness, fullMark: 20 },
-                        { attribute: 'Pace', value: selectedReport.attributes.physical.pace, fullMark: 20 },
-                        { attribute: 'Stamina', value: selectedReport.attributes.physical.stamina, fullMark: 20 },
-                        { attribute: 'Composure', value: selectedReport.attributes.mental.composure, fullMark: 20 },
-                      ]}
-                      color="hsl(158, 64%, 45%)"
-                    />
-                  </div>
+                
+                {(() => {
+                  const tech = selectedReport.attributes.technical;
+                  const tact = selectedReport.attributes.tactical;
+                  const phys = selectedReport.attributes.physical;
+                  const ment = selectedReport.attributes.mental;
                   
-                  {/* Category Averages */}
-                  <div className="grid grid-cols-2 gap-3">
-                    {(() => {
-                      const tech = selectedReport.attributes.technical;
-                      const tact = selectedReport.attributes.tactical;
-                      const phys = selectedReport.attributes.physical;
-                      const ment = selectedReport.attributes.mental;
-                      
-                      const techAvg = Math.round((tech.passing + tech.dribbling + tech.shooting + tech.firstTouch + tech.crossing + tech.heading) / 6);
-                      const tactAvg = Math.round((tact.positioning + tact.awareness + tact.decisionMaking + tact.offBallMovement + tact.defensiveContribution) / 5);
-                      const physAvg = Math.round((phys.pace + phys.stamina + phys.strength + phys.agility + phys.balance) / 5);
-                      const mentAvg = Math.round((ment.composure + ment.concentration + ment.aggression + ment.workRate + ment.leadership) / 5);
-                      
-                      const categories = [
-                        { name: 'Technical', avg: techAvg, icon: Target, color: 'bg-primary' },
-                        { name: 'Tactical', avg: tactAvg, icon: BarChart3, color: 'bg-blue-500' },
-                        { name: 'Physical', avg: physAvg, icon: Zap, color: 'bg-amber-500' },
-                        { name: 'Mental', avg: mentAvg, icon: Shield, color: 'bg-purple-500' },
-                      ];
-                      
-                      return categories.map((cat) => (
-                        <motion.div
-                          key={cat.name}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ duration: 0.3 }}
-                          className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors"
-                        >
-                          <div className="flex items-center gap-2 mb-2">
-                            <div className={`w-8 h-8 rounded-lg ${cat.color}/20 flex items-center justify-center`}>
-                              <cat.icon className={`w-4 h-4 ${cat.color === 'bg-primary' ? 'text-primary' : cat.color === 'bg-blue-500' ? 'text-blue-500' : cat.color === 'bg-amber-500' ? 'text-amber-500' : 'text-purple-500'}`} />
+                  const techAvg = (tech.passing + tech.dribbling + tech.shooting + tech.firstTouch + tech.crossing + tech.heading) / 6;
+                  const tactAvg = (tact.positioning + tact.awareness + tact.decisionMaking + tact.offBallMovement + tact.defensiveContribution) / 5;
+                  const physAvg = (phys.pace + phys.stamina + phys.strength + phys.agility + phys.balance) / 5;
+                  const mentAvg = (ment.composure + ment.concentration + ment.aggression + ment.workRate + ment.leadership) / 5;
+                  
+                  // Calculate overall score normalized to 0-100
+                  const overallScore = Math.round(((techAvg + tactAvg + physAvg + mentAvg) / 4) * 5);
+                  
+                  const getScoreColor = (score: number) => {
+                    if (score >= 85) return 'text-primary';
+                    if (score >= 70) return 'text-amber-500';
+                    if (score >= 55) return 'text-blue-500';
+                    return 'text-muted-foreground';
+                  };
+                  
+                  const getScoreLabel = (score: number) => {
+                    if (score >= 90) return 'World Class';
+                    if (score >= 80) return 'Excellent';
+                    if (score >= 70) return 'Very Good';
+                    if (score >= 60) return 'Good';
+                    if (score >= 50) return 'Average';
+                    return 'Developing';
+                  };
+                  
+                  const categories = [
+                    { name: 'Technical', avg: Math.round(techAvg), icon: Target, color: 'bg-primary', textColor: 'text-primary' },
+                    { name: 'Tactical', avg: Math.round(tactAvg), icon: BarChart3, color: 'bg-blue-500', textColor: 'text-blue-500' },
+                    { name: 'Physical', avg: Math.round(physAvg), icon: Zap, color: 'bg-amber-500', textColor: 'text-amber-500' },
+                    { name: 'Mental', avg: Math.round(mentAvg), icon: Shield, color: 'bg-purple-500', textColor: 'text-purple-500' },
+                  ];
+                  
+                  return (
+                    <>
+                      {/* Overall Score */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4, type: 'spring' }}
+                        className="mb-6 p-6 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm text-muted-foreground mb-1">Overall Match Rating</p>
+                            <div className="flex items-baseline gap-2">
+                              <motion.span
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className={`text-5xl font-bold ${getScoreColor(overallScore)}`}
+                              >
+                                {overallScore}
+                              </motion.span>
+                              <span className="text-xl text-muted-foreground">/100</span>
                             </div>
-                            <span className="text-sm font-medium">{cat.name}</span>
+                            <motion.p
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: 0.4 }}
+                              className={`text-sm font-medium mt-1 ${getScoreColor(overallScore)}`}
+                            >
+                              {getScoreLabel(overallScore)}
+                            </motion.p>
                           </div>
-                          <div className="flex items-end gap-1">
-                            <span className="text-3xl font-bold">{cat.avg}</span>
-                            <span className="text-sm text-muted-foreground mb-1">/20</span>
+                          
+                          {/* Circular Progress */}
+                          <div className="relative w-24 h-24">
+                            <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                              <circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                fill="none"
+                                stroke="hsl(var(--muted))"
+                                strokeWidth="8"
+                              />
+                              <motion.circle
+                                cx="50"
+                                cy="50"
+                                r="40"
+                                fill="none"
+                                stroke="hsl(158, 64%, 45%)"
+                                strokeWidth="8"
+                                strokeLinecap="round"
+                                strokeDasharray={251.2}
+                                initial={{ strokeDashoffset: 251.2 }}
+                                animate={{ strokeDashoffset: 251.2 - (251.2 * overallScore) / 100 }}
+                                transition={{ duration: 1, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Star className="w-8 h-8 text-primary" />
+                            </div>
                           </div>
-                          <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                        </div>
+                        
+                        {/* Category breakdown bar */}
+                        <div className="mt-4 flex gap-1 h-2 rounded-full overflow-hidden">
+                          {categories.map((cat, i) => (
                             <motion.div
+                              key={cat.name}
                               initial={{ width: 0 }}
-                              animate={{ width: `${(cat.avg / 20) * 100}%` }}
-                              transition={{ duration: 0.5, delay: 0.2 }}
-                              className={`h-full rounded-full ${cat.color}`}
+                              animate={{ width: '25%' }}
+                              transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
+                              className={`${cat.color} relative group`}
+                              style={{ opacity: 0.3 + (cat.avg / 20) * 0.7 }}
+                              title={`${cat.name}: ${cat.avg}/20`}
                             />
-                          </div>
-                        </motion.div>
-                      ));
-                    })()}
-                  </div>
-                </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                          <span>Technical</span>
+                          <span>Tactical</span>
+                          <span>Physical</span>
+                          <span>Mental</span>
+                        </div>
+                      </motion.div>
+                      
+                      <div className="grid md:grid-cols-2 gap-6 items-center">
+                        <div className="max-w-sm mx-auto w-full">
+                          <AttributeRadarChart
+                            data={[
+                              { attribute: 'Passing', value: selectedReport.attributes.technical.passing, fullMark: 20 },
+                              { attribute: 'Dribbling', value: selectedReport.attributes.technical.dribbling, fullMark: 20 },
+                              { attribute: 'Shooting', value: selectedReport.attributes.technical.shooting, fullMark: 20 },
+                              { attribute: 'Positioning', value: selectedReport.attributes.tactical.positioning, fullMark: 20 },
+                              { attribute: 'Awareness', value: selectedReport.attributes.tactical.awareness, fullMark: 20 },
+                              { attribute: 'Pace', value: selectedReport.attributes.physical.pace, fullMark: 20 },
+                              { attribute: 'Stamina', value: selectedReport.attributes.physical.stamina, fullMark: 20 },
+                              { attribute: 'Composure', value: selectedReport.attributes.mental.composure, fullMark: 20 },
+                            ]}
+                            color="hsl(158, 64%, 45%)"
+                          />
+                        </div>
+                        
+                        {/* Category Averages */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {categories.map((cat, index) => (
+                            <motion.div
+                              key={cat.name}
+                              initial={{ opacity: 0, scale: 0.9 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ duration: 0.3, delay: index * 0.1 }}
+                              className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors"
+                            >
+                              <div className="flex items-center gap-2 mb-2">
+                                <div className={`w-8 h-8 rounded-lg ${cat.color}/20 flex items-center justify-center`}>
+                                  <cat.icon className={`w-4 h-4 ${cat.textColor}`} />
+                                </div>
+                                <span className="text-sm font-medium">{cat.name}</span>
+                              </div>
+                              <div className="flex items-end gap-1">
+                                <span className="text-3xl font-bold">{cat.avg}</span>
+                                <span className="text-sm text-muted-foreground mb-1">/20</span>
+                              </div>
+                              <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <motion.div
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${(cat.avg / 20) * 100}%` }}
+                                  transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                                  className={`h-full rounded-full ${cat.color}`}
+                                />
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Attributes Grid */}
