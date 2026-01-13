@@ -305,7 +305,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_public: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string | null
+          organization: string | null
+          photo_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          organization?: string | null
+          photo_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string | null
+          organization?: string | null
+          photo_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_create_player: { Args: { _user_id: string }; Returns: boolean }
