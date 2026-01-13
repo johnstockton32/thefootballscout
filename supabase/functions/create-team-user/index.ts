@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -41,16 +41,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if requesting user is an admin
+    // Check if requesting user is an admin OR a team owner
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", requestingUser.id)
       .eq("role", "admin");
 
-    if (!roles || roles.length === 0) {
+    const isAdmin = roles && roles.length > 0;
+
+    // Check if user owns a team
+    const { data: ownedTeam } = await supabaseAdmin
+      .from("teams")
+      .select("id, name")
+      .eq("owner_id", requestingUser.id)
+      .maybeSingle();
+
+    if (!isAdmin && !ownedTeam) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin access required" }),
+        JSON.stringify({ error: "Unauthorized: Admin or team owner access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -95,14 +104,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the profile with team tier and organization
+    // Update the profile with team tier, organization, and team_id
+    const updateData: Record<string, unknown> = {
+      subscription_tier: "team",
+      organization: organization || ownedTeam?.name || null,
+      subscription_started_at: new Date().toISOString(),
+    };
+
+    // If requesting user is a team owner, add the new user to their team
+    if (ownedTeam) {
+      updateData.team_id = ownedTeam.id;
+    }
+
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .update({
-        subscription_tier: "team",
-        organization: organization || null,
-        subscription_started_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", newUser.user.id);
 
     if (profileError) {

@@ -58,8 +58,8 @@ export default function TeamsAdmin() {
     },
   });
 
-  // Fetch team data for current user
-  const { data: team, refetch: refetchTeam } = useQuery({
+  // Fetch team data for current user (as owner)
+  const { data: team, isLoading: isLoadingTeam, refetch: refetchTeam } = useQuery({
     queryKey: ["team", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -76,19 +76,58 @@ export default function TeamsAdmin() {
     enabled: !!user?.id,
   });
 
-  // Fetch team tier users
-  const { data: teamUsers, isLoading } = useQuery({
-    queryKey: ["team-users"],
+  // Check if user is an admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ["is-admin", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("subscription_tier", "team")
-        .order("created_at", { ascending: false });
+      if (!user?.id) return false;
+      
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .eq("role", "admin")
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      return !!data;
     },
+    enabled: !!user?.id,
+  });
+
+  // Fetch team members (users belonging to this team)
+  const { data: teamUsers, isLoading } = useQuery({
+    queryKey: ["team-users", team?.id, isAdmin],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      // If admin, show all team tier users
+      if (isAdmin) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("subscription_tier", "team")
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return data;
+      }
+      
+      // If team owner, show only their team members
+      if (team?.id) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("team_id", team.id)
+          .neq("id", user.id) // Exclude the owner themselves
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        return data;
+      }
+      
+      return [];
+    },
+    enabled: !!user?.id && (!!team?.id || !!isAdmin),
   });
 
   // Create user mutation
@@ -207,6 +246,32 @@ export default function TeamsAdmin() {
       .slice(0, 2);
   };
 
+  // Show loading or access denied if not a team owner or admin
+  if (isLoadingTeam) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!team && !isAdmin) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <Crown className="h-12 w-12 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Team Management</h2>
+          <p className="text-muted-foreground max-w-md">
+            You need to be a team owner to access this page. 
+            Upgrade to a Team plan to create and manage your scouting team.
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -215,10 +280,10 @@ export default function TeamsAdmin() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Crown className="h-6 w-6 text-primary" />
-              Team Management
+              {team ? `${team.name} - Team Management` : 'Team Management'}
             </h1>
             <p className="text-muted-foreground mt-1">
-              Create and manage team tier accounts
+              {isAdmin ? 'Manage all team tier accounts' : 'Add and manage your team members'}
             </p>
           </div>
           <Button onClick={() => setIsCreating(!isCreating)}>
