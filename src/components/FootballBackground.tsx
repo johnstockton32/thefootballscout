@@ -47,42 +47,6 @@ export function FootballBackground() {
           <line x1="70" y1="30" x2="78" y2="22" stroke="currentColor" strokeWidth="1" className="text-foreground" />
         </svg>
       </motion.div>
-
-      {/* Medium football - top left */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 2, delay: 0.3, ease: 'easeOut' }}
-        className="absolute -top-16 -left-16 w-[280px] h-[280px] opacity-[0.01] dark:opacity-[0.006]"
-      >
-        <svg
-          viewBox="0 0 100 100"
-          className="w-full h-full"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="1.5" className="text-foreground" />
-          <path
-            d="M50 10 L70 30 L62 55 L38 55 L30 30 Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            fill="currentColor"
-            className="text-foreground"
-          />
-          <path
-            d="M10 42 L30 30 L38 55 L25 72 L8 58 Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="text-foreground"
-          />
-          <path
-            d="M90 42 L70 30 L62 55 L75 72 L92 58 Z"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            className="text-foreground"
-          />
-        </svg>
-      </motion.div>
     </div>
   );
 }
