@@ -175,6 +175,37 @@ async function loadImageAsBase64(url: string): Promise<string | null> {
   }
 }
 
+// Helper to get score label
+function getScoreLabel(score: number): string {
+  if (score >= 90) return 'World Class';
+  if (score >= 80) return 'Excellent';
+  if (score >= 70) return 'Very Good';
+  if (score >= 60) return 'Good';
+  if (score >= 50) return 'Average';
+  return 'Developing';
+}
+
+// Helper to draw a rounded rectangle
+function drawRoundedRect(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fillColor: [number, number, number]) {
+  doc.setFillColor(...fillColor);
+  doc.roundedRect(x, y, w, h, r, r, 'F');
+}
+
+// Helper to draw a progress bar
+function drawProgressBar(doc: jsPDF, x: number, y: number, width: number, height: number, value: number, maxValue: number, bgColor: [number, number, number], fillColor: [number, number, number]) {
+  const percentage = Math.min(value / maxValue, 1);
+  
+  // Background
+  doc.setFillColor(...bgColor);
+  doc.roundedRect(x, y, width, height, height / 2, height / 2, 'F');
+  
+  // Fill
+  if (percentage > 0) {
+    doc.setFillColor(...fillColor);
+    doc.roundedRect(x, y, width * percentage, height, height / 2, height / 2, 'F');
+  }
+}
+
 // PDF Export Function
 export async function exportReportPDF(reportId: string, teamLogoUrl?: string | null) {
   const { data: report, error } = await supabase
@@ -201,22 +232,46 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   const doc = new jsPDF();
   const player = report.players as any;
+  const pageWidth = 210;
+  const margin = 15;
+  const contentWidth = pageWidth - margin * 2;
   
-  // Colors
+  // Colors (RGB)
   const primaryColor: [number, number, number] = [46, 139, 87]; // Emerald green
+  const blueColor: [number, number, number] = [59, 130, 246]; // Blue
+  const amberColor: [number, number, number] = [245, 158, 11]; // Amber
+  const purpleColor: [number, number, number] = [147, 51, 234]; // Purple
+  const destructiveColor: [number, number, number] = [220, 53, 69]; // Red
   const textColor: [number, number, number] = [30, 30, 30];
-  const mutedColor: [number, number, number] = [100, 100, 100];
+  const mutedColor: [number, number, number] = [120, 120, 120];
+  const bgMuted: [number, number, number] = [245, 245, 245];
+  const bgLight: [number, number, number] = [250, 250, 250];
 
-  // Header
+  // Calculate category averages
+  const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
+  const tactValues = [report.tactical_positioning, report.tactical_decision_making, report.tactical_awareness, report.tactical_off_ball_movement, report.tactical_defensive_contribution].filter(v => v != null);
+  const physValues = [report.physical_pace, report.physical_agility, report.physical_strength, report.physical_stamina, report.physical_balance].filter(v => v != null);
+  const mentValues = [report.mental_composure, report.mental_concentration, report.mental_work_rate, report.mental_leadership, report.mental_aggression].filter(v => v != null);
+
+  const techAvg = techValues.length > 0 ? techValues.reduce((a, b) => a + b, 0) / techValues.length : 0;
+  const tactAvg = tactValues.length > 0 ? tactValues.reduce((a, b) => a + b, 0) / tactValues.length : 0;
+  const physAvg = physValues.length > 0 ? physValues.reduce((a, b) => a + b, 0) / physValues.length : 0;
+  const mentAvg = mentValues.length > 0 ? mentValues.reduce((a, b) => a + b, 0) / mentValues.length : 0;
+
+  // Calculate overall score (0-100)
+  const categoryCount = [techAvg, tactAvg, physAvg, mentAvg].filter(v => v > 0).length;
+  const overallScore = categoryCount > 0 ? Math.round(((techAvg + tactAvg + physAvg + mentAvg) / categoryCount) * 5) : 0;
+
+  // ========== HEADER ==========
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, 210, 40, 'F');
+  doc.rect(0, 0, pageWidth, 45, 'F');
   
   // Add team logo if available
   if (teamLogoUrl) {
     const logoBase64 = await loadImageAsBase64(teamLogoUrl);
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', 170, 5, 30, 30);
+        doc.addImage(logoBase64, 'PNG', pageWidth - 45, 7, 30, 30);
       } catch (e) {
         console.warn('Could not add logo to PDF:', e);
       }
@@ -224,86 +279,185 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   }
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text('SCOUTING REPORT', 20, 25);
+  doc.text('SCOUTING REPORT', margin, 22);
   
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Generated: ${format(new Date(), 'MMMM d, yyyy')}`, 20, 35);
+  doc.text(`Generated: ${format(new Date(), 'MMMM d, yyyy')}`, margin, 32);
+  doc.text('The Football Scout', margin, 40);
 
-  // Player Info Section
+  // ========== PLAYER INFO SECTION ==========
   let y = 55;
   
+  // Player name and position
   doc.setTextColor(...textColor);
   doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text(player?.full_name || 'Unknown Player', 20, y);
-  y += 10;
-
-  doc.setFontSize(12);
-  doc.setTextColor(...mutedColor);
-  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
-  const club = player?.current_club || 'No Club';
-  doc.text(`${position} • ${club}`, 20, y);
-  y += 15;
-
-  // Player Details Grid
-  const playerDetails = [
-    ['Nationality', player?.nationality || 'N/A'],
-    ['Date of Birth', player?.date_of_birth || 'N/A'],
-    ['Height', player?.height_cm ? `${player.height_cm} cm` : 'N/A'],
-    ['Weight', player?.weight_kg ? `${player.weight_kg} kg` : 'N/A'],
-    ['Preferred Foot', player?.preferred_foot || 'N/A'],
-  ];
-
-  doc.setFontSize(10);
-  playerDetails.forEach(([label, value], i) => {
-    const x = 20 + (i % 3) * 60;
-    const yPos = y + Math.floor(i / 3) * 12;
-    doc.setTextColor(...mutedColor);
-    doc.text(label, x, yPos);
-    doc.setTextColor(...textColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text(value, x, yPos + 5);
-    doc.setFont('helvetica', 'normal');
-  });
-  y += 30;
-
-  // Match Details
-  doc.setFillColor(240, 240, 240);
-  doc.rect(20, y, 170, 25, 'F');
-  y += 8;
+  doc.text(player?.full_name || 'Unknown Player', margin, y);
   
-  doc.setTextColor(...textColor);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Match Details', 25, y);
-  y += 7;
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  const matchInfo = `${format(new Date(report.match_date), 'MMMM d, yyyy')} vs ${report.opposition || 'Unknown'} • ${COMPETITION_LEVEL_LABELS[report.competition_level as CompetitionLevel]}`;
-  doc.text(matchInfo, 25, y);
-  y += 20;
-
-  // Ratings Box
-  if (report.overall_rating) {
-    doc.setFillColor(...primaryColor);
-    doc.rect(150, 55, 40, 30, 'F');
+  // Overall rating box on the right
+  if (report.overall_rating || overallScore > 0) {
+    const ratingValue = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
+    drawRoundedRect(doc, pageWidth - margin - 35, y - 12, 35, 35, 4, primaryColor);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text(Math.round(report.overall_rating).toString(), 170, 75, { align: 'center' });
-    doc.setFontSize(8);
-    doc.text('OVERALL', 170, 82, { align: 'center' });
+    doc.text(ratingValue.toString(), pageWidth - margin - 17.5, y + 5, { align: 'center' });
+    doc.setFontSize(7);
+    doc.text('OVERALL', pageWidth - margin - 17.5, y + 13, { align: 'center' });
   }
+  
+  y += 8;
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
+  const club = player?.current_club || 'No Club';
+  doc.text(`${position} • ${club}`, margin, y);
+  y += 12;
 
-  // Attributes Table
+  // Player details grid
+  const details = [
+    { label: 'Nationality', value: player?.nationality || 'N/A' },
+    { label: 'Date of Birth', value: player?.date_of_birth || 'N/A' },
+    { label: 'Height', value: player?.height_cm ? `${player.height_cm} cm` : 'N/A' },
+    { label: 'Weight', value: player?.weight_kg ? `${player.weight_kg} kg` : 'N/A' },
+    { label: 'Preferred Foot', value: player?.preferred_foot || 'N/A' },
+  ];
+
+  doc.setFontSize(8);
+  const detailWidth = (contentWidth - 30) / 5;
+  details.forEach((detail, i) => {
+    const x = margin + i * detailWidth + (i * 7);
+    doc.setTextColor(...mutedColor);
+    doc.text(detail.label, x, y);
+    doc.setTextColor(...textColor);
+    doc.setFont('helvetica', 'bold');
+    doc.text(detail.value, x, y + 5);
+    doc.setFont('helvetica', 'normal');
+  });
+  y += 15;
+
+  // ========== MATCH DETAILS BOX ==========
+  drawRoundedRect(doc, margin, y, contentWidth, 22, 3, bgMuted);
+  y += 6;
+  
   doc.setTextColor(...textColor);
-  doc.setFontSize(14);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('Attributes', 20, y);
+  doc.text('Match Details', margin + 5, y);
+  y += 6;
+  
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...mutedColor);
+  const matchDate = format(new Date(report.match_date), 'MMMM d, yyyy');
+  const opposition = report.opposition || 'Unknown';
+  const competitionLevel = COMPETITION_LEVEL_LABELS[report.competition_level as CompetitionLevel] || report.competition_level;
+  const minutesObserved = report.minutes_observed ? `${report.minutes_observed} mins observed` : '';
+  doc.text(`${matchDate}  •  vs ${opposition}  •  ${competitionLevel}${minutesObserved ? '  •  ' + minutesObserved : ''}`, margin + 5, y);
+  y += 18;
+
+  // ========== OVERALL PERFORMANCE SECTION ==========
+  // Draw a gradient-like box for overall score
+  drawRoundedRect(doc, margin, y, contentWidth, 35, 4, [240, 253, 244]); // Light green bg
+  doc.setDrawColor(...primaryColor);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, y, contentWidth, 35, 4, 4, 'S');
+  
+  // Overall score on the left
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(9);
+  doc.text('Overall Match Rating', margin + 8, y + 8);
+  
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(32);
+  doc.setFont('helvetica', 'bold');
+  doc.text(overallScore.toString(), margin + 8, y + 24);
+  
+  doc.setTextColor(...mutedColor);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'normal');
+  doc.text('/100', margin + 30, y + 24);
+  
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text(getScoreLabel(overallScore), margin + 8, y + 31);
+  
+  // Category breakdown bars on the right
+  const barStartX = margin + 80;
+  const barWidth = 90;
+  const barHeight = 4;
+  const categories = [
+    { name: 'Technical', avg: Math.round(techAvg), color: primaryColor },
+    { name: 'Tactical', avg: Math.round(tactAvg), color: blueColor },
+    { name: 'Physical', avg: Math.round(physAvg), color: amberColor },
+    { name: 'Mental', avg: Math.round(mentAvg), color: purpleColor },
+  ];
+  
+  categories.forEach((cat, i) => {
+    const catY = y + 7 + i * 7;
+    doc.setTextColor(...mutedColor);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(cat.name, barStartX, catY + 2);
+    
+    drawProgressBar(doc, barStartX + 25, catY - 1, barWidth - 40, barHeight, cat.avg, 20, bgMuted, cat.color);
+    
+    doc.setTextColor(...textColor);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${cat.avg}/20`, barStartX + barWidth - 8, catY + 2);
+  });
+  
+  y += 42;
+
+  // ========== CATEGORY AVERAGES GRID ==========
+  doc.setTextColor(...textColor);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Category Breakdown', margin, y);
+  y += 8;
+
+  const boxWidth = (contentWidth - 10) / 4;
+  const boxHeight = 28;
+  
+  categories.forEach((cat, i) => {
+    const boxX = margin + i * (boxWidth + 3.3);
+    
+    // Box background
+    drawRoundedRect(doc, boxX, y, boxWidth, boxHeight, 3, bgLight);
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(boxX, y, boxWidth, boxHeight, 3, 3, 'S');
+    
+    // Category header with color indicator
+    doc.setFillColor(...cat.color);
+    doc.roundedRect(boxX + 4, y + 4, 3, 10, 1, 1, 'F');
+    
+    doc.setTextColor(...textColor);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(cat.name, boxX + 10, y + 10);
+    
+    // Score
+    doc.setFontSize(16);
+    doc.text(cat.avg.toString(), boxX + 10, y + 22);
+    doc.setTextColor(...mutedColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('/20', boxX + 22, y + 22);
+  });
+  
+  y += boxHeight + 10;
+
+  // ========== DETAILED ATTRIBUTES ==========
+  doc.setTextColor(...textColor);
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Detailed Attributes', margin, y);
   y += 5;
 
   const technicalAttrs = [
@@ -341,86 +495,152 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   autoTable(doc, {
     startY: y,
-    head: [['Technical', 'Rating', 'Tactical', 'Rating']],
+    head: [['Technical', '', 'Tactical', '']],
     body: technicalAttrs.map((t, i) => [
       t[0],
       t[1]?.toString() || '-',
       tacticalAttrs[i]?.[0] || '',
       tacticalAttrs[i]?.[1]?.toString() || '-',
     ]),
-    theme: 'striped',
-    headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
-    margin: { left: 20, right: 20 },
-    styles: { fontSize: 9 },
+    theme: 'plain',
+    headStyles: { 
+      fillColor: [255, 255, 255], 
+      textColor: primaryColor,
+      fontStyle: 'bold',
+      fontSize: 10,
+    },
+    columnStyles: {
+      0: { cellWidth: 45 },
+      1: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+      2: { cellWidth: 45 },
+      3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+    },
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9, cellPadding: 2 },
+    alternateRowStyles: { fillColor: bgLight },
   });
 
   const firstTableFinalY = (doc as any).lastAutoTable?.finalY || y + 50;
 
   autoTable(doc, {
-    startY: firstTableFinalY + 5,
-    head: [['Physical', 'Rating', 'Mental', 'Rating']],
+    startY: firstTableFinalY + 3,
+    head: [['Physical', '', 'Mental', '']],
     body: physicalAttrs.map((p, i) => [
       p[0],
       p[1]?.toString() || '-',
       mentalAttrs[i]?.[0] || '',
       mentalAttrs[i]?.[1]?.toString() || '-',
     ]),
-    theme: 'striped',
-    headStyles: { fillColor: primaryColor, textColor: [255, 255, 255] },
-    margin: { left: 20, right: 20 },
-    styles: { fontSize: 9 },
+    theme: 'plain',
+    headStyles: { 
+      fillColor: [255, 255, 255], 
+      textColor: amberColor,
+      fontStyle: 'bold',
+      fontSize: 10,
+    },
+    columnStyles: {
+      0: { cellWidth: 45 },
+      1: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+      2: { cellWidth: 45 },
+      3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+    },
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 9, cellPadding: 2 },
+    alternateRowStyles: { fillColor: bgLight },
   });
 
-  y = (doc as any).lastAutoTable?.finalY + 15 || firstTableFinalY + 70;
+  y = (doc as any).lastAutoTable?.finalY + 10 || firstTableFinalY + 60;
 
-  // Strengths & Weaknesses
+  // ========== STRENGTHS & WEAKNESSES ==========
   if (report.strengths || report.weaknesses) {
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    const halfWidth = (contentWidth - 5) / 2;
     
     if (report.strengths) {
-      doc.setTextColor(46, 139, 87);
-      doc.text('Strengths', 20, y);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textColor);
+      // Strengths box
+      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 12);
+      const strengthBoxHeight = Math.max(25, 15 + strengthLines.length * 4);
+      
+      drawRoundedRect(doc, margin, y, halfWidth, strengthBoxHeight, 3, [240, 253, 244]);
+      doc.setDrawColor(...primaryColor);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(margin, y, halfWidth, strengthBoxHeight, 3, 3, 'S');
+      
+      doc.setTextColor(...primaryColor);
       doc.setFontSize(10);
-      const strengthLines = doc.splitTextToSize(report.strengths, 170);
-      doc.text(strengthLines, 20, y + 6);
-      y += 6 + strengthLines.length * 5 + 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('✓ Strengths', margin + 5, y + 8);
+      
+      doc.setTextColor(...textColor);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(strengthLines, margin + 5, y + 15);
     }
 
     if (report.weaknesses) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(12);
-      doc.setTextColor(220, 53, 69);
-      doc.text('Weaknesses', 20, y);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...textColor);
+      // Weaknesses box
+      const weaknessLines = doc.splitTextToSize(report.weaknesses, halfWidth - 12);
+      const weaknessBoxHeight = Math.max(25, 15 + weaknessLines.length * 4);
+      const weaknessX = margin + halfWidth + 5;
+      
+      drawRoundedRect(doc, weaknessX, y, halfWidth, weaknessBoxHeight, 3, [254, 242, 242]);
+      doc.setDrawColor(...destructiveColor);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(weaknessX, y, halfWidth, weaknessBoxHeight, 3, 3, 'S');
+      
+      doc.setTextColor(...destructiveColor);
       doc.setFontSize(10);
-      const weaknessLines = doc.splitTextToSize(report.weaknesses, 170);
-      doc.text(weaknessLines, 20, y + 6);
-      y += 6 + weaknessLines.length * 5 + 10;
+      doc.setFont('helvetica', 'bold');
+      doc.text('✗ Areas to Improve', weaknessX + 5, y + 8);
+      
+      doc.setTextColor(...textColor);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(weaknessLines, weaknessX + 5, y + 15);
+      
+      const maxBoxHeight = Math.max(
+        report.strengths ? Math.max(25, 15 + doc.splitTextToSize(report.strengths, halfWidth - 12).length * 4) : 0,
+        weaknessBoxHeight
+      );
+      y += maxBoxHeight + 8;
+    } else if (report.strengths) {
+      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 12);
+      y += Math.max(25, 15 + strengthLines.length * 4) + 8;
     }
   }
 
-  // Recommendation
+  // ========== RECOMMENDATION ==========
   if (report.recommendation) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
+    drawRoundedRect(doc, margin, y, contentWidth, 25, 3, bgMuted);
+    
     doc.setTextColor(...primaryColor);
-    doc.text('Recommendation', 20, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...textColor);
     doc.setFontSize(10);
-    const recLines = doc.splitTextToSize(report.recommendation, 170);
-    doc.text(recLines, 20, y + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Scout Recommendation', margin + 5, y + 8);
+    
+    doc.setTextColor(...textColor);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const recLines = doc.splitTextToSize(report.recommendation, contentWidth - 12);
+    doc.text(recLines, margin + 5, y + 15);
+    y += 30;
   }
 
-  // Footer
+  // ========== POTENTIAL RATING ==========
+  if (report.potential_rating) {
+    doc.setTextColor(...mutedColor);
+    doc.setFontSize(9);
+    doc.text(`Potential Rating: `, margin, y);
+    doc.setTextColor(...primaryColor);
+    doc.setFont('helvetica', 'bold');
+    doc.text(report.potential_rating.toString(), margin + 28, y);
+  }
+
+  // ========== FOOTER ==========
   doc.setFontSize(8);
   doc.setTextColor(...mutedColor);
-  doc.text('The Football Scout', 20, 285);
-  doc.text(`Report ID: ${report.id}`, 190, 285, { align: 'right' });
+  doc.setFont('helvetica', 'normal');
+  doc.text('The Football Scout', margin, 287);
+  doc.text(`Report ID: ${report.id.substring(0, 8)}...`, pageWidth - margin, 287, { align: 'right' });
 
   // Save
   const filename = `scouting_report_${player?.full_name?.replace(/\s+/g, '_') || 'unknown'}_${format(new Date(report.match_date), 'yyyy-MM-dd')}.pdf`;
