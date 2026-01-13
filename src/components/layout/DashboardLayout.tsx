@@ -26,7 +26,7 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
   { icon: Users, label: 'Players', href: '/players' },
   { icon: FileText, label: 'Reports', href: '/reports' },
-  { icon: BarChart3, label: 'Compare', href: '/compare' },
+  { icon: BarChart3, label: 'Compare', href: '/players/compare' },
 ];
 
 const adminNavItems = [
