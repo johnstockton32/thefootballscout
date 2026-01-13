@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,7 @@ export default function Settings() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, profile, signOut, updateGdprConsent, updateProfile, deleteAccount } = useAuth();
+  const { theme, setTheme } = useTheme();
   
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -241,10 +243,14 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="appearance" className="gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Appearance</span>
             </TabsTrigger>
             <TabsTrigger value="security" className="gap-2">
               <Lock className="h-4 w-4" />
@@ -330,6 +336,79 @@ export default function Settings() {
                     </Button>
                   </form>
                 </Form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Appearance Tab */}
+          <TabsContent value="appearance" className="space-y-6">
+            <Card className="card-glass">
+              <CardHeader>
+                <CardTitle>Theme</CardTitle>
+                <CardDescription>Choose your preferred color scheme</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <button
+                    onClick={() => setTheme('light')}
+                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'light' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
+                      <Sun className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-sm">Light</p>
+                      <p className="text-xs text-muted-foreground">Bright and clean</p>
+                    </div>
+                    {theme === 'light' && (
+                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setTheme('dark')}
+                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'dark' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                      <Moon className="h-6 w-6 text-slate-300" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-sm">Dark</p>
+                      <p className="text-xs text-muted-foreground">Stadium night mode</p>
+                    </div>
+                    {theme === 'dark' && (
+                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => setTheme('system')}
+                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                      theme === 'system' 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                      <Monitor className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-medium text-sm">System</p>
+                      <p className="text-xs text-muted-foreground">Match device</p>
+                    </div>
+                    {theme === 'system' && (
+                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                    )}
+                  </button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
