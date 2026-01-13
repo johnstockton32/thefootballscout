@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft } from 'lucide-react';
 import { z } from 'zod';
+import { supabase } from '@/integrations/supabase/client';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -17,11 +18,17 @@ const authSchema = z.object({
   fullName: z.string().optional(),
 });
 
+const resetSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
+type AuthMode = 'signIn' | 'signUp' | 'resetPassword';
+
 export default function Auth() {
   const navigate = useNavigate();
   const { user, signIn, signUp, updateGdprConsent } = useAuth();
   
-  const [isSignUp, setIsSignUp] = useState(false);
+  const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -38,7 +45,11 @@ export default function Auth() {
 
   const validateForm = () => {
     try {
-      authSchema.parse({ email, password, fullName: isSignUp ? fullName : undefined });
+      if (mode === 'resetPassword') {
+        resetSchema.parse({ email });
+      } else {
+        authSchema.parse({ email, password, fullName: mode === 'signUp' ? fullName : undefined });
+      }
       setErrors({});
       return true;
     } catch (err) {
@@ -55,12 +66,38 @@ export default function Auth() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!validateForm()) return;
+    
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth`,
+      });
+      
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      
+      toast.success('Password reset email sent! Check your inbox.');
+      setMode('signIn');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (mode === 'resetPassword') {
+      await handlePasswordReset();
+      return;
+    }
+    
     if (!validateForm()) return;
     
-    if (isSignUp && !gdprConsent) {
+    if (mode === 'signUp' && !gdprConsent) {
       toast.error('Please accept the data processing agreement to continue');
       return;
     }
@@ -68,7 +105,7 @@ export default function Auth() {
     setIsLoading(true);
 
     try {
-      if (isSignUp) {
+      if (mode === 'signUp') {
         const { error } = await signUp(email, password, fullName);
         if (error) {
           if (error.message.includes('already registered')) {
@@ -101,6 +138,22 @@ export default function Auth() {
     }
   };
 
+  const getTitle = () => {
+    switch (mode) {
+      case 'signUp': return 'Create your account';
+      case 'resetPassword': return 'Reset your password';
+      default: return 'Welcome back';
+    }
+  };
+
+  const getDescription = () => {
+    switch (mode) {
+      case 'signUp': return 'Start scouting the next generation of talent';
+      case 'resetPassword': return 'Enter your email and we\'ll send you a reset link';
+      default: return 'Sign in to access your scouting dashboard';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pitch-pattern flex flex-col">
       {/* Header */}
@@ -114,18 +167,15 @@ export default function Auth() {
           <Card className="card-glass border-border/50">
             <CardHeader className="text-center pb-2">
               <CardTitle className="text-2xl font-bold">
-                {isSignUp ? 'Create your account' : 'Welcome back'}
+                {getTitle()}
               </CardTitle>
               <CardDescription className="text-muted-foreground">
-                {isSignUp 
-                  ? 'Start scouting the next generation of talent'
-                  : 'Sign in to access your scouting dashboard'
-                }
+                {getDescription()}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {isSignUp && (
+                {mode === 'signUp' && (
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-sm font-medium">
                       Full Name
@@ -168,35 +218,51 @@ export default function Auth() {
                   )}
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 bg-input border-border focus:border-primary"
-                      autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                {mode !== 'resetPassword' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="password" className="text-sm font-medium">
+                        Password
+                      </Label>
+                      {mode === 'signIn' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode('resetPassword');
+                            setErrors({});
+                          }}
+                          className="text-xs text-primary hover:text-primary/80 transition-colors"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="pl-10 pr-10 bg-input border-border focus:border-primary"
+                        autoComplete={mode === 'signUp' ? 'new-password' : 'current-password'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="text-xs text-destructive">{errors.password}</p>
+                    )}
                   </div>
-                  {errors.password && (
-                    <p className="text-xs text-destructive">{errors.password}</p>
-                  )}
-                </div>
+                )}
 
-                {isSignUp && (
+                {mode === 'signUp' && (
                   <div className="flex items-start space-x-3 py-2">
                     <Checkbox
                       id="gdpr"
@@ -227,28 +293,44 @@ export default function Auth() {
                     <span className="animate-pulse">Processing...</span>
                   ) : (
                     <>
-                      {isSignUp ? 'Create Account' : 'Sign In'}
+                      {mode === 'signUp' && 'Create Account'}
+                      {mode === 'signIn' && 'Sign In'}
+                      {mode === 'resetPassword' && 'Send Reset Link'}
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </Button>
               </form>
 
-              <div className="mt-6 text-center">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setErrors({});
-                  }}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {isSignUp ? (
-                    <>Already have an account? <span className="text-primary font-medium">Sign in</span></>
-                  ) : (
-                    <>Don't have an account? <span className="text-primary font-medium">Sign up</span></>
-                  )}
-                </button>
+              <div className="mt-6 text-center space-y-2">
+                {mode === 'resetPassword' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('signIn');
+                      setErrors({});
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    Back to sign in
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode(mode === 'signUp' ? 'signIn' : 'signUp');
+                      setErrors({});
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {mode === 'signUp' ? (
+                      <>Already have an account? <span className="text-primary font-medium">Sign in</span></>
+                    ) : (
+                      <>Don't have an account? <span className="text-primary font-medium">Sign up</span></>
+                    )}
+                  </button>
+                )}
               </div>
             </CardContent>
           </Card>
