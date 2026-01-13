@@ -25,6 +25,7 @@ interface SubscriptionData {
   isLoading: boolean;
   isInTrial: boolean;
   trialEndsAt: Date | null;
+  trialDaysRemaining: number;
   subscriptionStartedAt: Date | null;
   canStartTrial: boolean;
   startTrial: () => Promise<boolean>;
@@ -206,6 +207,11 @@ export function useSubscription(): SubscriptionData {
   const isInTrial = tier === 'pro' && trialEndsAt !== null && trialEndsAt > new Date();
   const canCreatePlayer = tier !== 'free' || playerCount < limits.maxPlayers;
   const canCreateReport = tier !== 'free' || monthlyReportCount < limits.maxReportsPerMonth;
+  
+  // Calculate trial days remaining
+  const trialDaysRemaining = isInTrial && trialEndsAt 
+    ? Math.max(0, Math.ceil((trialEndsAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
 
   return {
     tier,
@@ -219,6 +225,7 @@ export function useSubscription(): SubscriptionData {
     isLoading,
     isInTrial,
     trialEndsAt,
+    trialDaysRemaining,
     subscriptionStartedAt,
     canStartTrial,
     startTrial,
