@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { Logo } from '@/components/Logo';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import {
@@ -17,12 +19,15 @@ import {
   ArrowRight,
   Calendar,
   MapPin,
-  Ruler,
   TrendingUp,
   CheckCircle,
+  Footprints,
+  Weight,
+  Ruler,
+  X,
 } from 'lucide-react';
 
-// Demo data for showcase
+// Extended demo data with full attributes
 const demoPlayers = [
   {
     id: '1',
@@ -35,6 +40,17 @@ const demoPlayers = [
     rating: 82,
     potential: 89,
     photo: null,
+    height: 185,
+    weight: 78,
+    preferredFoot: 'Right',
+    attributes: {
+      technical: { passing: 16, dribbling: 18, shooting: 17, firstTouch: 16, crossing: 14, heading: 15 },
+      tactical: { positioning: 15, awareness: 14, decisionMaking: 15, offBallMovement: 17, defensiveContribution: 10 },
+      physical: { pace: 19, stamina: 16, strength: 14, agility: 17, balance: 15 },
+      mental: { composure: 15, concentration: 14, aggression: 13, workRate: 16, leadership: 12 },
+    },
+    strengths: 'Electric pace, clinical finishing in the box, excellent off-ball movement',
+    weaknesses: 'Defensive work rate, aerial duels against physical defenders',
   },
   {
     id: '2',
@@ -47,6 +63,17 @@ const demoPlayers = [
     rating: 78,
     potential: 85,
     photo: null,
+    height: 178,
+    weight: 72,
+    preferredFoot: 'Left',
+    attributes: {
+      technical: { passing: 17, dribbling: 14, shooting: 12, firstTouch: 16, crossing: 13, heading: 11 },
+      tactical: { positioning: 18, awareness: 17, decisionMaking: 16, offBallMovement: 14, defensiveContribution: 16 },
+      physical: { pace: 15, stamina: 18, strength: 14, agility: 15, balance: 16 },
+      mental: { composure: 16, concentration: 17, aggression: 14, workRate: 18, leadership: 15 },
+    },
+    strengths: 'Exceptional vision and passing range, tireless work rate, tactical intelligence',
+    weaknesses: 'Lacks top-end pace, shooting from distance needs improvement',
   },
   {
     id: '3',
@@ -59,8 +86,21 @@ const demoPlayers = [
     rating: 75,
     potential: 84,
     photo: null,
+    height: 188,
+    weight: 82,
+    preferredFoot: 'Right',
+    attributes: {
+      technical: { passing: 14, dribbling: 11, shooting: 8, firstTouch: 13, crossing: 10, heading: 17 },
+      tactical: { positioning: 16, awareness: 15, decisionMaking: 14, offBallMovement: 12, defensiveContribution: 18 },
+      physical: { pace: 14, stamina: 15, strength: 17, agility: 13, balance: 14 },
+      mental: { composure: 15, concentration: 16, aggression: 16, workRate: 15, leadership: 14 },
+    },
+    strengths: 'Commanding aerial presence, strong in the tackle, reads the game well',
+    weaknesses: 'Distribution under pressure, recovery pace against fast forwards',
   },
 ];
+
+type DemoPlayer = typeof demoPlayers[0];
 
 const demoReports = [
   {
@@ -144,8 +184,33 @@ const features = [
   },
 ];
 
+// Helper component for attribute bars
+function AttributeBar({ name, value }: { name: string; value: number }) {
+  const percentage = (value / 20) * 100;
+  const getColorClass = () => {
+    if (value >= 17) return 'bg-primary';
+    if (value >= 14) return 'bg-amber-500';
+    if (value >= 11) return 'bg-muted-foreground';
+    return 'bg-destructive';
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-sm text-muted-foreground w-32 shrink-0">{name}</span>
+      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <div 
+          className={`h-full rounded-full transition-all ${getColorClass()}`}
+          style={{ width: `${percentage}%` }}
+        />
+      </div>
+      <span className="text-sm font-medium w-6 text-right">{value}</span>
+    </div>
+  );
+}
+
 export default function Demo() {
   const [activeTab, setActiveTab] = useState('players');
+  const [selectedPlayer, setSelectedPlayer] = useState<DemoPlayer | null>(null);
 
   return (
     <div className="min-h-screen bg-background">
@@ -248,17 +313,24 @@ export default function Demo() {
 
             {/* Players Tab */}
             <TabsContent value="players" className="space-y-6">
+              <p className="text-sm text-muted-foreground text-center">
+                Click on a player card to view detailed stats and attributes
+              </p>
               <div className="grid md:grid-cols-3 gap-6">
                 {demoPlayers.map((player) => (
-                  <Card key={player.id} className="card-glass hover:shadow-lg transition-shadow">
+                  <Card 
+                    key={player.id} 
+                    className="card-glass hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer group"
+                    onClick={() => setSelectedPlayer(player)}
+                  >
                     <CardContent className="pt-6">
                       <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center">
+                        <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
                           <Users className="w-7 h-7 text-primary" />
                         </div>
                         <Badge className="position-badge">{player.position}</Badge>
                       </div>
-                      <h3 className="text-lg font-semibold mb-1">{player.name}</h3>
+                      <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">{player.name}</h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         {player.positionFull} • {player.club}
                       </p>
@@ -281,6 +353,9 @@ export default function Demo() {
                           <p className="text-xs text-muted-foreground">Potential</p>
                           <p className="text-xl font-bold text-gradient-gold">{player.potential}</p>
                         </div>
+                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          View Details
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -409,6 +484,163 @@ export default function Demo() {
           </Tabs>
         </div>
       </section>
+
+      {/* Player Detail Modal */}
+      <Dialog open={!!selectedPlayer} onOpenChange={() => setSelectedPlayer(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          {selectedPlayer && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
+                      <Users className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                      <DialogTitle className="text-2xl">{selectedPlayer.name}</DialogTitle>
+                      <p className="text-muted-foreground">{selectedPlayer.positionFull} • {selectedPlayer.club}</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">Rating</p>
+                      <p className="text-2xl font-bold text-primary">{selectedPlayer.rating}</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xs text-muted-foreground">Potential</p>
+                      <p className="text-2xl font-bold text-gradient-gold">{selectedPlayer.potential}</p>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              {/* Player Info */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4 border-y border-border">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Age</p>
+                    <p className="font-medium">{selectedPlayer.age} years</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Nationality</p>
+                    <p className="font-medium">{selectedPlayer.nationality}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Ruler className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Height</p>
+                    <p className="font-medium">{selectedPlayer.height} cm</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Footprints className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Preferred Foot</p>
+                    <p className="font-medium">{selectedPlayer.preferredFoot}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Attributes Grid */}
+              <div className="grid md:grid-cols-2 gap-6 py-4">
+                {/* Technical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Technical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Passing" value={selectedPlayer.attributes.technical.passing} />
+                    <AttributeBar name="Dribbling" value={selectedPlayer.attributes.technical.dribbling} />
+                    <AttributeBar name="Shooting" value={selectedPlayer.attributes.technical.shooting} />
+                    <AttributeBar name="First Touch" value={selectedPlayer.attributes.technical.firstTouch} />
+                    <AttributeBar name="Crossing" value={selectedPlayer.attributes.technical.crossing} />
+                    <AttributeBar name="Heading" value={selectedPlayer.attributes.technical.heading} />
+                  </div>
+                </div>
+
+                {/* Tactical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Tactical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Positioning" value={selectedPlayer.attributes.tactical.positioning} />
+                    <AttributeBar name="Awareness" value={selectedPlayer.attributes.tactical.awareness} />
+                    <AttributeBar name="Decision Making" value={selectedPlayer.attributes.tactical.decisionMaking} />
+                    <AttributeBar name="Off-Ball Movement" value={selectedPlayer.attributes.tactical.offBallMovement} />
+                    <AttributeBar name="Def. Contribution" value={selectedPlayer.attributes.tactical.defensiveContribution} />
+                  </div>
+                </div>
+
+                {/* Physical */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Physical
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Pace" value={selectedPlayer.attributes.physical.pace} />
+                    <AttributeBar name="Stamina" value={selectedPlayer.attributes.physical.stamina} />
+                    <AttributeBar name="Strength" value={selectedPlayer.attributes.physical.strength} />
+                    <AttributeBar name="Agility" value={selectedPlayer.attributes.physical.agility} />
+                    <AttributeBar name="Balance" value={selectedPlayer.attributes.physical.balance} />
+                  </div>
+                </div>
+
+                {/* Mental */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Mental
+                  </h4>
+                  <div className="space-y-2">
+                    <AttributeBar name="Composure" value={selectedPlayer.attributes.mental.composure} />
+                    <AttributeBar name="Concentration" value={selectedPlayer.attributes.mental.concentration} />
+                    <AttributeBar name="Aggression" value={selectedPlayer.attributes.mental.aggression} />
+                    <AttributeBar name="Work Rate" value={selectedPlayer.attributes.mental.workRate} />
+                    <AttributeBar name="Leadership" value={selectedPlayer.attributes.mental.leadership} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Strengths & Weaknesses */}
+              <div className="grid md:grid-cols-2 gap-4 pt-4 border-t border-border">
+                <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                  <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    Strengths
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{selectedPlayer.strengths}</p>
+                </div>
+                <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <h4 className="font-semibold text-destructive mb-2 flex items-center gap-2">
+                    <X className="w-4 h-4" />
+                    Areas to Improve
+                  </h4>
+                  <p className="text-sm text-muted-foreground">{selectedPlayer.weaknesses}</p>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="flex justify-end gap-3 pt-4">
+                <Button variant="outline" onClick={() => setSelectedPlayer(null)}>
+                  Close
+                </Button>
+                <Button variant="hero" asChild>
+                  <Link to="/auth">Sign Up to Scout</Link>
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* CTA Section */}
       <section className="py-16 px-4 bg-muted/30">
