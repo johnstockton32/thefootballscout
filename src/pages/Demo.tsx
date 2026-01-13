@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +9,89 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Logo } from '@/components/Logo';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
+
+// Animation variants
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.4,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    y: -8,
+    scale: 1.02,
+    transition: {
+      duration: 0.2,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  },
+};
+
+const featureCardVariants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: (i: number) => ({
+    opacity: 1,
+    scale: 1,
+    transition: {
+      delay: i * 0.08,
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    scale: 1.05,
+    transition: {
+      duration: 0.2,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  },
+};
+
+const modalContentVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+const modalItemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.2 },
+  },
+};
+
+const reportRowVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: i * 0.1,
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    x: 4,
+    transition: {
+      duration: 0.15,
+    },
+  },
+};
 import {
   Users,
   FileText,
@@ -328,20 +412,40 @@ export default function Demo() {
       {/* Features Grid */}
       <section className="py-16 px-4 bg-muted/30">
         <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">
+          <motion.h2 
+            className="text-3xl font-bold text-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
             Everything You Need for Professional Scouting
-          </h2>
+          </motion.h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <Card key={index} className="card-glass">
-                <CardContent className="pt-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                    <feature.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </CardContent>
-              </Card>
+              <motion.div
+                key={index}
+                custom={index}
+                variants={featureCardVariants}
+                initial="hidden"
+                whileInView="visible"
+                whileHover="hover"
+                viewport={{ once: true }}
+              >
+                <Card className="card-glass h-full">
+                  <CardContent className="pt-6">
+                    <motion.div 
+                      className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4"
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <feature.icon className="w-6 h-6 text-primary" />
+                    </motion.div>
+                    <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                    <p className="text-muted-foreground">{feature.description}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -380,48 +484,64 @@ export default function Demo() {
                 Click on a player card to view detailed stats and attributes
               </p>
               <div className="grid md:grid-cols-3 gap-6">
-                {demoPlayers.map((player) => (
-                  <Card 
-                    key={player.id} 
-                    className="card-glass hover:shadow-lg hover:border-primary/50 transition-all cursor-pointer group"
+                {demoPlayers.map((player, index) => (
+                  <motion.div
+                    key={player.id}
+                    custom={index}
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    whileHover="hover"
                     onClick={() => setSelectedPlayer(player)}
+                    className="cursor-pointer"
                   >
-                    <CardContent className="pt-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center group-hover:bg-primary/30 transition-colors">
-                          <Users className="w-7 h-7 text-primary" />
+                    <Card className="card-glass hover:border-primary/50 transition-colors h-full">
+                      <CardContent className="pt-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <motion.div 
+                            className="w-14 h-14 rounded-xl bg-primary/20 flex items-center justify-center"
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <Users className="w-7 h-7 text-primary" />
+                          </motion.div>
+                          <Badge className="position-badge">{player.position}</Badge>
                         </div>
-                        <Badge className="position-badge">{player.position}</Badge>
-                      </div>
-                      <h3 className="text-lg font-semibold mb-1 group-hover:text-primary transition-colors">{player.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        {player.positionFull} • {player.club}
-                      </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {player.age} yrs
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MapPin className="w-4 h-4" />
-                          {player.nationality}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-border">
-                        <div>
-                          <p className="text-xs text-muted-foreground">Rating</p>
-                          <p className="text-xl font-bold text-primary">{player.rating}</p>
+                        <h3 className="text-lg font-semibold mb-1">{player.name}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          {player.positionFull} • {player.club}
+                        </p>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                          <span className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            {player.age} yrs
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MapPin className="w-4 h-4" />
+                            {player.nationality}
+                          </span>
                         </div>
-                        <div>
-                          <p className="text-xs text-muted-foreground">Potential</p>
-                          <p className="text-xl font-bold text-gradient-gold">{player.potential}</p>
+                        <div className="flex items-center justify-between pt-4 border-t border-border">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Rating</p>
+                            <p className="text-xl font-bold text-primary">{player.rating}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Potential</p>
+                            <p className="text-xl font-bold text-gradient-gold">{player.potential}</p>
+                          </div>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            whileHover={{ opacity: 1 }}
+                          >
+                            <Button variant="ghost" size="sm">
+                              View Details
+                            </Button>
+                          </motion.div>
                         </div>
-                        <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          View Details
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 ))}
               </div>
             </TabsContent>
@@ -438,16 +558,21 @@ export default function Demo() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {demoReports.map((report) => (
-                      <div 
+                    {demoReports.map((report, index) => (
+                      <motion.div 
                         key={report.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted hover:border-primary/50 border border-transparent transition-all cursor-pointer group"
+                        custom={index}
+                        variants={reportRowVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover="hover"
+                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-transparent hover:border-primary/50 cursor-pointer"
                         onClick={() => setSelectedReport(report)}
                       >
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <FileText className="w-4 h-4 text-primary" />
-                            <span className="font-medium group-hover:text-primary transition-colors">{report.playerName}</span>
+                            <span className="font-medium">{report.playerName}</span>
                             <Badge variant="outline" className="text-xs">{report.position}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground">
@@ -459,9 +584,14 @@ export default function Demo() {
                             {report.recommendation}
                           </Badge>
                           <div className="rating-badge-sm">{report.rating}</div>
-                          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <motion.div
+                            initial={{ opacity: 0, x: -5 }}
+                            whileHover={{ opacity: 1, x: 0 }}
+                          >
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          </motion.div>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </CardContent>
