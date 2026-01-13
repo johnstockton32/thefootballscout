@@ -628,6 +628,7 @@ export default function Settings() {
               <Card className="card-glass">
                 <CardHeader>
                   <CardTitle>Plan Management</CardTitle>
+                  <CardDescription>Upgrade or modify your subscription</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between p-4 rounded-lg border">
@@ -647,6 +648,62 @@ export default function Settings() {
                     >
                       {isUpgrading ? 'Upgrading...' : 'Upgrade'}
                     </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Team Plan Management */}
+            {subscription.tier === 'team' && (
+              <Card className="card-glass">
+                <CardHeader>
+                  <CardTitle>Plan Management</CardTitle>
+                  <CardDescription>Modify your subscription</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">Downgrade to Pro</h4>
+                        <span className="text-lg font-bold">£29/month</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Keep unlimited players & reports, lose team features
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline">
+                          Downgrade
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Downgrade to Pro?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You will be downgraded to the Pro plan. You'll keep:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                              <li>Unlimited player profiles</li>
+                              <li>Unlimited reports</li>
+                              <li>Advanced analytics and PDF export</li>
+                            </ul>
+                            <p className="mt-2 text-amber-600 dark:text-amber-400">
+                              You'll lose access to team collaboration features.
+                            </p>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep Team Plan</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleUpgrade('pro')}
+                            disabled={isUpgrading}
+                          >
+                            {isUpgrading ? 'Processing...' : 'Downgrade to Pro'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardContent>
               </Card>
