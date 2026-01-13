@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { z } from 'zod';
 import { handleError } from '@/lib/errorUtils';
+import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
 
 const playerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -31,6 +32,7 @@ export default function NewPlayer() {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -97,6 +99,7 @@ export default function NewPlayer() {
         weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
         preferred_foot: formData.preferred_foot || null,
         notes: formData.notes.trim() || null,
+        photo_url: photoUrl,
       });
 
       if (error) throw error;
@@ -137,6 +140,19 @@ export default function NewPlayer() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Player Photo */}
+              {user && (
+                <div className="space-y-2">
+                  <Label>Player Photo</Label>
+                  <PlayerPhotoUpload
+                    photoUrl={photoUrl}
+                    onPhotoChange={setPhotoUrl}
+                    playerName={formData.full_name}
+                    userId={user.id}
+                  />
+                </div>
+              )}
+
               {/* Name */}
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name *</Label>
