@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Users, FileText, UserCheck, ShieldCheck, TrendingUp, Activity, Download, BarChart3 } from 'lucide-react';
+import { Users, FileText, UserCheck, ShieldCheck, TrendingUp, Activity, Download, BarChart3, Crown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
 import { handleError } from '@/lib/errorUtils';
 import {
@@ -201,7 +202,13 @@ export default function AdminDashboard() {
               Manage users, view analytics, and export data
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="default" asChild>
+              <Link to="/admin/teams">
+                <Crown className="w-4 h-4 mr-2" />
+                Manage Teams
+              </Link>
+            </Button>
             <Button variant="outline" onClick={handleExportPlayers}>
               <Download className="w-4 h-4 mr-2" />
               Export Players
