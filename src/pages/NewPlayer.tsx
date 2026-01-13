@@ -176,14 +176,14 @@ export default function NewPlayer() {
                 <div className="space-y-2">
                   <Label htmlFor="secondary_position">Secondary Position</Label>
                   <Select 
-                    value={formData.secondary_position} 
-                    onValueChange={(v) => handleChange('secondary_position', v)}
+                    value={formData.secondary_position || 'none'} 
+                    onValueChange={(v) => handleChange('secondary_position', v === 'none' ? '' : v)}
                   >
                     <SelectTrigger className="bg-input">
                       <SelectValue placeholder="Optional" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="none">None</SelectItem>
                       {Object.entries(POSITION_LABELS).map(([value, label]) => (
                         <SelectItem key={value} value={value}>
                           {label}
