@@ -8,7 +8,7 @@ export function FootballBackground() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2, ease: 'easeOut' }}
-        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.025] dark:opacity-[0.02]"
+        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.012] dark:opacity-[0.008]"
       >
         <svg
           viewBox="0 0 100 100"
@@ -53,7 +53,7 @@ export function FootballBackground() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2, delay: 0.3, ease: 'easeOut' }}
-        className="absolute -top-16 -left-16 w-[280px] h-[280px] opacity-[0.02] dark:opacity-[0.015]"
+        className="absolute -top-16 -left-16 w-[280px] h-[280px] opacity-[0.01] dark:opacity-[0.006]"
       >
         <svg
           viewBox="0 0 100 100"
