@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   LayoutDashboard,
   Users,
   FileText,
   BarChart3,
-  Settings,
   Shield,
 } from 'lucide-react';
 
@@ -15,7 +15,6 @@ const navItems = [
   { icon: Users, label: 'Players', href: '/players' },
   { icon: FileText, label: 'Reports', href: '/reports' },
   { icon: BarChart3, label: 'Compare', href: '/players/compare' },
-  { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
 const adminNavItems = [
@@ -24,12 +23,21 @@ const adminNavItems = [
 
 export function MobileBottomNav() {
   const location = useLocation();
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
 
-  // For admin, replace Settings with Admin in nav
+  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email?.charAt(0).toUpperCase() || 'U';
+  };
+
+  // For admin, add Admin before Settings
   const displayItems = isAdmin 
-    ? [...navItems.slice(0, 4), adminNavItems[0]]
+    ? [...navItems, adminNavItems[0]]
     : navItems;
+
+  const isSettingsActive = location.pathname === '/settings' || location.pathname.startsWith('/settings');
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
@@ -65,6 +73,36 @@ export function MobileBottomNav() {
             </Link>
           );
         })}
+        
+        {/* Profile/Settings with Avatar */}
+        <Link
+          to="/settings"
+          className={cn(
+            'flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all min-w-[60px]',
+            isSettingsActive
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Avatar className={cn(
+            'h-5 w-5 transition-transform',
+            isSettingsActive && 'scale-110 ring-2 ring-primary ring-offset-1 ring-offset-background'
+          )}>
+            <AvatarImage src={profile?.photo_url || undefined} alt={profile?.full_name || 'Profile'} />
+            <AvatarFallback className="text-[8px] bg-primary/20 text-primary font-bold">
+              {getInitials(profile?.full_name, profile?.email)}
+            </AvatarFallback>
+          </Avatar>
+          <span className={cn(
+            'text-[10px] font-medium',
+            isSettingsActive && 'font-semibold'
+          )}>
+            Profile
+          </span>
+          {isSettingsActive && (
+            <div className="absolute bottom-1 w-1 h-1 rounded-full bg-primary" />
+          )}
+        </Link>
       </div>
     </nav>
   );

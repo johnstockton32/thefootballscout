@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -57,6 +58,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const currentTier = tierConfig[tier] || tierConfig.free;
   const TierIcon = currentTier.icon;
+
+  const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return email?.charAt(0).toUpperCase() || 'U';
+  };
 
   const allNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
 
@@ -196,21 +204,22 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* User Section */}
           <div className="p-4 border-t border-sidebar-border">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <span className="text-primary font-bold text-sm">
-                  {profile?.full_name?.charAt(0) || profile?.email?.charAt(0) || 'U'}
-                </span>
-              </div>
+            <Link to="/settings" className="flex items-center gap-3 mb-4 group">
+              <Avatar className="h-10 w-10 border-2 border-border group-hover:border-primary transition-colors">
+                <AvatarImage src={profile?.photo_url || undefined} alt={profile?.full_name || 'Profile'} />
+                <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
+                  {getInitials(profile?.full_name, profile?.email)}
+                </AvatarFallback>
+              </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                <p className="text-sm font-medium text-sidebar-foreground truncate group-hover:text-primary transition-colors">
                   {profile?.full_name || 'Scout'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {profile?.email}
                 </p>
               </div>
-            </div>
+            </Link>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
