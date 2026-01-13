@@ -77,7 +77,7 @@ export default function Index() {
               Start Scouting Free
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button variant="glass" size="lg" onClick={() => navigate('/auth')}>
+            <Button variant="glass" size="lg" onClick={() => navigate('/demo')}>
               View Demo
             </Button>
           </div>
