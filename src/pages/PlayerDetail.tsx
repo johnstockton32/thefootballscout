@@ -5,6 +5,11 @@ import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
 import { 
   supabase, 
   PlayerPosition, 
@@ -29,7 +34,8 @@ import {
   Weight,
   User,
   FileText,
-  Star,
+  Save,
+  X,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -85,6 +91,21 @@ export default function PlayerDetail() {
   const [player, setPlayer] = useState<Player | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    full_name: '',
+    position: '',
+    secondary_position: '',
+    date_of_birth: '',
+    nationality: '',
+    current_club: '',
+    height_cm: '',
+    weight_kg: '',
+    preferred_foot: '',
+    notes: '',
+    photo_url: null as string | null,
+  });
 
   useEffect(() => {
     if (id && user) {
@@ -142,6 +163,81 @@ export default function PlayerDetail() {
       navigate('/players');
     } catch (error: unknown) {
       toast.error(handleError(error, 'Delete player'));
+    }
+  };
+
+  const startEditing = () => {
+    if (!player) return;
+    setEditData({
+      full_name: player.full_name,
+      position: player.position,
+      secondary_position: player.secondary_position || '',
+      date_of_birth: player.date_of_birth || '',
+      nationality: player.nationality || '',
+      current_club: player.current_club || '',
+      height_cm: player.height_cm?.toString() || '',
+      weight_kg: player.weight_kg?.toString() || '',
+      preferred_foot: player.preferred_foot || '',
+      notes: player.notes || '',
+      photo_url: player.photo_url,
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+  };
+
+  const handleEditChange = (field: string, value: string | null) => {
+    setEditData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveChanges = async () => {
+    if (!player) return;
+    setIsSaving(true);
+
+    try {
+      const { error } = await supabase
+        .from('players')
+        .update({
+          full_name: editData.full_name.trim(),
+          position: editData.position as PlayerPosition,
+          secondary_position: editData.secondary_position ? editData.secondary_position as PlayerPosition : null,
+          date_of_birth: editData.date_of_birth || null,
+          nationality: editData.nationality.trim() || null,
+          current_club: editData.current_club.trim() || null,
+          height_cm: editData.height_cm ? parseInt(editData.height_cm) : null,
+          weight_kg: editData.weight_kg ? parseInt(editData.weight_kg) : null,
+          preferred_foot: editData.preferred_foot || null,
+          notes: editData.notes.trim() || null,
+          photo_url: editData.photo_url,
+        })
+        .eq('id', player.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setPlayer({
+        ...player,
+        full_name: editData.full_name.trim(),
+        position: editData.position as PlayerPosition,
+        secondary_position: editData.secondary_position ? editData.secondary_position as PlayerPosition : null,
+        date_of_birth: editData.date_of_birth || null,
+        nationality: editData.nationality.trim() || null,
+        current_club: editData.current_club.trim() || null,
+        height_cm: editData.height_cm ? parseInt(editData.height_cm) : null,
+        weight_kg: editData.weight_kg ? parseInt(editData.weight_kg) : null,
+        preferred_foot: editData.preferred_foot || null,
+        notes: editData.notes.trim() || null,
+        photo_url: editData.photo_url,
+      });
+
+      setIsEditing(false);
+      toast.success('Player updated successfully');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Update player'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -226,33 +322,58 @@ export default function PlayerDetail() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="hero" asChild>
-              <Link to={`/reports/new?playerId=${player.id}`}>
-                <Plus className="w-4 h-4 mr-2" />
-                New Report
-              </Link>
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Trash2 className="w-4 h-4 text-destructive" />
+            {isEditing ? (
+              <>
+                <Button variant="outline" onClick={cancelEditing} disabled={isSaving}>
+                  <X className="w-4 h-4 mr-2" />
+                  Cancel
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Player</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete {player.full_name} and all associated scouting reports. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
-                    Delete
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                <Button variant="hero" onClick={saveChanges} disabled={isSaving}>
+                  {isSaving ? (
+                    <span className="animate-pulse">Saving...</span>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </>
+                  )}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" onClick={startEditing}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </Button>
+                <Button variant="hero" asChild>
+                  <Link to={`/reports/new?playerId=${player.id}`}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Report
+                  </Link>
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently delete {player.full_name} and all associated scouting reports. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
           </div>
         </div>
 
@@ -261,62 +382,198 @@ export default function PlayerDetail() {
           <div className="lg:col-span-1 space-y-6">
             <Card className="card-glass">
               <CardHeader>
-                <CardTitle className="text-lg">Player Details</CardTitle>
+                <CardTitle className="text-lg">
+                  {isEditing ? 'Edit Player' : 'Player Details'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {player.date_of_birth && (
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Age</p>
-                      <p className="font-medium">{calculateAge(player.date_of_birth)} years</p>
+                {isEditing && user ? (
+                  <>
+                    {/* Photo Upload in Edit Mode */}
+                    <div className="space-y-2">
+                      <Label>Photo</Label>
+                      <PlayerPhotoUpload
+                        photoUrl={editData.photo_url}
+                        onPhotoChange={(url) => handleEditChange('photo_url', url)}
+                        playerName={editData.full_name}
+                        userId={user.id}
+                      />
                     </div>
-                  </div>
-                )}
-                {player.nationality && (
-                  <div className="flex items-center gap-3">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nationality</p>
-                      <p className="font-medium">{player.nationality}</p>
+
+                    <div className="space-y-2">
+                      <Label>Full Name</Label>
+                      <Input
+                        value={editData.full_name}
+                        onChange={(e) => handleEditChange('full_name', e.target.value)}
+                        className="bg-input"
+                      />
                     </div>
-                  </div>
-                )}
-                {player.current_club && (
-                  <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Club</p>
-                      <p className="font-medium">{player.current_club}</p>
+
+                    <div className="space-y-2">
+                      <Label>Position</Label>
+                      <Select value={editData.position} onValueChange={(v) => handleEditChange('position', v)}>
+                        <SelectTrigger className="bg-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(POSITION_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                )}
-                {player.height_cm && (
-                  <div className="flex items-center gap-3">
-                    <Ruler className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Height</p>
-                      <p className="font-medium">{player.height_cm} cm</p>
+
+                    <div className="space-y-2">
+                      <Label>Secondary Position</Label>
+                      <Select 
+                        value={editData.secondary_position || 'none'} 
+                        onValueChange={(v) => handleEditChange('secondary_position', v === 'none' ? '' : v)}
+                      >
+                        <SelectTrigger className="bg-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">None</SelectItem>
+                          {Object.entries(POSITION_LABELS).map(([value, label]) => (
+                            <SelectItem key={value} value={value}>{label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                  </div>
-                )}
-                {player.weight_kg && (
-                  <div className="flex items-center gap-3">
-                    <Weight className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Weight</p>
-                      <p className="font-medium">{player.weight_kg} kg</p>
+
+                    <div className="space-y-2">
+                      <Label>Date of Birth</Label>
+                      <Input
+                        type="date"
+                        value={editData.date_of_birth}
+                        onChange={(e) => handleEditChange('date_of_birth', e.target.value)}
+                        className="bg-input"
+                      />
                     </div>
-                  </div>
-                )}
-                {player.preferred_foot && (
-                  <div className="flex items-center gap-3">
-                    <span className="w-4 h-4 text-muted-foreground text-center">🦶</span>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Preferred Foot</p>
-                      <p className="font-medium capitalize">{player.preferred_foot}</p>
+
+                    <div className="space-y-2">
+                      <Label>Nationality</Label>
+                      <Input
+                        value={editData.nationality}
+                        onChange={(e) => handleEditChange('nationality', e.target.value)}
+                        className="bg-input"
+                      />
                     </div>
-                  </div>
+
+                    <div className="space-y-2">
+                      <Label>Current Club</Label>
+                      <Input
+                        value={editData.current_club}
+                        onChange={(e) => handleEditChange('current_club', e.target.value)}
+                        className="bg-input"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label>Height (cm)</Label>
+                        <Input
+                          type="number"
+                          value={editData.height_cm}
+                          onChange={(e) => handleEditChange('height_cm', e.target.value)}
+                          className="bg-input"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Weight (kg)</Label>
+                        <Input
+                          type="number"
+                          value={editData.weight_kg}
+                          onChange={(e) => handleEditChange('weight_kg', e.target.value)}
+                          className="bg-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Preferred Foot</Label>
+                      <Select 
+                        value={editData.preferred_foot || 'none'} 
+                        onValueChange={(v) => handleEditChange('preferred_foot', v === 'none' ? '' : v)}
+                      >
+                        <SelectTrigger className="bg-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Not specified</SelectItem>
+                          <SelectItem value="right">Right</SelectItem>
+                          <SelectItem value="left">Left</SelectItem>
+                          <SelectItem value="both">Both</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={editData.notes}
+                        onChange={(e) => handleEditChange('notes', e.target.value)}
+                        className="bg-input min-h-[80px]"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {player.date_of_birth && (
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Age</p>
+                          <p className="font-medium">{calculateAge(player.date_of_birth)} years</p>
+                        </div>
+                      </div>
+                    )}
+                    {player.nationality && (
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Nationality</p>
+                          <p className="font-medium">{player.nationality}</p>
+                        </div>
+                      </div>
+                    )}
+                    {player.current_club && (
+                      <div className="flex items-center gap-3">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Club</p>
+                          <p className="font-medium">{player.current_club}</p>
+                        </div>
+                      </div>
+                    )}
+                    {player.height_cm && (
+                      <div className="flex items-center gap-3">
+                        <Ruler className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Height</p>
+                          <p className="font-medium">{player.height_cm} cm</p>
+                        </div>
+                      </div>
+                    )}
+                    {player.weight_kg && (
+                      <div className="flex items-center gap-3">
+                        <Weight className="w-4 h-4 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm text-muted-foreground">Weight</p>
+                          <p className="font-medium">{player.weight_kg} kg</p>
+                        </div>
+                      </div>
+                    )}
+                    {player.preferred_foot && (
+                      <div className="flex items-center gap-3">
+                        <span className="w-4 h-4 text-muted-foreground text-center">🦶</span>
+                        <div>
+                          <p className="text-sm text-muted-foreground">Preferred Foot</p>
+                          <p className="font-medium capitalize">{player.preferred_foot}</p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
