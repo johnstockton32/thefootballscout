@@ -27,11 +27,6 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Check if GDPR consent is required (for new users)
-  if (profile && !profile.gdpr_consent && location.pathname !== '/gdpr-consent') {
-    return <Navigate to="/gdpr-consent" replace />;
-  }
-
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/dashboard" replace />;
   }
