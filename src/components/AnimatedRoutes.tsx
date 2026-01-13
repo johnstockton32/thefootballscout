@@ -17,6 +17,7 @@ import ReportDetail from '@/pages/ReportDetail';
 import AdminDashboard from '@/pages/AdminDashboard';
 import GdprConsent from '@/pages/GdprConsent';
 import Settings from '@/pages/Settings';
+import Pricing from '@/pages/Pricing';
 import NotFound from '@/pages/NotFound';
 
 export function AnimatedRoutes() {
@@ -27,6 +28,7 @@ export function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
+        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/gdpr-consent" element={<PageTransition><GdprConsent /></PageTransition>} />
         
