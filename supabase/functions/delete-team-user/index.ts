@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       console.log("Missing authorization header");
@@ -43,17 +43,26 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if requesting user is an admin
+    // Check if requesting user is an admin OR a team owner
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", requestingUser.id)
       .eq("role", "admin");
 
-    if (!roles || roles.length === 0) {
-      console.log("User is not an admin:", requestingUser.id);
+    const isAdmin = roles && roles.length > 0;
+
+    // Check if user owns a team
+    const { data: ownedTeam } = await supabaseAdmin
+      .from("teams")
+      .select("id")
+      .eq("owner_id", requestingUser.id)
+      .maybeSingle();
+
+    if (!isAdmin && !ownedTeam) {
+      console.log("User is not an admin or team owner:", requestingUser.id);
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin access required" }),
+        JSON.stringify({ error: "Unauthorized: Admin or team owner access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -68,7 +77,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prevent admin from deleting themselves
+    // Prevent user from deleting themselves
     if (userId === requestingUser.id) {
       return new Response(
         JSON.stringify({ error: "You cannot delete your own account" }),
@@ -76,10 +85,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if target user exists and is a team user
+    // Check if target user exists
     const { data: targetProfile, error: profileError } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, subscription_tier")
+      .select("id, email, subscription_tier, team_id")
       .eq("id", userId)
       .single();
 
@@ -89,6 +98,16 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    // If requester is a team owner (not admin), verify they can only delete their team members
+    if (!isAdmin && ownedTeam) {
+      if (targetProfile.team_id !== ownedTeam.id) {
+        return new Response(
+          JSON.stringify({ error: "You can only remove members from your own team" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Check if target is an admin (prevent deleting admins)
@@ -101,6 +120,20 @@ Deno.serve(async (req) => {
     if (targetRoles && targetRoles.length > 0) {
       return new Response(
         JSON.stringify({ error: "Cannot delete admin users" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if target is a team owner (prevent deleting team owners)
+    const { data: targetTeam } = await supabaseAdmin
+      .from("teams")
+      .select("id")
+      .eq("owner_id", userId)
+      .maybeSingle();
+
+    if (targetTeam) {
+      return new Response(
+        JSON.stringify({ error: "Cannot delete team owners. Transfer ownership first." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

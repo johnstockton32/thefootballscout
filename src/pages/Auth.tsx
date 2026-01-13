@@ -17,6 +17,7 @@ const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
+  teamName: z.string().optional(),
 });
 
 const resetSchema = z.object({
@@ -62,6 +63,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [teamName, setTeamName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -88,7 +90,18 @@ export default function Auth() {
       if (mode === 'resetPassword') {
         resetSchema.parse({ email });
       } else {
-        authSchema.parse({ email, password, fullName: mode === 'signUp' ? fullName : undefined });
+        authSchema.parse({ 
+          email, 
+          password, 
+          fullName: mode === 'signUp' ? fullName : undefined,
+          teamName: mode === 'signUp' && selectedTier === 'team' ? teamName : undefined,
+        });
+        
+        // Additional validation for team signup
+        if (mode === 'signUp' && selectedTier === 'team' && !teamName.trim()) {
+          setErrors({ teamName: 'Team name is required' });
+          return false;
+        }
       }
       setErrors({});
       return true;
@@ -169,6 +182,24 @@ export default function Auth() {
             await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
           } else if (selectedTier === 'team') {
             await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: 'team' });
+            
+            // Create the team with the user as owner
+            const { data: newTeam, error: teamError } = await supabase
+              .from('teams')
+              .insert({
+                name: teamName.trim(),
+                owner_id: currentUser.id,
+              })
+              .select()
+              .single();
+            
+            if (!teamError && newTeam) {
+              // Update the user's profile with the team_id
+              await supabase
+                .from('profiles')
+                .update({ team_id: newTeam.id })
+                .eq('id', currentUser.id);
+            }
           }
         }
         
@@ -359,6 +390,32 @@ export default function Auth() {
                         ))}
                       </div>
                     </div>
+                    
+                    {/* Team Name Field - Only for Team tier */}
+                    {selectedTier === 'team' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="teamName" className="text-sm font-medium">
+                          Team Name
+                        </Label>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input
+                            id="teamName"
+                            type="text"
+                            placeholder="Your Scouting Organization"
+                            value={teamName}
+                            onChange={(e) => setTeamName(e.target.value)}
+                            className="pl-10 bg-input border-border focus:border-primary"
+                          />
+                        </div>
+                        {errors.teamName && (
+                          <p className="text-xs text-destructive">{errors.teamName}</p>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          You'll be the admin of this team and can invite other scouts.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="flex items-start space-x-3 py-2">
                       <Checkbox
