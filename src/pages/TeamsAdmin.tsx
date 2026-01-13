@@ -23,8 +23,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2 } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 
 const createUserSchema = z.object({
@@ -39,6 +44,7 @@ export default function TeamsAdmin() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
 
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -126,6 +132,36 @@ export default function TeamsAdmin() {
     },
   });
 
+  // Resend invitation mutation
+  const resendInvitationMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("resend-team-invitation", {
+        body: { email },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to resend invitation");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Password reset email sent successfully!");
+      setResendingEmail(null);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send email");
+      setResendingEmail(null);
+    },
+  });
+
   const onSubmit = (values: CreateUserForm) => {
     createUserMutation.mutate(values);
   };
@@ -133,6 +169,11 @@ export default function TeamsAdmin() {
   const handleDeleteUser = (userId: string) => {
     setDeletingUserId(userId);
     deleteUserMutation.mutate(userId);
+  };
+
+  const handleResendInvitation = (email: string) => {
+    setResendingEmail(email);
+    resendInvitationMutation.mutate(email);
   };
 
   const getInitials = (name: string | null) => {
@@ -330,40 +371,63 @@ export default function TeamsAdmin() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                disabled={deletingUserId === user.id}
-                              >
-                                {deletingUserId === user.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to remove <strong>{user.full_name || user.email}</strong> from the team? 
-                                  This will permanently delete their account and all associated data. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteUser(user.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          <div className="flex items-center justify-end gap-1">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleResendInvitation(user.email)}
+                                  disabled={resendingEmail === user.email}
+                                  className="text-muted-foreground hover:text-foreground"
                                 >
-                                  Remove Member
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                                  {resendingEmail === user.email ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <RefreshCw className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Resend password reset email</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  disabled={deletingUserId === user.id}
+                                >
+                                  {deletingUserId === user.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to remove <strong>{user.full_name || user.email}</strong> from the team? 
+                                    This will permanently delete their account and all associated data. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteUser(user.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Remove Member
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
