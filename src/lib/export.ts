@@ -1,16 +1,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import { POSITION_LABELS, COMPETITION_LEVEL_LABELS, PlayerPosition, CompetitionLevel } from '@/lib/supabase';
-
-// Extend jsPDF with autoTable
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-    lastAutoTable: { finalY: number };
-  }
-}
 
 // CSV Export Functions
 export async function exportPlayersCSV() {
@@ -347,7 +339,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ['Aggression', report.mental_aggression],
   ];
 
-  doc.autoTable({
+  autoTable(doc, {
     startY: y,
     head: [['Technical', 'Rating', 'Tactical', 'Rating']],
     body: technicalAttrs.map((t, i) => [
@@ -362,8 +354,10 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     styles: { fontSize: 9 },
   });
 
-  doc.autoTable({
-    startY: doc.lastAutoTable.finalY + 5,
+  const firstTableFinalY = (doc as any).lastAutoTable?.finalY || y + 50;
+
+  autoTable(doc, {
+    startY: firstTableFinalY + 5,
     head: [['Physical', 'Rating', 'Mental', 'Rating']],
     body: physicalAttrs.map((p, i) => [
       p[0],
@@ -377,7 +371,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     styles: { fontSize: 9 },
   });
 
-  y = doc.lastAutoTable.finalY + 15;
+  y = (doc as any).lastAutoTable?.finalY + 15 || firstTableFinalY + 70;
 
   // Strengths & Weaknesses
   if (report.strengths || report.weaknesses) {
