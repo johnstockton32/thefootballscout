@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MobileBottomNav } from './MobileBottomNav';
 import {
   LayoutDashboard,
   Users,
@@ -190,11 +191,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen">
+      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0">
         <div className="p-4 md:p-6 lg:p-8">
           {children}
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav />
     </div>
   );
 }
