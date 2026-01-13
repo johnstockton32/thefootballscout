@@ -10,11 +10,13 @@ interface Profile {
   organization: string | null;
   gdpr_consent: boolean;
   gdpr_consent_date: string | null;
+  photo_url: string | null;
 }
 
 interface ProfileUpdate {
   full_name?: string | null;
   organization?: string | null;
+  photo_url?: string | null;
 }
 
 interface AuthContextType {

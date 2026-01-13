@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Download, Trash2, LogOut, FileText, Users } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,6 +36,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
 import { handleError } from '@/lib/errorUtils';
+import { ProfilePhotoUpload } from '@/components/settings/ProfilePhotoUpload';
 import { format } from 'date-fns';
 
 // Validation schemas
@@ -261,6 +262,27 @@ export default function Settings() {
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">
+            {/* Profile Photo */}
+            <Card className="card-glass">
+              <CardHeader>
+                <CardTitle>Profile Photo</CardTitle>
+                <CardDescription>Upload a photo to personalize your account</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {user && (
+                  <ProfilePhotoUpload
+                    userId={user.id}
+                    currentPhotoUrl={profile?.photo_url || null}
+                    fullName={profile?.full_name || null}
+                    onPhotoUpdated={(url) => {
+                      updateProfile({ photo_url: url });
+                    }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Profile Information */}
             <Card className="card-glass">
               <CardHeader>
                 <CardTitle>Profile Information</CardTitle>
