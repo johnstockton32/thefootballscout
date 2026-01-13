@@ -46,6 +46,9 @@ export default function Index() {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-3">
+            <Button variant="ghost" onClick={() => navigate('/pricing')}>
+              Pricing
+            </Button>
             <Button variant="ghost" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
