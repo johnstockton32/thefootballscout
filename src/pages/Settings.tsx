@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Check } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,11 +35,12 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription, SubscriptionTier } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
 import { handleError } from '@/lib/errorUtils';
 import { ProfilePhotoUpload } from '@/components/settings/ProfilePhotoUpload';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 
 // Validation schemas
 const profileSchema = z.object({
@@ -62,6 +64,7 @@ export default function Settings() {
   const { toast } = useToast();
   const { user, profile, signOut, updateGdprConsent, updateProfile, deleteAccount } = useAuth();
   const { theme, setTheme } = useTheme();
+  const subscription = useSubscription();
   
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -70,6 +73,9 @@ export default function Settings() {
   const [isWithdrawingConsent, setIsWithdrawingConsent] = useState(false);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
@@ -234,6 +240,94 @@ export default function Settings() {
     navigate('/');
   };
 
+  // Handle start trial
+  const handleStartTrial = async () => {
+    setIsStartingTrial(true);
+    try {
+      const success = await subscription.startTrial();
+      if (success) {
+        toast({
+          title: 'Trial started!',
+          description: 'Your 14-day Pro trial has begun. Enjoy unlimited access!',
+        });
+      } else {
+        toast({
+          title: 'Unable to start trial',
+          description: 'You may have already used your trial period.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: handleError(error, 'starting trial'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsStartingTrial(false);
+    }
+  };
+
+  // Handle upgrade
+  const handleUpgrade = async (tier: SubscriptionTier) => {
+    setIsUpgrading(true);
+    try {
+      const success = await subscription.upgradePlan(tier);
+      if (success) {
+        toast({
+          title: 'Plan upgraded!',
+          description: `You're now on the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: handleError(error, 'upgrading plan'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
+  // Handle cancel subscription
+  const handleCancelSubscription = async () => {
+    setIsCancelling(true);
+    try {
+      const success = await subscription.cancelSubscription();
+      if (success) {
+        toast({
+          title: 'Subscription cancelled',
+          description: 'You have been downgraded to the Free plan.',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: handleError(error, 'cancelling subscription'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
+  const getTierIcon = (tier: SubscriptionTier) => {
+    switch (tier) {
+      case 'free': return <Zap className="h-5 w-5" />;
+      case 'pro': return <Crown className="h-5 w-5" />;
+      case 'team': return <Building2 className="h-5 w-5" />;
+    }
+  };
+
+  const getTierColor = (tier: SubscriptionTier) => {
+    switch (tier) {
+      case 'free': return 'bg-muted text-muted-foreground';
+      case 'pro': return 'bg-primary text-primary-foreground';
+      case 'team': return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white';
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="container mx-auto py-6 px-4 max-w-4xl">
@@ -243,10 +337,14 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+            <TabsTrigger value="subscription" className="gap-2">
+              <Crown className="h-4 w-4" />
+              <span className="hidden sm:inline">Plan</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
@@ -338,6 +436,266 @@ export default function Settings() {
                 </Form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Subscription Tab */}
+          <TabsContent value="subscription" className="space-y-6">
+            {/* Current Plan */}
+            <Card className="card-glass">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Current Plan</CardTitle>
+                    <CardDescription>Manage your subscription and billing</CardDescription>
+                  </div>
+                  <Badge className={`${getTierColor(subscription.tier)} px-3 py-1 text-sm`}>
+                    {getTierIcon(subscription.tier)}
+                    <span className="ml-2 capitalize">{subscription.tier}</span>
+                    {subscription.isInTrial && <span className="ml-1">(Trial)</span>}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Trial Status */}
+                {subscription.isInTrial && subscription.trialEndsAt && (
+                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Crown className="h-5 w-5 text-primary" />
+                      <span className="font-semibold">Pro Trial Active</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Your trial ends {formatDistanceToNow(subscription.trialEndsAt, { addSuffix: true })} 
+                      ({format(subscription.trialEndsAt, 'MMMM d, yyyy')})
+                    </p>
+                  </div>
+                )}
+
+                {/* Usage Stats */}
+                <div className="space-y-4">
+                  <h4 className="font-medium">Usage This Month</h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Players</span>
+                      <span>
+                        {subscription.usage.playerCount} / {subscription.limits.maxPlayers === Infinity ? '∞' : subscription.limits.maxPlayers}
+                      </span>
+                    </div>
+                    {subscription.tier === 'free' && (
+                      <Progress 
+                        value={(subscription.usage.playerCount / subscription.limits.maxPlayers) * 100} 
+                        className="h-2"
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Reports this month</span>
+                      <span>
+                        {subscription.usage.monthlyReportCount} / {subscription.limits.maxReportsPerMonth === Infinity ? '∞' : subscription.limits.maxReportsPerMonth}
+                      </span>
+                    </div>
+                    {subscription.tier === 'free' && (
+                      <Progress 
+                        value={(subscription.usage.monthlyReportCount / subscription.limits.maxReportsPerMonth) * 100} 
+                        className="h-2"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Plan Features */}
+                <div className="space-y-3">
+                  <h4 className="font-medium">Your Plan Includes</h4>
+                  <ul className="space-y-2">
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      {subscription.limits.maxPlayers === Infinity ? 'Unlimited' : `Up to ${subscription.limits.maxPlayers}`} player profiles
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      {subscription.limits.maxReportsPerMonth === Infinity ? 'Unlimited' : `${subscription.limits.maxReportsPerMonth}`} reports per month
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      Compare up to {subscription.limits.maxComparisonPlayers} players
+                    </li>
+                    {subscription.limits.hasAdvancedAnalytics && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Advanced analytics & radar charts
+                      </li>
+                    )}
+                    {subscription.limits.hasPdfExport && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        PDF export
+                      </li>
+                    )}
+                    {subscription.limits.hasTeamFeatures && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Team collaboration features
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Upgrade Options */}
+            {subscription.tier === 'free' && (
+              <Card className="card-glass border-primary/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5 text-primary" />
+                    Upgrade Your Plan
+                  </CardTitle>
+                  <CardDescription>Unlock more features with a paid plan</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Start Trial */}
+                  {subscription.canStartTrial && (
+                    <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold">Try Pro Free for 14 Days</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Experience unlimited players, reports, and advanced analytics
+                          </p>
+                        </div>
+                        <Button 
+                          variant="hero" 
+                          onClick={handleStartTrial}
+                          disabled={isStartingTrial}
+                        >
+                          {isStartingTrial ? 'Starting...' : 'Start Free Trial'}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Upgrade to Pro */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-5 w-5 text-primary" />
+                        <h4 className="font-semibold">Pro Plan</h4>
+                        <span className="text-lg font-bold">£29/month</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Unlimited players, reports, and advanced features
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleUpgrade('pro')}
+                      disabled={isUpgrading}
+                    >
+                      {isUpgrading ? 'Upgrading...' : 'Upgrade to Pro'}
+                    </Button>
+                  </div>
+
+                  {/* Upgrade to Team */}
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-purple-500" />
+                        <h4 className="font-semibold">Team Plan</h4>
+                        <span className="text-lg font-bold">£99/month</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Everything in Pro plus team collaboration
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleUpgrade('team')}
+                      disabled={isUpgrading}
+                    >
+                      {isUpgrading ? 'Upgrading...' : 'Upgrade to Team'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Pro Plan Management */}
+            {subscription.tier === 'pro' && !subscription.isInTrial && (
+              <Card className="card-glass">
+                <CardHeader>
+                  <CardTitle>Plan Management</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-5 w-5 text-purple-500" />
+                        <h4 className="font-semibold">Upgrade to Team</h4>
+                        <span className="text-lg font-bold">£99/month</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Add team collaboration features
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleUpgrade('team')}
+                      disabled={isUpgrading}
+                    >
+                      {isUpgrading ? 'Upgrading...' : 'Upgrade'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Cancel Subscription */}
+            {(subscription.tier !== 'free') && (
+              <Card className="card-glass border-destructive/20">
+                <CardHeader>
+                  <CardTitle className="text-destructive">Cancel Subscription</CardTitle>
+                  <CardDescription>
+                    Downgrade to the free plan. You'll lose access to premium features.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                        Cancel Subscription
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          You will be downgraded to the Free plan immediately. You'll lose access to:
+                          <ul className="list-disc list-inside mt-2 space-y-1">
+                            <li>Unlimited player profiles (limited to 10)</li>
+                            <li>Unlimited reports (limited to 5/month)</li>
+                            <li>Advanced analytics and PDF export</li>
+                            {subscription.tier === 'team' && <li>Team collaboration features</li>}
+                          </ul>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleCancelSubscription}
+                          disabled={isCancelling}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Appearance Tab */}
