@@ -649,6 +649,51 @@ export default function Settings() {
                       {isUpgrading ? 'Upgrading...' : 'Upgrade'}
                     </Button>
                   </div>
+                  
+                  <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <h4 className="font-semibold">Downgrade to Free</h4>
+                        <span className="text-lg font-bold">£0/month</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Basic features with limited players & reports
+                      </p>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline">
+                          Downgrade
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Downgrade to Free?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You will be downgraded to the Free plan. You'll have:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                              <li>Up to 5 player profiles</li>
+                              <li>Up to 10 reports per month</li>
+                              <li>Basic analytics</li>
+                            </ul>
+                            <p className="mt-2 text-amber-600 dark:text-amber-400">
+                              You'll lose access to unlimited players, reports, and PDF export.
+                            </p>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep Pro Plan</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleUpgrade('free')}
+                            disabled={isUpgrading}
+                          >
+                            {isUpgrading ? 'Processing...' : 'Downgrade to Free'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </CardContent>
               </Card>
             )}
