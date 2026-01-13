@@ -918,26 +918,79 @@ export default function Demo() {
                 </div>
               </div>
 
-              {/* Radar Chart */}
+              {/* Radar Chart with Category Scores */}
               <div className="py-4 border-b border-border">
                 <h4 className="font-semibold mb-4 flex items-center gap-2">
                   <BarChart3 className="w-4 h-4 text-primary" />
                   Attribute Overview
                 </h4>
-                <div className="max-w-md mx-auto">
-                  <AttributeRadarChart
-                    data={[
-                      { attribute: 'Passing', value: selectedReport.attributes.technical.passing, fullMark: 20 },
-                      { attribute: 'Dribbling', value: selectedReport.attributes.technical.dribbling, fullMark: 20 },
-                      { attribute: 'Shooting', value: selectedReport.attributes.technical.shooting, fullMark: 20 },
-                      { attribute: 'Positioning', value: selectedReport.attributes.tactical.positioning, fullMark: 20 },
-                      { attribute: 'Awareness', value: selectedReport.attributes.tactical.awareness, fullMark: 20 },
-                      { attribute: 'Pace', value: selectedReport.attributes.physical.pace, fullMark: 20 },
-                      { attribute: 'Stamina', value: selectedReport.attributes.physical.stamina, fullMark: 20 },
-                      { attribute: 'Composure', value: selectedReport.attributes.mental.composure, fullMark: 20 },
-                    ]}
-                    color="hsl(158, 64%, 45%)"
-                  />
+                <div className="grid md:grid-cols-2 gap-6 items-center">
+                  <div className="max-w-sm mx-auto w-full">
+                    <AttributeRadarChart
+                      data={[
+                        { attribute: 'Passing', value: selectedReport.attributes.technical.passing, fullMark: 20 },
+                        { attribute: 'Dribbling', value: selectedReport.attributes.technical.dribbling, fullMark: 20 },
+                        { attribute: 'Shooting', value: selectedReport.attributes.technical.shooting, fullMark: 20 },
+                        { attribute: 'Positioning', value: selectedReport.attributes.tactical.positioning, fullMark: 20 },
+                        { attribute: 'Awareness', value: selectedReport.attributes.tactical.awareness, fullMark: 20 },
+                        { attribute: 'Pace', value: selectedReport.attributes.physical.pace, fullMark: 20 },
+                        { attribute: 'Stamina', value: selectedReport.attributes.physical.stamina, fullMark: 20 },
+                        { attribute: 'Composure', value: selectedReport.attributes.mental.composure, fullMark: 20 },
+                      ]}
+                      color="hsl(158, 64%, 45%)"
+                    />
+                  </div>
+                  
+                  {/* Category Averages */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {(() => {
+                      const tech = selectedReport.attributes.technical;
+                      const tact = selectedReport.attributes.tactical;
+                      const phys = selectedReport.attributes.physical;
+                      const ment = selectedReport.attributes.mental;
+                      
+                      const techAvg = Math.round((tech.passing + tech.dribbling + tech.shooting + tech.firstTouch + tech.crossing + tech.heading) / 6);
+                      const tactAvg = Math.round((tact.positioning + tact.awareness + tact.decisionMaking + tact.offBallMovement + tact.defensiveContribution) / 5);
+                      const physAvg = Math.round((phys.pace + phys.stamina + phys.strength + phys.agility + phys.balance) / 5);
+                      const mentAvg = Math.round((ment.composure + ment.concentration + ment.aggression + ment.workRate + ment.leadership) / 5);
+                      
+                      const categories = [
+                        { name: 'Technical', avg: techAvg, icon: Target, color: 'bg-primary' },
+                        { name: 'Tactical', avg: tactAvg, icon: BarChart3, color: 'bg-blue-500' },
+                        { name: 'Physical', avg: physAvg, icon: Zap, color: 'bg-amber-500' },
+                        { name: 'Mental', avg: mentAvg, icon: Shield, color: 'bg-purple-500' },
+                      ];
+                      
+                      return categories.map((cat) => (
+                        <motion.div
+                          key={cat.name}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ duration: 0.3 }}
+                          className="p-4 rounded-xl bg-muted/50 border border-border hover:border-primary/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className={`w-8 h-8 rounded-lg ${cat.color}/20 flex items-center justify-center`}>
+                              <cat.icon className={`w-4 h-4 ${cat.color === 'bg-primary' ? 'text-primary' : cat.color === 'bg-blue-500' ? 'text-blue-500' : cat.color === 'bg-amber-500' ? 'text-amber-500' : 'text-purple-500'}`} />
+                            </div>
+                            <span className="text-sm font-medium">{cat.name}</span>
+                          </div>
+                          <div className="flex items-end gap-1">
+                            <span className="text-3xl font-bold">{cat.avg}</span>
+                            <span className="text-sm text-muted-foreground mb-1">/20</span>
+                          </div>
+                          <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${(cat.avg / 20) * 100}%` }}
+                              transition={{ duration: 0.5, delay: 0.2 }}
+                              className={`h-full rounded-full ${cat.color}`}
+                            />
+                          </div>
+                        </motion.div>
+                      ));
+                    })()}
+                  </div>
                 </div>
               </div>
 
