@@ -918,6 +918,29 @@ export default function Demo() {
                 </div>
               </div>
 
+              {/* Radar Chart */}
+              <div className="py-4 border-b border-border">
+                <h4 className="font-semibold mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-primary" />
+                  Attribute Overview
+                </h4>
+                <div className="max-w-md mx-auto">
+                  <AttributeRadarChart
+                    data={[
+                      { attribute: 'Passing', value: selectedReport.attributes.technical.passing, fullMark: 20 },
+                      { attribute: 'Dribbling', value: selectedReport.attributes.technical.dribbling, fullMark: 20 },
+                      { attribute: 'Shooting', value: selectedReport.attributes.technical.shooting, fullMark: 20 },
+                      { attribute: 'Positioning', value: selectedReport.attributes.tactical.positioning, fullMark: 20 },
+                      { attribute: 'Awareness', value: selectedReport.attributes.tactical.awareness, fullMark: 20 },
+                      { attribute: 'Pace', value: selectedReport.attributes.physical.pace, fullMark: 20 },
+                      { attribute: 'Stamina', value: selectedReport.attributes.physical.stamina, fullMark: 20 },
+                      { attribute: 'Composure', value: selectedReport.attributes.mental.composure, fullMark: 20 },
+                    ]}
+                    color="hsl(158, 64%, 45%)"
+                  />
+                </div>
+              </div>
+
               {/* Attributes Grid */}
               <div className="grid md:grid-cols-2 gap-6 py-4">
                 {/* Technical */}
