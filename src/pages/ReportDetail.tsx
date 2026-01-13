@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { handleError } from '@/lib/errorUtils';
 import { exportReportPDF } from '@/lib/export';
 import {
   ArrowLeft,
@@ -137,9 +138,8 @@ export default function ReportDetail() {
 
       toast.success('Report deleted successfully');
       navigate('/reports');
-    } catch (error: any) {
-      console.error('Error deleting report:', error);
-      toast.error(error.message || 'Failed to delete report');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Delete report'));
     }
   };
 

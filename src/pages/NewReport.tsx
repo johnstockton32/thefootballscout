@@ -19,6 +19,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud } from 'lucide-react';
+import { handleError } from '@/lib/errorUtils';
 import { useDebouncedCallback } from 'use-debounce';
 
 interface Player {
@@ -210,9 +211,8 @@ export default function NewReport() {
 
       toast.success('Report submitted successfully!');
       navigate('/reports');
-    } catch (error: any) {
-      console.error('Error submitting report:', error);
-      toast.error(error.message || 'Failed to submit report');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Submit report'));
     } finally {
       setIsSubmitting(false);
     }
