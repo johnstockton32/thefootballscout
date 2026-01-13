@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { cn } from '@/lib/utils';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -23,9 +24,38 @@ const resetSchema = z.object({
 });
 
 type AuthMode = 'signIn' | 'signUp' | 'resetPassword';
+type SubscriptionTier = 'free' | 'pro' | 'team';
+
+const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; description: string; price: string; features: string[] }[] = [
+  {
+    tier: 'free',
+    label: 'Free',
+    icon: Sparkles,
+    description: 'Get started with basic scouting',
+    price: '£0/month',
+    features: ['Up to 10 players', '5 reports/month', '2-player comparison'],
+  },
+  {
+    tier: 'pro',
+    label: 'Pro',
+    icon: Crown,
+    description: '14-day free trial included',
+    price: '£29/month',
+    features: ['Unlimited players', 'Unlimited reports', '5-player comparison'],
+  },
+  {
+    tier: 'team',
+    label: 'Team',
+    icon: Users,
+    description: 'For professional scouting teams',
+    price: '£99/month',
+    features: ['Everything in Pro', 'Team collaboration', 'Priority support'],
+  },
+];
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, signIn, signUp, updateGdprConsent } = useAuth();
   
   const [mode, setMode] = useState<AuthMode>('signIn');
@@ -36,6 +66,16 @@ export default function Auth() {
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
+
+  // Check for tier from URL params (from pricing page)
+  useEffect(() => {
+    const tierParam = searchParams.get('tier') as SubscriptionTier | null;
+    if (tierParam && ['free', 'pro', 'team'].includes(tierParam)) {
+      setSelectedTier(tierParam);
+      setMode('signUp');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
@@ -118,7 +158,21 @@ export default function Auth() {
         
         // Update GDPR consent after signup
         await updateGdprConsent(true);
-        toast.success('Welcome to The Football Scout!');
+        
+        // Apply selected tier after a brief delay to ensure profile exists
+        // We need to get the user from the current session
+        const { data: sessionData } = await supabase.auth.getSession();
+        const currentUser = sessionData.session?.user;
+        
+        if (currentUser && selectedTier !== 'free') {
+          if (selectedTier === 'pro') {
+            await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
+          } else if (selectedTier === 'team') {
+            await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: 'team' });
+          }
+        }
+        
+        toast.success(`Welcome to The Football Scout! ${selectedTier === 'pro' ? 'Your 14-day Pro trial has started.' : ''}`);
         navigate('/dashboard');
       } else {
         const { error } = await signIn(email, password);
@@ -263,41 +317,85 @@ export default function Auth() {
                 )}
 
                 {mode === 'signUp' && (
-                  <div className="flex items-start space-x-3 py-2">
-                    <Checkbox
-                      id="gdpr"
-                      checked={gdprConsent}
-                      onCheckedChange={(checked) => setGdprConsent(checked === true)}
-                      className="mt-0.5"
-                    />
-                    <div className="space-y-1">
-                      <Label htmlFor="gdpr" className="text-sm font-medium leading-tight cursor-pointer">
-                        I agree to data processing
-                      </Label>
-                      <p className="text-xs text-muted-foreground">
-                        I consent to the processing of my personal data in accordance with GDPR. 
-                        Player data will be handled securely and in compliance with data protection regulations.
-                        Read our{' '}
-                        <a 
-                          href="/privacy-policy" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Privacy Policy
-                        </a>
-                        {' '}and{' '}
-                        <a 
-                          href="/terms-of-service" 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-primary hover:underline"
-                        >
-                          Terms of Service
-                        </a>.
-                      </p>
+                  <>
+                    {/* Tier Selection */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium">Choose your plan</Label>
+                      <div className="grid gap-2">
+                        {tierOptions.map((option) => (
+                          <button
+                            key={option.tier}
+                            type="button"
+                            onClick={() => setSelectedTier(option.tier)}
+                            className={cn(
+                              'flex items-center gap-3 p-3 rounded-lg border text-left transition-all',
+                              selectedTier === option.tier
+                                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                                : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                            )}
+                          >
+                            <div className={cn(
+                              'w-10 h-10 rounded-full flex items-center justify-center',
+                              selectedTier === option.tier ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                            )}>
+                              <option.icon className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{option.label}</span>
+                                <span className="text-xs text-muted-foreground">{option.price}</span>
+                                {option.tier === 'pro' && (
+                                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                    14-day trial
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{option.description}</p>
+                            </div>
+                            {selectedTier === option.tier && (
+                              <Check className="w-5 h-5 text-primary shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+
+                    <div className="flex items-start space-x-3 py-2">
+                      <Checkbox
+                        id="gdpr"
+                        checked={gdprConsent}
+                        onCheckedChange={(checked) => setGdprConsent(checked === true)}
+                        className="mt-0.5"
+                      />
+                      <div className="space-y-1">
+                        <Label htmlFor="gdpr" className="text-sm font-medium leading-tight cursor-pointer">
+                          I agree to data processing
+                        </Label>
+                        <p className="text-xs text-muted-foreground">
+                          I consent to the processing of my personal data in accordance with GDPR. 
+                          Player data will be handled securely and in compliance with data protection regulations.
+                          Read our{' '}
+                          <a 
+                            href="/privacy-policy" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Privacy Policy
+                          </a>
+                          {' '}and{' '}
+                          <a 
+                            href="/terms-of-service" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            Terms of Service
+                          </a>.
+                        </p>
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <Button 

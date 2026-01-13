@@ -5,6 +5,7 @@ import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MobileBottomNav } from './MobileBottomNav';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
   LayoutDashboard,
   Users,
@@ -17,6 +18,8 @@ import {
   ChevronRight,
   Plus,
   Shield,
+  Crown,
+  Sparkles,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -34,8 +37,15 @@ const adminNavItems = [
   { icon: Shield, label: 'Admin', href: '/admin' },
 ];
 
+const tierConfig = {
+  free: { label: 'Free', icon: Sparkles, className: 'bg-muted text-muted-foreground' },
+  pro: { label: 'Pro', icon: Crown, className: 'bg-primary/20 text-primary' },
+  team: { label: 'Team', icon: Users, className: 'bg-accent text-accent-foreground' },
+};
+
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut, isAdmin } = useAuth();
+  const { tier, isInTrial, trialDaysRemaining } = useSubscription();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,6 +55,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate('/');
   };
 
+  const currentTier = tierConfig[tier] || tierConfig.free;
+  const TierIcon = currentTier.icon;
+
   const allNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
 
   return (
@@ -53,12 +66,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-16">
           <Logo size="sm" />
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Mobile Tier Badge */}
+            <Link
+              to="/settings?tab=plan"
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                currentTier.className
+              )}
+            >
+              <TierIcon className="w-3.5 h-3.5" />
+              <span>{currentTier.label}</span>
+              {isInTrial && <span className="text-[10px] opacity-75">Trial</span>}
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -111,6 +138,23 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Logo */}
           <div className="p-6">
             <Logo size="md" />
+          </div>
+
+          {/* Tier Badge */}
+          <div className="px-4 mb-4">
+            <Link
+              to="/settings?tab=plan"
+              className={cn(
+                'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80',
+                currentTier.className
+              )}
+            >
+              <TierIcon className="w-4 h-4" />
+              <span>{currentTier.label} Plan</span>
+              {isInTrial && (
+                <span className="text-xs opacity-75">({trialDaysRemaining}d left)</span>
+              )}
+            </Link>
           </div>
 
           {/* Quick Action */}
