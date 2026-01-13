@@ -29,9 +29,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw, Shield, UserCheck } from "lucide-react";
 import { format } from "date-fns";
+import type { Database } from "@/integrations/supabase/types";
+
+type TeamRole = Database["public"]["Enums"]["team_role"];
 import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
 
 const createUserSchema = z.object({
@@ -234,6 +244,51 @@ export default function TeamsAdmin() {
   const handleResendInvitation = (email: string) => {
     setResendingEmail(email);
     resendInvitationMutation.mutate(email);
+  };
+
+  // Update role mutation
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, role }: { userId: string; role: TeamRole }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ team_role: role })
+        .eq("id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Role updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["team-users"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update role");
+    },
+  });
+
+  const handleRoleChange = (userId: string, role: TeamRole) => {
+    updateRoleMutation.mutate({ userId, role });
+  };
+
+  const getRoleBadgeColor = (role: TeamRole | null) => {
+    switch (role) {
+      case "team_admin":
+        return "bg-destructive/10 text-destructive hover:bg-destructive/20";
+      case "senior_scout":
+        return "bg-primary/10 text-primary hover:bg-primary/20";
+      default:
+        return "bg-muted text-muted-foreground hover:bg-muted/80";
+    }
+  };
+
+  const getRoleLabel = (role: TeamRole | null) => {
+    switch (role) {
+      case "team_admin":
+        return "Team Admin";
+      case "senior_scout":
+        return "Senior Scout";
+      default:
+        return "Scout";
+    }
   };
 
   const getInitials = (name: string | null) => {
@@ -441,7 +496,7 @@ export default function TeamsAdmin() {
                     <TableRow>
                       <TableHead>User</TableHead>
                       <TableHead>Organization</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>Role</TableHead>
                       <TableHead>Joined</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -469,9 +524,41 @@ export default function TeamsAdmin() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="default" className="bg-primary/10 text-primary hover:bg-primary/20">
-                            Team
-                          </Badge>
+                          {team ? (
+                            <Select
+                              defaultValue={user.team_role || "scout"}
+                              onValueChange={(value: TeamRole) => handleRoleChange(user.id, value)}
+                              disabled={updateRoleMutation.isPending}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="scout">
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-3 w-3" />
+                                    Scout
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="senior_scout">
+                                  <div className="flex items-center gap-2">
+                                    <UserCheck className="h-3 w-3" />
+                                    Senior Scout
+                                  </div>
+                                </SelectItem>
+                                <SelectItem value="team_admin">
+                                  <div className="flex items-center gap-2">
+                                    <Shield className="h-3 w-3" />
+                                    Team Admin
+                                  </div>
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant="default" className={getRoleBadgeColor(user.team_role)}>
+                              {getRoleLabel(user.team_role)}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-muted-foreground">

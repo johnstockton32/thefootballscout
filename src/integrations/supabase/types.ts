@@ -87,6 +87,7 @@ export type Database = {
           subscription_started_at: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           team_id: string | null
+          team_role: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at: string | null
           updated_at: string
         }
@@ -102,6 +103,7 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
+          team_role?: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -117,6 +119,7 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
+          team_role?: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -313,6 +316,10 @@ export type Database = {
     Functions: {
       can_create_player: { Args: { _user_id: string }; Returns: boolean }
       can_create_report: { Args: { _user_id: string }; Returns: boolean }
+      can_manage_team_role: {
+        Args: { _member_id: string; _owner_id: string }
+        Returns: boolean
+      }
       cancel_subscription: { Args: { _user_id: string }; Returns: boolean }
       get_comparison_limit: { Args: { _user_id: string }; Returns: number }
       get_monthly_report_count: { Args: { _user_id: string }; Returns: number }
@@ -329,6 +336,7 @@ export type Database = {
         Returns: boolean
       }
       is_in_trial: { Args: { _user_id: string }; Returns: boolean }
+      is_team_admin: { Args: { _user_id: string }; Returns: boolean }
       start_pro_trial: { Args: { _user_id: string }; Returns: boolean }
       upgrade_subscription: {
         Args: {
@@ -356,6 +364,7 @@ export type Database = {
         | "winger"
         | "striker"
       subscription_tier: "free" | "pro" | "team"
+      team_role: "scout" | "senior_scout" | "team_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -502,6 +511,7 @@ export const Constants = {
         "striker",
       ],
       subscription_tier: ["free", "pro", "team"],
+      team_role: ["scout", "senior_scout", "team_admin"],
     },
   },
 } as const
