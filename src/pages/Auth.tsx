@@ -194,10 +194,13 @@ export default function Auth() {
               .single();
             
             if (!teamError && newTeam) {
-              // Update the user's profile with the team_id
+              // Update the user's profile with the team_id and set them as team_admin
               await supabase
                 .from('profiles')
-                .update({ team_id: newTeam.id })
+                .update({ 
+                  team_id: newTeam.id,
+                  team_role: 'team_admin' as const
+                })
                 .eq('id', currentUser.id);
             }
           }
