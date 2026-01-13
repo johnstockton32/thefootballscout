@@ -5,6 +5,7 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { PlayerCard } from '@/components/players/PlayerCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar } from 'lucide-react';
@@ -32,7 +33,7 @@ interface Report {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [stats, setStats] = useState({
@@ -118,16 +119,33 @@ export default function Dashboard() {
     }
   };
 
+  const getInitials = (name: string | null | undefined) => {
+    if (name) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    }
+    return 'U';
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-8 animate-fade-in">
-        {/* Header */}
+        {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground mt-1">
-              Welcome back! Here's your scouting overview.
-            </p>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-lg">
+              <AvatarImage src={profile?.photo_url || undefined} alt={profile?.full_name || 'Profile'} />
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+                {getInitials(profile?.full_name)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">
+                Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Here's your scouting overview.
+              </p>
+            </div>
           </div>
           <div className="flex gap-3">
             <Button variant="outline" asChild>
