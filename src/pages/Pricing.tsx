@@ -172,7 +172,7 @@ export default function Pricing() {
                     variant={plan.variant} 
                     className="w-full" 
                     size="lg"
-                    onClick={() => navigate('/auth')}
+                    onClick={() => navigate(`/auth?mode=signUp&tier=${plan.name.toLowerCase()}`)}
                   >
                     {plan.cta}
                     <ArrowRight className="w-4 h-4" />

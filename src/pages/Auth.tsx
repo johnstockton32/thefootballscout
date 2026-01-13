@@ -70,9 +70,15 @@ export default function Auth() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
 
-  // Check for tier from URL params (from pricing page)
+  // Check for mode and tier from URL params (from pricing page)
   useEffect(() => {
+    const modeParam = searchParams.get('mode') as AuthMode | null;
     const tierParam = searchParams.get('tier') as SubscriptionTier | null;
+    
+    if (modeParam && ['signIn', 'signUp', 'resetPassword'].includes(modeParam)) {
+      setMode(modeParam);
+    }
+    
     if (tierParam && ['free', 'pro', 'team'].includes(tierParam)) {
       setSelectedTier(tierParam);
       setMode('signUp');

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase, PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Search, Users, Filter } from 'lucide-react';
+import { Plus, Search, Users, Filter, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Player {
   id: string;
@@ -20,6 +21,7 @@ interface Player {
 }
 
 export default function Players() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
@@ -79,6 +81,10 @@ export default function Players() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Players</h1>
             <p className="text-muted-foreground mt-1">
               {players.length} player{players.length !== 1 ? 's' : ''} in your database

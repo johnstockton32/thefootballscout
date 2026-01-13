@@ -7,7 +7,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { supabase, CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, Star } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, Star, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface Report {
   id: string;
@@ -24,6 +25,7 @@ interface Report {
 }
 
 export default function Reports() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [reports, setReports] = useState<Report[]>([]);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
@@ -89,6 +91,10 @@ export default function Reports() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
             <h1 className="text-2xl md:text-3xl font-bold">Scouting Reports</h1>
             <p className="text-muted-foreground mt-1">
               {reports.filter(r => !r.is_draft).length} submitted report{reports.filter(r => !r.is_draft).length !== 1 ? 's' : ''}
