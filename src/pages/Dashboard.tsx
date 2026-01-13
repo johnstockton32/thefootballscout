@@ -6,10 +6,14 @@ import { PlayerCard } from '@/components/players/PlayerCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { supabase, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar } from 'lucide-react';
-import { format } from 'date-fns';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface Player {
   id: string;
@@ -34,6 +38,7 @@ interface Report {
 
 export default function Dashboard() {
   const { user, profile } = useAuth();
+  const subscription = useSubscription();
   const [players, setPlayers] = useState<Player[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [stats, setStats] = useState({
@@ -189,6 +194,98 @@ export default function Dashboard() {
             icon={<TrendingUp className="w-5 h-5" />}
           />
         </div>
+
+        {/* Subscription Status Card */}
+        <Card className={cn(
+          "card-glass border-l-4",
+          subscription.tier === 'free' ? 'border-l-muted-foreground' : 
+          subscription.tier === 'pro' ? 'border-l-primary' : 'border-l-purple-500'
+        )}>
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center",
+                  subscription.tier === 'free' ? 'bg-muted' :
+                  subscription.tier === 'pro' ? 'bg-primary/20' : 'bg-purple-500/20'
+                )}>
+                  {subscription.tier === 'free' ? <Sparkles className="w-6 h-6 text-muted-foreground" /> :
+                   subscription.tier === 'pro' ? <Crown className="w-6 h-6 text-primary" /> :
+                   <Building2 className="w-6 h-6 text-purple-500" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold capitalize">{subscription.tier} Plan</h3>
+                    {subscription.isInTrial && (
+                      <Badge variant="secondary" className="text-xs">
+                        Trial • {subscription.trialDaysRemaining}d left
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {subscription.tier === 'free' 
+                      ? 'Upgrade to unlock unlimited features' 
+                      : subscription.isInTrial && subscription.trialEndsAt
+                        ? `Trial ends ${formatDistanceToNow(subscription.trialEndsAt, { addSuffix: true })}`
+                        : 'Enjoying unlimited scouting features'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-6">
+                {/* Usage Stats */}
+                <div className="flex gap-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {subscription.usage.playerCount}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{subscription.limits.maxPlayers === Infinity ? '∞' : subscription.limits.maxPlayers}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Players</p>
+                    {subscription.tier === 'free' && (
+                      <Progress 
+                        value={(subscription.usage.playerCount / subscription.limits.maxPlayers) * 100} 
+                        className="h-1 w-16 mt-1"
+                      />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {subscription.usage.monthlyReportCount}
+                      <span className="text-sm font-normal text-muted-foreground">
+                        /{subscription.limits.maxReportsPerMonth === Infinity ? '∞' : subscription.limits.maxReportsPerMonth}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Reports/mo</p>
+                    {subscription.tier === 'free' && (
+                      <Progress 
+                        value={(subscription.usage.monthlyReportCount / subscription.limits.maxReportsPerMonth) * 100} 
+                        className="h-1 w-16 mt-1"
+                      />
+                    )}
+                  </div>
+                </div>
+                
+                {/* Action Button */}
+                {subscription.tier === 'free' ? (
+                  <Button variant="hero" size="sm" asChild>
+                    <Link to="/settings?tab=subscription">
+                      <Zap className="w-4 h-4 mr-1" />
+                      Upgrade
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/settings?tab=subscription">
+                      Manage Plan
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Main Content Grid */}
         <div className="grid lg:grid-cols-3 gap-6">
