@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
+import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
 
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -41,6 +43,7 @@ const createUserSchema = z.object({
 type CreateUserForm = z.infer<typeof createUserSchema>;
 
 export default function TeamsAdmin() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -53,6 +56,24 @@ export default function TeamsAdmin() {
       fullName: "",
       organization: "",
     },
+  });
+
+  // Fetch team data for current user
+  const { data: team, refetch: refetchTeam } = useQuery({
+    queryKey: ["team", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("owner_id", user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id,
   });
 
   // Fetch team tier users
@@ -205,6 +226,28 @@ export default function TeamsAdmin() {
             Add Team Member
           </Button>
         </div>
+
+        {/* Team Logo Section */}
+        {team && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Crown className="h-5 w-5 text-primary" />
+                Team Logo
+              </CardTitle>
+              <CardDescription>
+                Upload a logo to appear on your scouting reports
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TeamLogoUpload
+                teamId={team.id}
+                currentLogoUrl={team.logo_url}
+                onLogoUpdated={() => refetchTeam()}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Create User Form */}
         {isCreating && (
