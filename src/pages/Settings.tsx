@@ -348,64 +348,64 @@ export default function Settings() {
                 <CardDescription>Choose your preferred color scheme</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="flex flex-col gap-3">
                   <button
                     onClick={() => setTheme('light')}
-                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
                       theme === 'light' 
                         ? 'border-primary bg-primary/10' 
                         : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center shrink-0">
                       <Sun className="h-6 w-6 text-amber-600" />
                     </div>
-                    <div className="text-center">
-                      <p className="font-medium text-sm">Light</p>
-                      <p className="text-xs text-muted-foreground">Bright and clean</p>
+                    <div className="text-left flex-1">
+                      <p className="font-medium">Light</p>
+                      <p className="text-sm text-muted-foreground">Bright and clean</p>
                     </div>
                     {theme === 'light' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
                     )}
                   </button>
 
                   <button
                     onClick={() => setTheme('dark')}
-                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
                       theme === 'dark' 
                         ? 'border-primary bg-primary/10' 
                         : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shrink-0">
                       <Moon className="h-6 w-6 text-slate-300" />
                     </div>
-                    <div className="text-center">
-                      <p className="font-medium text-sm">Dark</p>
-                      <p className="text-xs text-muted-foreground">Stadium night mode</p>
+                    <div className="text-left flex-1">
+                      <p className="font-medium">Dark</p>
+                      <p className="text-sm text-muted-foreground">Stadium night mode</p>
                     </div>
                     {theme === 'dark' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
                     )}
                   </button>
 
                   <button
                     onClick={() => setTheme('system')}
-                    className={`flex flex-col items-center gap-3 p-4 rounded-lg border-2 transition-all ${
+                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
                       theme === 'system' 
                         ? 'border-primary bg-primary/10' 
                         : 'border-border hover:border-primary/50 hover:bg-muted/50'
                     }`}
                   >
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shrink-0">
                       <Monitor className="h-6 w-6 text-white" />
                     </div>
-                    <div className="text-center">
-                      <p className="font-medium text-sm">System</p>
-                      <p className="text-xs text-muted-foreground">Match device</p>
+                    <div className="text-left flex-1">
+                      <p className="font-medium">System</p>
+                      <p className="text-sm text-muted-foreground">Match device</p>
                     </div>
                     {theme === 'system' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground">Active</Badge>
+                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
                     )}
                   </button>
                 </div>
