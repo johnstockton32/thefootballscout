@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Check } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Check, ArrowLeft } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -332,6 +332,10 @@ export default function Settings() {
     <DashboardLayout>
       <div className="container mx-auto py-6 px-4 max-w-4xl">
         <div className="mb-8">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
+          </Button>
           <h1 className="text-3xl font-bold text-foreground">Settings</h1>
           <p className="text-muted-foreground mt-1">Manage your account settings and preferences</p>
         </div>

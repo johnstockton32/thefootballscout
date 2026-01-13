@@ -37,7 +37,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw, Shield, UserCheck } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw, Shield, UserCheck, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -53,6 +54,7 @@ const createUserSchema = z.object({
 type CreateUserForm = z.infer<typeof createUserSchema>;
 
 export default function TeamsAdmin() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
@@ -333,6 +335,10 @@ export default function TeamsAdmin() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Crown className="h-6 w-6 text-primary" />
               {team ? `${team.name} - Team Management` : 'Team Management'}
