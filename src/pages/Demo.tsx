@@ -101,6 +101,7 @@ import {
   Shield,
   Zap,
   ArrowRight,
+  ArrowLeft,
   Calendar,
   MapPin,
   TrendingUp,
@@ -364,7 +365,15 @@ export default function Demo() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Logo size="sm" />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild className="gap-2">
+              <Link to="/">
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back to Home</span>
+              </Link>
+            </Button>
+            <Logo size="sm" />
+          </div>
           <div className="flex items-center gap-4">
             <Badge variant="secondary" className="hidden sm:inline-flex">
               Demo Mode
