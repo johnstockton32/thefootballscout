@@ -8,13 +8,23 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { Users, UserPlus, Mail, Building, Loader2, Crown } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 const createUserSchema = z.object({
@@ -28,6 +38,7 @@ type CreateUserForm = z.infer<typeof createUserSchema>;
 export default function TeamsAdmin() {
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
 
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -84,8 +95,44 @@ export default function TeamsAdmin() {
     },
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const response = await supabase.functions.invoke("delete-team-user", {
+        body: { userId },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to delete user");
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success("Team member removed successfully");
+      setDeletingUserId(null);
+      queryClient.invalidateQueries({ queryKey: ["team-users"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete user");
+      setDeletingUserId(null);
+    },
+  });
+
   const onSubmit = (values: CreateUserForm) => {
     createUserMutation.mutate(values);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    setDeletingUserId(userId);
+    deleteUserMutation.mutate(userId);
   };
 
   const getInitials = (name: string | null) => {
@@ -247,6 +294,7 @@ export default function TeamsAdmin() {
                       <TableHead>Organization</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Joined</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -280,6 +328,42 @@ export default function TeamsAdmin() {
                           <span className="text-sm text-muted-foreground">
                             {format(new Date(user.created_at), "MMM d, yyyy")}
                           </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                disabled={deletingUserId === user.id}
+                              >
+                                {deletingUserId === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to remove <strong>{user.full_name || user.email}</strong> from the team? 
+                                  This will permanently delete their account and all associated data. This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteUser(user.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Remove Member
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     ))}
