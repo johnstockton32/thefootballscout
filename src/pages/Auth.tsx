@@ -277,6 +277,24 @@ export default function Auth() {
                       <p className="text-xs text-muted-foreground">
                         I consent to the processing of my personal data in accordance with GDPR. 
                         Player data will be handled securely and in compliance with data protection regulations.
+                        Read our{' '}
+                        <a 
+                          href="/privacy-policy" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Privacy Policy
+                        </a>
+                        {' '}and{' '}
+                        <a 
+                          href="/terms-of-service" 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          Terms of Service
+                        </a>.
                       </p>
                     </div>
                   </div>
