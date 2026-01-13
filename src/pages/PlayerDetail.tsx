@@ -16,6 +16,7 @@ import {
 } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { handleError } from '@/lib/errorUtils';
 import { format } from 'date-fns';
 import {
   ArrowLeft,
@@ -139,9 +140,8 @@ export default function PlayerDetail() {
 
       toast.success('Player deleted successfully');
       navigate('/players');
-    } catch (error: any) {
-      console.error('Error deleting player:', error);
-      toast.error(error.message || 'Failed to delete player');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Delete player'));
     }
   };
 

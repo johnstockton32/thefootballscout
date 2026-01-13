@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Users, FileText, UserCheck, ShieldCheck, TrendingUp, Activity, Download, BarChart3 } from 'lucide-react';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
+import { handleError } from '@/lib/errorUtils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -152,9 +153,8 @@ export default function AdminDashboard() {
       );
 
       toast.success(`User role updated to ${newRole}`);
-    } catch (error: any) {
-      console.error('Error updating role:', error);
-      toast.error(error.message || 'Failed to update role');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Update role'));
     }
   };
 

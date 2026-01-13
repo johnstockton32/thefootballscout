@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, User } from 'lucide-react';
 import { z } from 'zod';
+import { handleError } from '@/lib/errorUtils';
 
 const playerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -102,9 +103,8 @@ export default function NewPlayer() {
 
       toast.success('Player added successfully!');
       navigate('/players');
-    } catch (error: any) {
-      console.error('Error creating player:', error);
-      toast.error(error.message || 'Failed to create player');
+    } catch (error: unknown) {
+      toast.error(handleError(error, 'Create player'));
     } finally {
       setIsSubmitting(false);
     }
