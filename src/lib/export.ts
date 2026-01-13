@@ -165,8 +165,26 @@ function downloadCSV(headers: string[], rows: string[][], filename: string) {
   URL.revokeObjectURL(url);
 }
 
+// Helper function to load image as base64
+async function loadImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) return null;
+    
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
 // PDF Export Function
-export async function exportReportPDF(reportId: string) {
+export async function exportReportPDF(reportId: string, teamLogoUrl?: string | null) {
   const { data: report, error } = await supabase
     .from('scouting_reports')
     .select(`
@@ -200,6 +218,18 @@ export async function exportReportPDF(reportId: string) {
   // Header
   doc.setFillColor(...primaryColor);
   doc.rect(0, 0, 210, 40, 'F');
+  
+  // Add team logo if available
+  if (teamLogoUrl) {
+    const logoBase64 = await loadImageAsBase64(teamLogoUrl);
+    if (logoBase64) {
+      try {
+        doc.addImage(logoBase64, 'PNG', 170, 5, 30, 30);
+      } catch (e) {
+        console.warn('Could not add logo to PDF:', e);
+      }
+    }
+  }
   
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);

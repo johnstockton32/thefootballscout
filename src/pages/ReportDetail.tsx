@@ -85,14 +85,42 @@ export default function ReportDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [report, setReport] = useState<Report | null>(null);
+  const [teamLogoUrl, setTeamLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (id && user) {
       fetchReport();
+      fetchTeamLogo();
     }
   }, [id, user]);
+
+  const fetchTeamLogo = async () => {
+    try {
+      // First get user's team_id from profile
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('team_id')
+        .eq('id', user?.id)
+        .maybeSingle();
+
+      if (profile?.team_id) {
+        // Then get team's logo
+        const { data: team } = await supabase
+          .from('teams')
+          .select('logo_url')
+          .eq('id', profile.team_id)
+          .maybeSingle();
+
+        if (team?.logo_url) {
+          setTeamLogoUrl(team.logo_url);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching team logo:', error);
+    }
+  };
 
   const fetchReport = async () => {
     try {
@@ -148,7 +176,7 @@ export default function ReportDetail() {
     
     setIsExporting(true);
     try {
-      await exportReportPDF(report.id);
+      await exportReportPDF(report.id, teamLogoUrl);
       toast.success('PDF exported successfully');
     } catch (error: any) {
       console.error('Error exporting PDF:', error);
