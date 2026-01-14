@@ -53,7 +53,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, Shield, UserCheck, ArrowLeft, MoreHorizontal, Pencil, KeyRound } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, Shield, UserCheck, ArrowLeft, MoreHorizontal, Pencil, KeyRound, Lock, Eye, EyeOff } from "lucide-react";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -63,13 +63,14 @@ import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  organization: z.string().min(2, "Organization is required"),
+  organization: z.string().optional(),
+  password: z.string().min(8, "Password must be at least 8 characters"),
   role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
 });
 
 const editUserSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  organization: z.string().min(2, "Organization is required"),
+  organization: z.string().optional(),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -86,12 +87,15 @@ export default function TeamsAdmin() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
 
+  const [showPassword, setShowPassword] = useState(false);
+
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       email: "",
       fullName: "",
       organization: "",
+      password: "",
       role: "scout",
     },
   });
@@ -464,7 +468,7 @@ export default function TeamsAdmin() {
                 Create Team User
               </CardTitle>
               <CardDescription>
-                Create a new account with team tier subscription. The user will receive an email to set their password.
+                Create a new team member account with team tier subscription.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -518,7 +522,7 @@ export default function TeamsAdmin() {
                       name="organization"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Organization *</FormLabel>
+                          <FormLabel>Organization <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
                           <FormControl>
                             <div className="relative">
                               <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -535,42 +539,70 @@ export default function TeamsAdmin() {
                     />
                     <FormField
                       control={form.control}
-                      name="role"
+                      name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Role *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a role" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="scout">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-3 w-3" />
-                                  Scout
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="senior_scout">
-                                <div className="flex items-center gap-2">
-                                  <UserCheck className="h-3 w-3" />
-                                  Senior Scout
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="team_admin">
-                                <div className="flex items-center gap-2">
-                                  <Shield className="h-3 w-3" />
-                                  Team Admin
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <FormLabel>Password *</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="••••••••"
+                                className="pl-10 pr-10"
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+                  <FormField
+                    control={form.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role *</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="scout">
+                              <div className="flex items-center gap-2">
+                                <Users className="h-3 w-3" />
+                                Scout
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="senior_scout">
+                              <div className="flex items-center gap-2">
+                                <UserCheck className="h-3 w-3" />
+                                Senior Scout
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="team_admin">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-3 w-3" />
+                                Team Admin
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   <div className="flex gap-3">
                     <Button
                       type="submit"
