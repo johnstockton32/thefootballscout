@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -85,6 +85,16 @@ export default function Settings() {
       organization: profile?.organization || '',
     },
   });
+
+  // Reset form when profile data loads
+  useEffect(() => {
+    if (profile) {
+      profileForm.reset({
+        full_name: profile.full_name || '',
+        organization: profile.organization || '',
+      });
+    }
+  }, [profile, profileForm]);
 
   // Password form
   const passwordForm = useForm<PasswordFormData>({
