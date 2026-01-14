@@ -46,12 +46,14 @@ export default function TeamFeed() {
   const [activities, setActivities] = useState<TeamActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const teamId = profile ? (profile as any).team_id : null;
+  // Access team_id from profile - it's now properly typed
+  const teamId = profile?.team_id || null;
 
   useEffect(() => {
     if (user && teamId) {
       fetchActivities();
-      subscribeToActivities();
+      const unsubscribe = subscribeToActivities();
+      return unsubscribe;
     } else {
       setIsLoading(false);
     }

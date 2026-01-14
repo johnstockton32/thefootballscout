@@ -11,12 +11,17 @@ interface Profile {
   gdpr_consent: boolean;
   gdpr_consent_date: string | null;
   photo_url: string | null;
+  team_id: string | null;
+  team_role: 'scout' | 'senior_scout' | 'team_admin' | null;
+  subscription_tier: 'free' | 'pro' | 'team' | 'agency';
 }
 
 interface ProfileUpdate {
   full_name?: string | null;
   organization?: string | null;
   photo_url?: string | null;
+  team_id?: string | null;
+  team_role?: 'scout' | 'senior_scout' | 'team_admin' | null;
 }
 
 interface AuthContextType {

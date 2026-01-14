@@ -188,18 +188,21 @@ export default function Auth() {
         // Update GDPR consent after signup
         await updateGdprConsent(true);
         
-        // Apply selected tier after a brief delay to ensure profile exists
-        // We need to get the user from the current session
+        // Apply selected tier - we need to wait for the session to be established
+        // Use a small delay to ensure profile exists from the trigger
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUser = sessionData.session?.user;
         
-        if (currentUser && selectedTier !== 'free') {
+        if (currentUser) {
           if (selectedTier === 'pro') {
             await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
           } else if (selectedTier === 'team' || selectedTier === 'agency') {
+            // First upgrade the subscription tier
             await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
             
-            // Create the team with the user as owner (for both Team and Agency tiers)
+            // Create the team with the user as owner
             const { data: newTeam, error: teamError } = await supabase
               .from('teams')
               .insert({
@@ -209,15 +212,22 @@ export default function Auth() {
               .select()
               .single();
             
-            if (!teamError && newTeam) {
+            if (teamError) {
+              console.error('Error creating team:', teamError);
+              toast.error('Account created but team setup failed. Please contact support.');
+            } else if (newTeam) {
               // Update the user's profile with the team_id and set them as team_admin
-              await supabase
+              const { error: profileError } = await supabase
                 .from('profiles')
                 .update({ 
                   team_id: newTeam.id,
-                  team_role: 'team_admin' as const
+                  team_role: 'team_admin'
                 })
                 .eq('id', currentUser.id);
+              
+              if (profileError) {
+                console.error('Error updating profile with team:', profileError);
+              }
             }
           }
         }
