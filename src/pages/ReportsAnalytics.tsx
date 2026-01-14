@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,6 +42,7 @@ const RECOMMENDATION_COLORS = {
 
 export default function ReportsAnalytics() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [competitionData, setCompetitionData] = useState<CompetitionData[]>([]);
@@ -141,13 +142,20 @@ export default function ReportsAnalytics() {
     }
   };
 
-  const StatCard = ({ title, value, icon, className }: { 
+  const StatCard = ({ title, value, icon, className, onClick }: { 
     title: string; 
     value: string | number; 
     icon: React.ReactNode;
     className?: string;
+    onClick?: () => void;
   }) => (
-    <Card className={cn('card-glass', className)}>
+    <Card 
+      className={cn(
+        'card-glass transition-all duration-200',
+        onClick && 'cursor-pointer hover:scale-[1.02] hover:shadow-lg hover:border-primary/30'
+      )} 
+      onClick={onClick}
+    >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
@@ -208,29 +216,36 @@ export default function ReportsAnalytics() {
               <StatCard 
                 title="Total Reports" 
                 value={stats.totalReports} 
-                icon={<FileText className="w-5 h-5 text-primary" />} 
+                icon={<FileText className="w-5 h-5 text-primary" />}
+                onClick={() => navigate('/reports')}
               />
               <StatCard 
                 title="Average Rating" 
                 value={stats.avgRating} 
-                icon={<Star className="w-5 h-5 text-accent" />} 
+                icon={<Star className="w-5 h-5 text-accent" />}
+                onClick={() => navigate('/reports')}
               />
               <StatCard 
                 title="Highest Rating" 
                 value={stats.highestRating} 
-                icon={<Target className="w-5 h-5 text-status-success" />} 
+                icon={<Target className="w-5 h-5 text-status-success" />}
+                onClick={() => navigate('/reports')}
               />
               <StatCard 
                 title="This Month" 
                 value={stats.thisMonth} 
-                icon={<Calendar className="w-5 h-5 text-primary" />} 
+                icon={<Calendar className="w-5 h-5 text-primary" />}
+                onClick={() => navigate('/reports')}
               />
             </div>
 
             {/* Charts Grid */}
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Monthly Reports Chart */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Activity className="w-5 h-5 text-primary" />
@@ -264,6 +279,7 @@ export default function ReportsAnalytics() {
                           fill="hsl(var(--primary))" 
                           radius={[4, 4, 0, 0]}
                           name="Reports"
+                          cursor="pointer"
                         />
                       </BarChart>
                     </ResponsiveContainer>
@@ -272,7 +288,10 @@ export default function ReportsAnalytics() {
               </Card>
 
               {/* Rating Trend Chart */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <TrendingUp className="w-5 h-5 text-accent" />
@@ -307,8 +326,9 @@ export default function ReportsAnalytics() {
                           dataKey="avgRating" 
                           stroke="hsl(var(--accent))" 
                           strokeWidth={3}
-                          dot={{ fill: 'hsl(var(--accent))', strokeWidth: 2 }}
+                          dot={{ fill: 'hsl(var(--accent))', strokeWidth: 2, cursor: 'pointer' }}
                           name="Avg Rating"
+                          cursor="pointer"
                         />
                       </LineChart>
                     </ResponsiveContainer>
@@ -317,7 +337,10 @@ export default function ReportsAnalytics() {
               </Card>
 
               {/* Competition Level Distribution */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <BarChart3 className="w-5 h-5 text-primary" />
@@ -338,6 +361,7 @@ export default function ReportsAnalytics() {
                           dataKey="value"
                           label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                           labelLine={false}
+                          cursor="pointer"
                         >
                           {competitionData.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COMPETITION_COLORS[index % COMPETITION_COLORS.length]} />
@@ -357,7 +381,10 @@ export default function ReportsAnalytics() {
               </Card>
 
               {/* Recommendation Distribution */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Target className="w-5 h-5 text-status-success" />
@@ -373,7 +400,10 @@ export default function ReportsAnalytics() {
                         const color = RECOMMENDATION_COLORS[item.name as keyof typeof RECOMMENDATION_COLORS] || '#6b7280';
                         
                         return (
-                          <div key={item.name} className="space-y-2">
+                          <div 
+                            key={item.name} 
+                            className="space-y-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          >
                             <div className="flex justify-between text-sm">
                               <span>{item.name}</span>
                               <span className="text-muted-foreground">{item.value} ({percentage}%)</span>
