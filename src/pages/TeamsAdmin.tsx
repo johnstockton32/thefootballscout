@@ -56,7 +56,7 @@ type CreateUserForm = z.infer<typeof createUserSchema>;
 
 export default function TeamsAdmin() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
@@ -614,27 +614,29 @@ export default function TeamsAdmin() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => handleResendInvitation(user.email)}
-                                  disabled={resendingEmail === user.email}
-                                  className="text-muted-foreground hover:text-foreground"
-                                >
-                                  {resendingEmail === user.email ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <RefreshCw className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Resend password reset email</p>
-                              </TooltipContent>
-                            </Tooltip>
-                            
+                            {/* Password reset button - only visible to team admins */}
+                            {(profile?.team_role === 'team_admin' || isAdmin) && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleResendInvitation(user.email)}
+                                    disabled={resendingEmail === user.email}
+                                    className="text-muted-foreground hover:text-foreground"
+                                  >
+                                    {resendingEmail === user.email ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <RefreshCw className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Reset user password</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button
