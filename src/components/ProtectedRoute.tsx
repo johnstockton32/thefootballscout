@@ -6,11 +6,15 @@ import { Loader2 } from 'lucide-react';
 interface ProtectedRouteProps {
   children: ReactNode;
   requireAdmin?: boolean;
+  requireTeamOwnerOrAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requireAdmin = false, requireTeamOwnerOrAdmin = false }: ProtectedRouteProps) {
   const { user, isLoading, isAdmin, profile } = useAuth();
   const location = useLocation();
+
+  // Check if user is a team owner (has team_role of team_admin)
+  const isTeamOwner = profile?.team_role === 'team_admin';
 
   if (isLoading) {
     return (
@@ -28,6 +32,10 @@ export function ProtectedRoute({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (requireAdmin && !isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (requireTeamOwnerOrAdmin && !isAdmin && !isTeamOwner) {
     return <Navigate to="/dashboard" replace />;
   }
 
