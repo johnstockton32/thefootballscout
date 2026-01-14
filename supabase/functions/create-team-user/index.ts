@@ -78,18 +78,19 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, fullName, organization, role } = await req.json();
+    const { email, fullName, organization, role, password } = await req.json();
 
-    if (!email || !fullName) {
+    if (!email || !fullName || !password) {
       return new Response(
-        JSON.stringify({ error: "Email and full name are required" }),
+        JSON.stringify({ error: "Email, full name, and password are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!organization) {
+    // Validate password strength
+    if (password.length < 8) {
       return new Response(
-        JSON.stringify({ error: "Organization is required" }),
+        JSON.stringify({ error: "Password must be at least 8 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -112,27 +113,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if organization already exists (only one person per organization)
-    const { data: existingOrg } = await supabaseAdmin
-      .from("profiles")
-      .select("id, organization")
-      .eq("organization", organization)
-      .maybeSingle();
-
-    if (existingOrg) {
-      return new Response(
-        JSON.stringify({ error: `A user from "${organization}" already exists. Only one user per organization is allowed.` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Generate a secure random password
-    const tempPassword = crypto.randomUUID().slice(0, 16) + "Aa1!";
-
-    // Create the user
+    // Create the user with provided password
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: tempPassword,
+      password: password,
       email_confirm: true,
       user_metadata: {
         full_name: fullName,
@@ -150,7 +134,7 @@ Deno.serve(async (req) => {
     // Update the profile with team tier, organization, team_id and selected role
     const updateData: Record<string, unknown> = {
       subscription_tier: "team",
-      organization: organization,
+      organization: organization || null,
       subscription_started_at: new Date().toISOString(),
       team_role: role, // Use the role provided in the request
     };
@@ -169,20 +153,10 @@ Deno.serve(async (req) => {
       console.error("Error updating profile:", profileError);
     }
 
-    // Send password reset email so user can set their own password
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: "recovery",
-      email,
-    });
-
-    if (resetError) {
-      console.error("Error generating reset link:", resetError);
-    }
-
     return new Response(
       JSON.stringify({
         success: true,
-        message: "User created successfully. A password reset email will be sent.",
+        message: "User created successfully.",
         user: {
           id: newUser.user.id,
           email: newUser.user.email,

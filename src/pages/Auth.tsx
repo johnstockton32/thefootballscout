@@ -310,23 +310,6 @@ export default function Auth() {
                         <p className="text-xs text-destructive">{errors.fullName}</p>
                       )}
                     </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="organization" className="text-sm font-medium">
-                        Organization <span className="text-muted-foreground text-xs">(optional)</span>
-                      </Label>
-                      <div className="relative">
-                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <Input
-                          id="organization"
-                          type="text"
-                          placeholder="Your club or agency"
-                          value={organization}
-                          onChange={(e) => setOrganization(e.target.value)}
-                          className="pl-10 bg-input border-border focus:border-primary"
-                        />
-                      </div>
-                    </div>
                   </>
                 )}
 
