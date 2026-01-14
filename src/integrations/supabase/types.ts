@@ -65,6 +65,78 @@ export type Database = {
           },
         ]
       }
+      branding_settings: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          id: string
+          logo_url: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          show_default_branding: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_default_branding?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_default_branding?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      custom_attribute_weights: {
+        Row: {
+          created_at: string
+          id: string
+          mental_weight: number
+          physical_weight: number
+          position: string
+          tactical_weight: number
+          technical_weight: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          mental_weight?: number
+          physical_weight?: number
+          position: string
+          tactical_weight?: number
+          technical_weight?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          mental_weight?: number
+          physical_weight?: number
+          position?: string
+          tactical_weight?: number
+          technical_weight?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       players: {
         Row: {
           created_at: string

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2 } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
 import { handleError } from '@/lib/errorUtils';
 import { ProfilePhotoUpload } from '@/components/settings/ProfilePhotoUpload';
+import { CustomAttributeWeights } from '@/components/settings/CustomAttributeWeights';
+import { BrandingSettings } from '@/components/settings/BrandingSettings';
 import { format, formatDistanceToNow } from 'date-fns';
 
 // Validation schemas
@@ -431,7 +433,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-flex">
             <TabsTrigger value="profile" className="gap-2">
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Profile</span>
@@ -439,6 +441,10 @@ export default function Settings() {
             <TabsTrigger value="subscription" className="gap-2">
               <Crown className="h-4 w-4" />
               <span className="hidden sm:inline">Plan</span>
+            </TabsTrigger>
+            <TabsTrigger value="scouting" className="gap-2">
+              <Sliders className="h-4 w-4" />
+              <span className="hidden sm:inline">Scouting</span>
             </TabsTrigger>
             <TabsTrigger value="appearance" className="gap-2">
               <Palette className="h-4 w-4" />
@@ -603,6 +609,12 @@ export default function Settings() {
                 </Form>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Scouting Tab */}
+          <TabsContent value="scouting" className="space-y-6">
+            <CustomAttributeWeights />
+            <BrandingSettings />
           </TabsContent>
 
           {/* Subscription Tab */}
