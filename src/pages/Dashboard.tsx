@@ -188,17 +188,21 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Players"
-            value={stats.totalPlayers}
-            icon={<Users className="w-5 h-5" />}
-            variant="primary"
-          />
-          <StatCard
-            title="Reports Filed"
-            value={stats.totalReports}
-            icon={<FileText className="w-5 h-5" />}
-          />
+          <Link to="/players" className="block">
+            <StatCard
+              title="Total Players"
+              value={stats.totalPlayers}
+              icon={<Users className="w-5 h-5" />}
+              variant="primary"
+            />
+          </Link>
+          <Link to="/reports" className="block">
+            <StatCard
+              title="Reports Filed"
+              value={stats.totalReports}
+              icon={<FileText className="w-5 h-5" />}
+            />
+          </Link>
           <StatCard
             title="Avg Rating"
             value={stats.avgRating || '-'}
