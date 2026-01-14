@@ -32,10 +32,10 @@ export function StatCard({ title, value, subtitle, icon, trend, variant = 'defau
   return (
     <div
       className={cn(
-        'rounded-xl p-5 transition-all duration-300 hover:scale-[1.02]',
-        variant === 'default' && 'card-glass',
-        variant === 'primary' && 'card-glow',
-        variant === 'gold' && 'card-gold-glow'
+        'rounded-xl p-5 transition-all duration-200 hover:scale-[1.03] cursor-pointer hover:shadow-lg',
+        variant === 'default' && 'card-glass hover:border-primary/20',
+        variant === 'primary' && 'card-glow hover:border-primary/40',
+        variant === 'gold' && 'card-gold-glow hover:border-accent/40'
       )}
     >
       <div className="flex items-start justify-between mb-4">
