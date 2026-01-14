@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ import {
   Crown, ArrowLeft, Target, Calendar, Building2
 } from 'lucide-react';
 import { format, subDays, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface TeamMemberStats {
   id: string;
@@ -39,6 +40,7 @@ const COLORS = ['#22c55e', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'
 export default function TeamAnalytics() {
   const { user, profile } = useAuth();
   const { tier, limits } = useSubscription();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [memberStats, setMemberStats] = useState<TeamMemberStats[]>([]);
   const [dailyActivity, setDailyActivity] = useState<DailyActivity[]>([]);
@@ -230,7 +232,10 @@ export default function TeamAnalytics() {
           <>
             {/* Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/teams')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10">
@@ -243,7 +248,10 @@ export default function TeamAnalytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/players')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-blue-500/10">
@@ -256,7 +264,10 @@ export default function TeamAnalytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-amber-500/10">
@@ -269,7 +280,10 @@ export default function TeamAnalytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/reports/analytics')}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-purple-500/10">
@@ -287,7 +301,10 @@ export default function TeamAnalytics() {
             {/* Charts Grid */}
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Daily Activity */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/team-feed')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Activity className="w-5 h-5 text-primary" />
@@ -312,8 +329,8 @@ export default function TeamAnalytics() {
                           }}
                         />
                         <Legend />
-                        <Bar dataKey="reports" name="Reports" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                        <Bar dataKey="players" name="Players Added" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="reports" name="Reports" fill="#22c55e" radius={[4, 4, 0, 0]} cursor="pointer" />
+                        <Bar dataKey="players" name="Players Added" fill="#3b82f6" radius={[4, 4, 0, 0]} cursor="pointer" />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -321,7 +338,10 @@ export default function TeamAnalytics() {
               </Card>
 
               {/* Member Contribution */}
-              <Card className="card-glass">
+              <Card 
+                className="card-glass cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/30"
+                onClick={() => navigate('/teams')}
+              >
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <TrendingUp className="w-5 h-5 text-primary" />
@@ -344,6 +364,7 @@ export default function TeamAnalytics() {
                             `${name.split(' ')[0]} (${Math.round(percent * 100)}%)`
                           }
                           labelLine={false}
+                          cursor="pointer"
                         >
                           {memberStats.map((_, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
