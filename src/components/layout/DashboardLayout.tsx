@@ -40,6 +40,7 @@ const navItems = [
 const secondaryNavItems = [
   { icon: List, label: 'Watchlists', href: '/watchlists' },
   { icon: Activity, label: 'Team Feed', href: '/team-feed' },
+  { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics' },
 ];
 
 const teamOwnerNavItems = [
