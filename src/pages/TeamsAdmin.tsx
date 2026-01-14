@@ -259,6 +259,10 @@ export default function TeamsAdmin() {
       }
 
       if (response.data?.error) {
+        // Check for rate limiting error
+        if (response.data.error.includes("security purposes") || response.data.error.includes("after")) {
+          throw new Error("Please wait 60 seconds before requesting another password reset email.");
+        }
         throw new Error(response.data.error);
       }
 
