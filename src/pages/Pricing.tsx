@@ -62,7 +62,6 @@ const plans = [
       'Team activity feed',
       'Video clip attachments',
       'Dedicated account manager',
-      'SSO & advanced security',
     ],
     cta: 'Contact Sales',
     variant: 'glass' as const,
@@ -78,9 +77,7 @@ const plans = [
     features: [
       'Everything in Team',
       'Unlimited team members',
-      'Multi-team management',
       'White-label reports',
-      'API access & integrations',
       'Priority support 24/7',
       'Custom onboarding',
       'Advanced permissions',
