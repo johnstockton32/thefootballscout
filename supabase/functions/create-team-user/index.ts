@@ -22,30 +22,43 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Verify the requesting user
+    // Verify the requesting user using getClaims for signing-keys compatibility
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    // Create a client with the user's auth header for getClaims
+    const supabaseUserClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { data: claimsData, error: claimsError } = await supabaseUserClient.auth.getClaims(token);
     
-    if (authError || !requestingUser) {
+    if (claimsError || !claimsData?.claims) {
+      console.error("Auth error:", claimsError);
       return new Response(
         JSON.stringify({ error: "Invalid authorization" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    const requestingUserId = claimsData.claims.sub as string;
+    console.log("Authenticated user ID:", requestingUserId);
+
     // Check if requesting user is an admin OR a team owner
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", requestingUser.id)
+      .eq("user_id", requestingUserId)
       .eq("role", "admin");
 
     const isAdmin = roles && roles.length > 0;
@@ -54,7 +67,7 @@ Deno.serve(async (req) => {
     const { data: ownedTeam } = await supabaseAdmin
       .from("teams")
       .select("id, name")
-      .eq("owner_id", requestingUser.id)
+      .eq("owner_id", requestingUserId)
       .maybeSingle();
 
     if (!isAdmin && !ownedTeam) {
