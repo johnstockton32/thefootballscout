@@ -17,6 +17,7 @@ const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
+  organization: z.string().optional(),
   teamName: z.string().optional(),
 });
 
@@ -25,7 +26,7 @@ const resetSchema = z.object({
 });
 
 type AuthMode = 'signIn' | 'signUp' | 'resetPassword';
-type SubscriptionTier = 'free' | 'pro' | 'team';
+type SubscriptionTier = 'free' | 'pro' | 'team' | 'agency';
 
 const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; description: string; price: string; features: string[] }[] = [
   {
@@ -52,6 +53,14 @@ const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; 
     price: '£99/month',
     features: ['Everything in Pro', 'Team collaboration', 'Priority support'],
   },
+  {
+    tier: 'agency',
+    label: 'Agency',
+    icon: Shield,
+    description: 'For agencies & large clubs',
+    price: '£199/month',
+    features: ['Everything in Team', 'Unlimited team members', 'API access'],
+  },
 ];
 
 export default function Auth() {
@@ -63,6 +72,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [organization, setOrganization] = useState('');
   const [teamName, setTeamName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [gdprConsent, setGdprConsent] = useState(false);
@@ -79,7 +89,7 @@ export default function Auth() {
       setMode(modeParam);
     }
     
-    if (tierParam && ['free', 'pro', 'team'].includes(tierParam)) {
+    if (tierParam && ['free', 'pro', 'team', 'agency'].includes(tierParam)) {
       setSelectedTier(tierParam);
       setMode('signUp');
     }
@@ -100,12 +110,12 @@ export default function Auth() {
           email, 
           password, 
           fullName: mode === 'signUp' ? fullName : undefined,
-          teamName: mode === 'signUp' && selectedTier === 'team' ? teamName : undefined,
+          teamName: mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') ? teamName : undefined,
         });
         
-        // Additional validation for team signup
-        if (mode === 'signUp' && selectedTier === 'team' && !teamName.trim()) {
-          setErrors({ teamName: 'Team name is required' });
+        // Additional validation for team/agency signup
+        if (mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') && !teamName.trim()) {
+          setErrors({ teamName: 'Team/Organization name is required' });
           return false;
         }
       }
@@ -165,7 +175,7 @@ export default function Auth() {
 
     try {
       if (mode === 'signUp') {
-        const { error } = await signUp(email, password, fullName);
+        const { error } = await signUp(email, password, fullName, organization);
         if (error) {
           if (error.message.includes('already registered')) {
             toast.error('This email is already registered. Please sign in instead.');
@@ -186,14 +196,14 @@ export default function Auth() {
         if (currentUser && selectedTier !== 'free') {
           if (selectedTier === 'pro') {
             await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
-          } else if (selectedTier === 'team') {
-            await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: 'team' });
+          } else if (selectedTier === 'team' || selectedTier === 'agency') {
+            await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
             
-            // Create the team with the user as owner
+            // Create the team with the user as owner (for both Team and Agency tiers)
             const { data: newTeam, error: teamError } = await supabase
               .from('teams')
               .insert({
-                name: teamName.trim(),
+                name: teamName.trim() || `${fullName}'s Team`,
                 owner_id: currentUser.id,
               })
               .select()
@@ -270,25 +280,44 @@ export default function Auth() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === 'signUp' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-sm font-medium">
-                      Full Name
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="John Smith"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10 bg-input border-border focus:border-primary"
-                      />
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName" className="text-sm font-medium">
+                        Full Name
+                      </Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="fullName"
+                          type="text"
+                          placeholder="John Smith"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          className="pl-10 bg-input border-border focus:border-primary"
+                        />
+                      </div>
+                      {errors.fullName && (
+                        <p className="text-xs text-destructive">{errors.fullName}</p>
+                      )}
                     </div>
-                    {errors.fullName && (
-                      <p className="text-xs text-destructive">{errors.fullName}</p>
-                    )}
-                  </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="organization" className="text-sm font-medium">
+                        Organization <span className="text-muted-foreground text-xs">(optional)</span>
+                      </Label>
+                      <div className="relative">
+                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="organization"
+                          type="text"
+                          placeholder="Your club or agency"
+                          value={organization}
+                          onChange={(e) => setOrganization(e.target.value)}
+                          className="pl-10 bg-input border-border focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2">
@@ -400,18 +429,18 @@ export default function Auth() {
                       </div>
                     </div>
                     
-                    {/* Team Name Field - Only for Team tier */}
-                    {selectedTier === 'team' && (
+                    {/* Team Name Field - For Team and Agency tiers */}
+                    {(selectedTier === 'team' || selectedTier === 'agency') && (
                       <div className="space-y-2">
                         <Label htmlFor="teamName" className="text-sm font-medium">
-                          Team Name
+                          {selectedTier === 'agency' ? 'Agency/Organization Name' : 'Team Name'}
                         </Label>
                         <div className="relative">
                           <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="teamName"
                             type="text"
-                            placeholder="Your Scouting Organization"
+                            placeholder={selectedTier === 'agency' ? "Your Agency Name" : "Your Scouting Organization"}
                             value={teamName}
                             onChange={(e) => setTeamName(e.target.value)}
                             className="pl-10 bg-input border-border focus:border-primary"
@@ -421,7 +450,7 @@ export default function Auth() {
                           <p className="text-xs text-destructive">{errors.teamName}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          You'll be the admin of this team and can invite other scouts.
+                          You'll be the admin of this {selectedTier === 'agency' ? 'organization' : 'team'} and can invite other scouts.
                         </p>
                       </div>
                     )}
