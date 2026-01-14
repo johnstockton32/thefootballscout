@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const authSchema = z.object({
   fullName: z.string().optional(),
   organization: z.string().min(2, 'Organization is required'),
   teamName: z.string().optional(),
+  promoCode: z.string().max(50, 'Promo code is too long').optional(),
 });
 
 const resetSchema = z.object({
@@ -75,6 +76,8 @@ export default function Auth() {
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
   const [teamName, setTeamName] = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [showPromoCode, setShowPromoCode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -183,7 +186,7 @@ export default function Auth() {
 
     try {
       if (mode === 'signUp') {
-        const { error } = await signUp(email, password, fullName, organization);
+        const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
         if (error) {
           if (error.message.includes('already registered')) {
             toast.error('This email is already registered. Please sign in instead.');
@@ -279,7 +282,16 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background pitch-pattern flex flex-col">
       {/* Header */}
-      <header className="p-4 md:p-6">
+      <header className="p-4 md:p-6 flex items-center gap-4">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => navigate('/')}
+          className="gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          <span className="hidden sm:inline">Back</span>
+        </Button>
         <Logo size="md" />
       </header>
 
@@ -478,6 +490,41 @@ export default function Auth() {
                         </p>
                       </div>
                     )}
+
+                    {/* Promo Code Field */}
+                    <div className="space-y-2">
+                      {!showPromoCode ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowPromoCode(true)}
+                          className="text-sm text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                        >
+                          <Tag className="w-3 h-3" />
+                          Have a promo code?
+                        </button>
+                      ) : (
+                        <>
+                          <Label htmlFor="promoCode" className="text-sm font-medium">
+                            Promo Code
+                          </Label>
+                          <div className="relative">
+                            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <Input
+                              id="promoCode"
+                              type="text"
+                              placeholder="Enter promo code"
+                              value={promoCode}
+                              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                              className="pl-10 bg-input border-border focus:border-primary uppercase"
+                              maxLength={50}
+                            />
+                          </div>
+                          {errors.promoCode && (
+                            <p className="text-xs text-destructive">{errors.promoCode}</p>
+                          )}
+                        </>
+                      )}
+                    </div>
 
                     <div className="flex items-start space-x-3 py-2">
                       <Checkbox
