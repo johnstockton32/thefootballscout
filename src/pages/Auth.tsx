@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -83,6 +83,9 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
+  const [promoCodeStatus, setPromoCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [promoCodeMessage, setPromoCodeMessage] = useState<string>('');
+  const [promoCodeBenefits, setPromoCodeBenefits] = useState<{ tierUpgrade?: string; discountPercent?: number } | null>(null);
 
   // Check for mode and tier from URL params (from pricing page)
   useEffect(() => {
@@ -98,6 +101,52 @@ export default function Auth() {
       setMode('signUp');
     }
   }, [searchParams]);
+
+  // Validate promo code with debounce
+  useEffect(() => {
+    if (!promoCode.trim()) {
+      setPromoCodeStatus('idle');
+      setPromoCodeMessage('');
+      setPromoCodeBenefits(null);
+      return;
+    }
+
+    const validateCode = async () => {
+      setPromoCodeStatus('validating');
+      try {
+        const { data, error } = await supabase.rpc('validate_promo_code', { _code: promoCode.trim() });
+        
+        if (error) {
+          setPromoCodeStatus('invalid');
+          setPromoCodeMessage('Error validating code');
+          setPromoCodeBenefits(null);
+          return;
+        }
+
+        const result = data as { valid: boolean; error?: string; description?: string; tier_upgrade?: string; discount_percent?: number };
+        
+        if (result.valid) {
+          setPromoCodeStatus('valid');
+          setPromoCodeMessage(result.description || 'Code applied!');
+          setPromoCodeBenefits({
+            tierUpgrade: result.tier_upgrade,
+            discountPercent: result.discount_percent,
+          });
+        } else {
+          setPromoCodeStatus('invalid');
+          setPromoCodeMessage(result.error || 'Invalid code');
+          setPromoCodeBenefits(null);
+        }
+      } catch (err) {
+        setPromoCodeStatus('invalid');
+        setPromoCodeMessage('Error validating code');
+        setPromoCodeBenefits(null);
+      }
+    };
+
+    const timeout = setTimeout(validateCode, 500);
+    return () => clearTimeout(timeout);
+  }, [promoCode]);
 
   useEffect(() => {
     if (user) {
@@ -207,43 +256,67 @@ export default function Auth() {
         const currentUser = sessionData.session?.user;
         
         if (currentUser) {
-          if (selectedTier === 'pro') {
-            await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
-          } else if (selectedTier === 'team' || selectedTier === 'agency') {
-            // First upgrade the subscription tier
-            await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
+          // Redeem promo code if valid
+          let promoAppliedTier: string | null = null;
+          if (promoCode.trim() && promoCodeStatus === 'valid') {
+            const { data: redeemResult } = await supabase.rpc('redeem_promo_code', { 
+              _user_id: currentUser.id, 
+              _code: promoCode.trim() 
+            });
             
-            // Create the team with the user as owner
-            const { data: newTeam, error: teamError } = await supabase
-              .from('teams')
-              .insert({
-                name: teamName.trim() || `${fullName}'s Team`,
-                owner_id: currentUser.id,
-              })
-              .select()
-              .single();
-            
-            if (teamError) {
-              console.error('Error creating team:', teamError);
-              toast.error('Account created but team setup failed. Please contact support.');
-            } else if (newTeam) {
-              // Update the user's profile with the team_id and set them as team_admin
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .update({ 
-                  team_id: newTeam.id,
-                  team_role: 'team_admin'
-                })
-                .eq('id', currentUser.id);
+            const result = redeemResult as { success: boolean; tier_upgrade?: string; error?: string } | null;
+            if (result?.success && result.tier_upgrade) {
+              promoAppliedTier = result.tier_upgrade;
+            }
+          }
+
+          // Apply selected tier (only if promo didn't already upgrade)
+          if (!promoAppliedTier) {
+            if (selectedTier === 'pro') {
+              await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
+            } else if (selectedTier === 'team' || selectedTier === 'agency') {
+              // First upgrade the subscription tier
+              await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
               
-              if (profileError) {
-                console.error('Error updating profile with team:', profileError);
+              // Create the team with the user as owner
+              const { data: newTeam, error: teamError } = await supabase
+                .from('teams')
+                .insert({
+                  name: teamName.trim() || `${fullName}'s Team`,
+                  owner_id: currentUser.id,
+                })
+                .select()
+                .single();
+              
+              if (teamError) {
+                console.error('Error creating team:', teamError);
+                toast.error('Account created but team setup failed. Please contact support.');
+              } else if (newTeam) {
+                // Update the user's profile with the team_id and set them as team_admin
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .update({ 
+                    team_id: newTeam.id,
+                    team_role: 'team_admin'
+                  })
+                  .eq('id', currentUser.id);
+                
+                if (profileError) {
+                  console.error('Error updating profile with team:', profileError);
+                }
               }
             }
           }
+          
+          // Build success message
+          let successMessage = 'Welcome to The Football Scout!';
+          if (promoAppliedTier) {
+            successMessage += ` Your ${promoAppliedTier.charAt(0).toUpperCase() + promoAppliedTier.slice(1)} access has been activated!`;
+          } else if (selectedTier === 'pro') {
+            successMessage += ' Your 14-day Pro trial has started.';
+          }
+          toast.success(successMessage);
         }
-        
-        toast.success(`Welcome to The Football Scout! ${selectedTier === 'pro' ? 'Your 14-day Pro trial has started.' : ''}`);
         navigate('/dashboard');
       } else {
         const { error } = await signIn(email, password);
@@ -515,10 +588,47 @@ export default function Auth() {
                               placeholder="Enter promo code"
                               value={promoCode}
                               onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                              className="pl-10 bg-input border-border focus:border-primary uppercase"
+                              className={cn(
+                                "pl-10 pr-10 bg-input border-border focus:border-primary uppercase",
+                                promoCodeStatus === 'valid' && "border-green-500 focus:border-green-500",
+                                promoCodeStatus === 'invalid' && "border-destructive focus:border-destructive"
+                              )}
                               maxLength={50}
                             />
+                            {promoCodeStatus === 'validating' && (
+                              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground animate-spin" />
+                            )}
+                            {promoCodeStatus === 'valid' && (
+                              <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-green-500" />
+                            )}
+                            {promoCodeStatus === 'invalid' && (
+                              <XCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-destructive" />
+                            )}
                           </div>
+                          {promoCodeMessage && (
+                            <p className={cn(
+                              "text-xs",
+                              promoCodeStatus === 'valid' ? "text-green-500" : "text-destructive"
+                            )}>
+                              {promoCodeMessage}
+                            </p>
+                          )}
+                          {promoCodeBenefits && promoCodeStatus === 'valid' && (
+                            <div className="text-xs p-2 bg-green-500/10 border border-green-500/20 rounded-md space-y-1">
+                              {promoCodeBenefits.tierUpgrade && (
+                                <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                  <Crown className="w-3 h-3" />
+                                  Includes {promoCodeBenefits.tierUpgrade.charAt(0).toUpperCase() + promoCodeBenefits.tierUpgrade.slice(1)} tier upgrade!
+                                </p>
+                              )}
+                              {promoCodeBenefits.discountPercent && promoCodeBenefits.discountPercent > 0 && (
+                                <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                                  <Sparkles className="w-3 h-3" />
+                                  {promoCodeBenefits.discountPercent}% discount applied!
+                                </p>
+                              )}
+                            </div>
+                          )}
                           {errors.promoCode && (
                             <p className="text-xs text-destructive">{errors.promoCode}</p>
                           )}
