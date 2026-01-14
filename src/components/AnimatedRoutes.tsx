@@ -16,6 +16,9 @@ import ReportsAnalytics from '@/pages/ReportsAnalytics';
 import NewReport from '@/pages/NewReport';
 import ReportDetail from '@/pages/ReportDetail';
 import AdminDashboard from '@/pages/AdminDashboard';
+import AdminPromoCodes from '@/pages/AdminPromoCodes';
+import AdminUsers from '@/pages/AdminUsers';
+import AdminData from '@/pages/AdminData';
 import TeamsAdmin from '@/pages/TeamsAdmin';
 import GdprConsent from '@/pages/GdprConsent';
 import Settings from '@/pages/Settings';
@@ -55,6 +58,9 @@ export function AnimatedRoutes() {
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute requireAdmin><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/teams" element={<ProtectedRoute requireAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute requireAdmin><PageTransition><AdminUsers /></PageTransition></ProtectedRoute>} />
+        <Route path="/admin/data" element={<ProtectedRoute requireAdmin><PageTransition><AdminData /></PageTransition></ProtectedRoute>} />
+        <Route path="/admin/promo-codes" element={<ProtectedRoute requireAdmin><PageTransition><AdminPromoCodes /></PageTransition></ProtectedRoute>} />
         <Route path="/teams-admin" element={<ProtectedRoute requireTeamOwnerOrAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
         
         {/* Catch-all */}
