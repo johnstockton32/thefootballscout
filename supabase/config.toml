@@ -1,1 +1,16 @@
 project_id = "uhzrwimvyjwhzhgybgsu"
+
+[functions.ai-scouting-insights]
+verify_jwt = false
+
+[functions.create-team-user]
+verify_jwt = false
+
+[functions.delete-team-user]
+verify_jwt = false
+
+[functions.health]
+verify_jwt = false
+
+[functions.resend-team-invitation]
+verify_jwt = false
