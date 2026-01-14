@@ -28,7 +28,7 @@ interface UserWithDetails {
 }
 
 export default function AdminUsers() {
-  const { isAdmin, user: currentUser } = useAuth();
+  const { isAdmin, isSuperAdmin, user: currentUser, profile } = useAuth();
   const [users, setUsers] = useState<UserWithDetails[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<UserWithDetails[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +40,7 @@ export default function AdminUsers() {
     if (isAdmin) {
       fetchUsers();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   useEffect(() => {
     let filtered = users;
@@ -67,20 +67,31 @@ export default function AdminUsers() {
 
   const fetchUsers = async () => {
     try {
-      // Fetch profiles
-      const { data: profiles, error: profilesError } = await supabase
+      // If super admin, fetch all profiles. Otherwise, fetch only team members
+      let profilesQuery = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (profilesError) throw profilesError;
+      // Regular admins can only see their team members
+      if (!isSuperAdmin && profile?.team_id) {
+        profilesQuery = profilesQuery.eq('team_id', profile.team_id);
+      } else if (!isSuperAdmin) {
+        // Regular admin with no team - show nothing
+        setUsers([]);
+        setFilteredUsers([]);
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
       // Fetch roles
       const { data: roles, error: rolesError } = await supabase
         .from('user_roles')
         .select('*');
 
-      if (rolesError) throw rolesError;
+      if (profilesError) throw profilesError;
 
       // Fetch player counts per user
       const { data: players } = await supabase
@@ -225,9 +236,11 @@ export default function AdminUsers() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
                 <Users className="w-7 h-7 text-primary" />
-                User Management
+                {isSuperAdmin ? 'User Management' : 'Team User Management'}
               </h1>
-              <p className="text-muted-foreground mt-1">Manage all platform users</p>
+              <p className="text-muted-foreground mt-1">
+                {isSuperAdmin ? 'Manage all platform users' : 'Manage your team members'}
+              </p>
             </div>
           </div>
         </div>
@@ -371,18 +384,24 @@ export default function AdminUsers() {
                           </Select>
                         </TableCell>
                         <TableCell>
-                          <Select
-                            value={user.role}
-                            onValueChange={(value: 'scout' | 'admin') => updateUserRole(user.id, value)}
-                          >
-                            <SelectTrigger className="w-24 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="scout">Scout</SelectItem>
-                              <SelectItem value="admin">Admin</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          {isSuperAdmin ? (
+                            <Select
+                              value={user.role}
+                              onValueChange={(value: 'scout' | 'admin') => updateUserRole(user.id, value)}
+                            >
+                              <SelectTrigger className="w-24 h-8">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="scout">Scout</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                              {user.role}
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                           <AlertDialog>

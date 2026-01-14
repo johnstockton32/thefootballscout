@@ -49,7 +49,7 @@ interface Team {
 }
 
 export default function AdminData() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin, profile } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
@@ -61,7 +61,7 @@ export default function AdminData() {
     if (isAdmin) {
       fetchData();
     }
-  }, [isAdmin]);
+  }, [isAdmin, isSuperAdmin]);
 
   const fetchData = async () => {
     try {
@@ -72,11 +72,41 @@ export default function AdminData() {
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-      // Fetch players
-      const { data: playersData, error: playersError } = await supabase
+      // Fetch players - filter by team if not super admin
+      let playersQuery = supabase
         .from('players')
         .select('*')
         .order('created_at', { ascending: false });
+
+      if (!isSuperAdmin && profile?.team_id) {
+        // Get team member IDs
+        const teamMemberIds = profiles?.filter(p => {
+          // We need to check which profiles belong to the team
+          return true; // Will filter after
+        }).map(p => p.id) || [];
+        
+        // Fetch team member IDs
+        const { data: teamProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('team_id', profile.team_id);
+        
+        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
+        if (teamScoutIds.length > 0) {
+          playersQuery = playersQuery.in('scout_id', teamScoutIds);
+        } else {
+          setPlayers([]);
+          setReports([]);
+          setTeams([]);
+          setIsLoading(false);
+          return;
+        }
+      } else if (!isSuperAdmin) {
+        // Regular admin with no team - show only their own data
+        playersQuery = playersQuery.eq('scout_id', profile?.id || '');
+      }
+
+      const { data: playersData, error: playersError } = await playersQuery;
 
       if (playersError) throw playersError;
 
@@ -90,11 +120,27 @@ export default function AdminData() {
       });
       setPlayers(enrichedPlayers);
 
-      // Fetch reports with player names
-      const { data: reportsData, error: reportsError } = await supabase
+      // Fetch reports with player names - apply same team filter
+      let reportsQuery = supabase
         .from('scouting_reports')
         .select('*, players(full_name)')
         .order('created_at', { ascending: false });
+
+      if (!isSuperAdmin && profile?.team_id) {
+        const { data: teamProfiles } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('team_id', profile.team_id);
+        
+        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
+        if (teamScoutIds.length > 0) {
+          reportsQuery = reportsQuery.in('scout_id', teamScoutIds);
+        }
+      } else if (!isSuperAdmin) {
+        reportsQuery = reportsQuery.eq('scout_id', profile?.id || '');
+      }
+
+      const { data: reportsData, error: reportsError } = await reportsQuery;
 
       if (reportsError) throw reportsError;
 
@@ -114,13 +160,26 @@ export default function AdminData() {
       });
       setReports(enrichedReports);
 
-      // Fetch teams with member counts
-      const { data: teamsData, error: teamsError } = await supabase
-        .from('teams')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (teamsError) throw teamsError;
+      // Fetch teams - only super admins can see all teams
+      let teamsData: any[] = [];
+      if (isSuperAdmin) {
+        const { data, error: teamsError } = await supabase
+          .from('teams')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (teamsError) throw teamsError;
+        teamsData = data || [];
+      } else if (profile?.team_id) {
+        // Regular admins can only see their own team
+        const { data, error: teamsError } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', profile.team_id);
+        
+        if (teamsError) throw teamsError;
+        teamsData = data || [];
+      }
 
       // Get member counts
       const { data: teamMembers } = await supabase
@@ -237,9 +296,11 @@ export default function AdminData() {
             <div>
               <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
                 <FileText className="w-7 h-7 text-primary" />
-                Data Management
+                {isSuperAdmin ? 'Data Management' : 'Team Data Management'}
               </h1>
-              <p className="text-muted-foreground mt-1">Manage players, reports, and teams</p>
+              <p className="text-muted-foreground mt-1">
+                {isSuperAdmin ? 'Manage players, reports, and teams' : 'Manage your team\'s players and reports'}
+              </p>
             </div>
           </div>
         </div>
