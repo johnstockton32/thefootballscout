@@ -71,6 +71,7 @@ const createUserSchema = z.object({
 const editUserSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   organization: z.string().optional(),
+  role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -83,7 +84,7 @@ export default function TeamsAdmin() {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
-  const [editingUser, setEditingUser] = useState<{ id: string; full_name: string | null; organization: string | null } | null>(null);
+  const [editingUser, setEditingUser] = useState<{ id: string; full_name: string | null; organization: string | null; team_role: TeamRole | null } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
 
@@ -105,6 +106,7 @@ export default function TeamsAdmin() {
     defaultValues: {
       fullName: "",
       organization: "",
+      role: "scout",
     },
   });
 
@@ -307,10 +309,10 @@ export default function TeamsAdmin() {
 
   // Edit user mutation
   const editUserMutation = useMutation({
-    mutationFn: async ({ userId, fullName, organization }: { userId: string; fullName: string; organization: string }) => {
+    mutationFn: async ({ userId, fullName, organization, role }: { userId: string; fullName: string; organization: string; role: TeamRole }) => {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName, organization: organization })
+        .update({ full_name: fullName, organization: organization, team_role: role })
         .eq("id", userId);
 
       if (error) throw error;
@@ -330,11 +332,12 @@ export default function TeamsAdmin() {
     updateRoleMutation.mutate({ userId, role });
   };
 
-  const handleEditUser = (user: { id: string; full_name: string | null; organization: string | null }) => {
+  const handleEditUser = (user: { id: string; full_name: string | null; organization: string | null; team_role: TeamRole | null }) => {
     setEditingUser(user);
     editForm.reset({
       fullName: user.full_name || "",
       organization: user.organization || "",
+      role: user.team_role || "scout",
     });
   };
 
@@ -343,7 +346,8 @@ export default function TeamsAdmin() {
     editUserMutation.mutate({
       userId: editingUser.id,
       fullName: values.fullName,
-      organization: values.organization,
+      organization: values.organization || "",
+      role: values.role as TeamRole,
     });
   };
 
@@ -812,7 +816,7 @@ export default function TeamsAdmin() {
                   name="organization"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Organization</FormLabel>
+                      <FormLabel>Organization <span className="text-muted-foreground text-xs">(optional)</span></FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -823,6 +827,43 @@ export default function TeamsAdmin() {
                           />
                         </div>
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Role *</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="scout">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-3 w-3" />
+                              Scout
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="senior_scout">
+                            <div className="flex items-center gap-2">
+                              <UserCheck className="h-3 w-3" />
+                              Senior Scout
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="team_admin">
+                            <div className="flex items-center gap-2">
+                              <Shield className="h-3 w-3" />
+                              Team Admin
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
