@@ -31,6 +31,7 @@ interface AuthContextType {
   roles: AppRole[];
   isLoading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   signUp: (email: string, password: string, fullName?: string, organization?: string, promoCode?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
@@ -71,6 +73,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const checkSuperAdmin = async (userId: string) => {
+    const { data } = await supabase.rpc('is_super_admin', { _user_id: userId });
+    setIsSuperAdmin(data === true);
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -83,10 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchProfile(session.user.id);
             fetchRoles(session.user.id);
+            checkSuperAdmin(session.user.id);
           }, 0);
         } else {
           setProfile(null);
           setRoles([]);
+          setIsSuperAdmin(false);
         }
         
         setIsLoading(false);
@@ -101,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchRoles(session.user.id);
+        checkSuperAdmin(session.user.id);
       }
       
       setIsLoading(false);
@@ -142,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setProfile(null);
+    setIsSuperAdmin(false);
     setRoles([]);
   };
 
@@ -221,6 +232,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         roles,
         isLoading,
         isAdmin,
+        isSuperAdmin,
         signUp,
         signIn,
         signOut,

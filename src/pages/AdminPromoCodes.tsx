@@ -40,7 +40,7 @@ interface PromoCodeRedemption {
 }
 
 export default function AdminPromoCodes() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>([]);
   const [redemptions, setRedemptions] = useState<PromoCodeRedemption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,10 +60,10 @@ export default function AdminPromoCodes() {
   });
 
   useEffect(() => {
-    if (isAdmin) {
+    if (isSuperAdmin) {
       fetchPromoCodes();
     }
-  }, [isAdmin]);
+  }, [isSuperAdmin]);
 
   const fetchPromoCodes = async () => {
     try {
@@ -222,13 +222,13 @@ export default function AdminPromoCodes() {
     }
   };
 
-  if (!isAdmin) {
+  if (!isSuperAdmin) {
     return (
       <DashboardLayout>
         <div className="text-center py-16">
           <ShieldCheck className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
           <h3 className="text-xl font-semibold mb-2">Access Denied</h3>
-          <p className="text-muted-foreground">You need admin privileges to access this page.</p>
+          <p className="text-muted-foreground">Only platform super admins can manage promo codes.</p>
         </div>
       </DashboardLayout>
     );

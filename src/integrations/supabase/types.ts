@@ -488,6 +488,24 @@ export type Database = {
           },
         ]
       }
+      super_admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       team_activity: {
         Row: {
           activity_type: string
@@ -733,6 +751,7 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_in_trial: { Args: { _user_id: string }; Returns: boolean }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       is_team_admin: { Args: { _user_id: string }; Returns: boolean }
       is_team_admin_of_profile: {
         Args: { _admin_id: string; _profile_team_id: string }
