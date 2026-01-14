@@ -31,7 +31,7 @@ interface AuthContextType {
   roles: AppRole[];
   isLoading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, fullName?: string, organization?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName?: string, organization?: string, promoCode?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateGdprConsent: (consent: boolean) => Promise<{ error: Error | null }>;
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName?: string, organization?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, organization?: string, promoCode?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           full_name: fullName,
           organization: organization,
+          promo_code: promoCode?.trim() || null,
         },
       },
     });
