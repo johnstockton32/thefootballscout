@@ -51,17 +51,27 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Check if requesting user is an admin
-    const { data: roles } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", requestingUserId)
-      .eq("role", "admin");
+    // Check if requesting user is a team owner or team admin
+    const { data: userProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("team_id, team_role")
+      .eq("id", requestingUserId)
+      .single();
 
-    if (!roles || roles.length === 0) {
-      console.log("User is not an admin:", requestingUserId);
+    // Also check if user owns a team
+    const { data: ownedTeam } = await supabaseAdmin
+      .from("teams")
+      .select("id")
+      .eq("owner_id", requestingUserId)
+      .maybeSingle();
+
+    const isTeamAdmin = userProfile?.team_role === "team_admin";
+    const isTeamOwner = !!ownedTeam;
+
+    if (!isTeamAdmin && !isTeamOwner) {
+      console.log("User is not a team owner or team admin:", requestingUserId);
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin access required" }),
+        JSON.stringify({ error: "Unauthorized: Team admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
