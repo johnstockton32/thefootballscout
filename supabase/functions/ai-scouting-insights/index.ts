@@ -120,7 +120,7 @@ serve(async (req) => {
 
     switch (insightType) {
       case 'development':
-        systemPrompt = `You are an elite football scout and player development specialist. Provide actionable, specific development recommendations based on scouting data. Focus on concrete drills, training focus areas, and realistic timelines. Be concise but comprehensive.`;
+        systemPrompt = `You are an elite football scout and player development specialist. Provide actionable, specific development recommendations based on scouting data. Focus on concrete drills, training focus areas, and realistic timelines. Be concise but comprehensive. IMPORTANT: Write in clear, plain text paragraphs. Do NOT use markdown formatting, bullet points, asterisks, headers, or special symbols. Use natural sentence structure with clear sections separated by line breaks.`;
         userPrompt = `Analyze this player and provide development recommendations:
 
 Player: ${playerData.full_name}
@@ -131,15 +131,11 @@ Age: ${playerData.age || 'Unknown'}
 Scouting Reports:
 ${reportsContext}
 
-Provide:
-1. Top 3 priority development areas with specific training recommendations
-2. Timeline for improvement (3-6-12 months)
-3. Potential position versatility based on attributes
-4. Key attributes to maintain as strengths`;
+Write your analysis in clear paragraphs covering: the top 3 priority development areas with specific training recommendations, a timeline for improvement over 3, 6, and 12 months, potential position versatility based on attributes, and key attributes to maintain as strengths. Use plain text only, no formatting.`;
         break;
 
       case 'comparison':
-        systemPrompt = `You are an expert football analyst who compares players to professional footballers. Provide realistic comparisons based on playing style and attribute profiles, not just hype.`;
+        systemPrompt = `You are an expert football analyst who compares players to professional footballers. Provide realistic comparisons based on playing style and attribute profiles, not just hype. IMPORTANT: Write in clear, plain text paragraphs. Do NOT use markdown formatting, bullet points, asterisks, headers, or special symbols. Use natural sentence structure.`;
         userPrompt = `Based on this player's profile, suggest professional player comparisons:
 
 Player: ${playerData.full_name}
@@ -149,14 +145,11 @@ Age: ${playerData.age || 'Unknown'}
 Scouting Data:
 ${reportsContext}
 
-Provide 2-3 professional player comparisons with:
-- Player name and why they're comparable
-- Key similar attributes
-- What this player would need to reach that level`;
+Write 2-3 professional player comparisons in clear paragraphs. For each comparison, explain the player name and why they are comparable, the key similar attributes, and what this player would need to reach that level. Use plain text only, no formatting.`;
         break;
 
       case 'transfer':
-        systemPrompt = `You are a football transfer market analyst. Provide realistic transfer valuations and recommendations based on player attributes, age, and market trends. Be specific about suitable leagues and club types.`;
+        systemPrompt = `You are a football transfer market analyst. Provide realistic transfer valuations and recommendations based on player attributes, age, and market trends. Be specific about suitable leagues and club types. IMPORTANT: Write in clear, plain text paragraphs. Do NOT use markdown formatting, bullet points, asterisks, headers, or special symbols. Use natural sentence structure.`;
         userPrompt = `Provide transfer market analysis for this player:
 
 Player: ${playerData.full_name}
@@ -168,15 +161,11 @@ Nationality: ${playerData.nationality || 'Unknown'}
 Performance Data:
 ${reportsContext}
 
-Provide:
-1. Suitable league levels (Championship, League One, etc.)
-2. Types of clubs that would benefit from this player
-3. Estimated market value range
-4. Best transfer window timing recommendation`;
+Write your analysis in clear paragraphs covering: suitable league levels such as Championship or League One, types of clubs that would benefit from this player, an estimated market value range, and the best transfer window timing recommendation. Use plain text only, no formatting.`;
         break;
 
       default: // summary
-        systemPrompt = `You are a professional football scout providing executive summaries. Be concise, insightful, and focus on what makes this player unique or concerning.`;
+        systemPrompt = `You are a professional football scout providing executive summaries. Be concise, insightful, and focus on what makes this player unique or concerning. IMPORTANT: Write in clear, plain text sentences. Do NOT use markdown formatting, bullet points, asterisks, headers, or special symbols.`;
         userPrompt = `Provide a brief executive summary of this player:
 
 Player: ${playerData.full_name}
@@ -187,10 +176,7 @@ Age: ${playerData.age || 'Unknown'}
 Scouting Reports:
 ${reportsContext}
 
-Provide a 3-4 sentence summary covering:
-- Overall assessment and standout qualities
-- Key concern or area to monitor
-- Recommendation (sign, monitor, pass)`;
+Write a 3-4 sentence summary in plain text covering the overall assessment and standout qualities, any key concern or area to monitor, and your recommendation (sign, monitor, or pass). Use plain text only, no formatting.`;
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
