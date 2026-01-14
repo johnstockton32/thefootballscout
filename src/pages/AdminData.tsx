@@ -4,15 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Users, ShieldCheck, Trash2, ArrowLeft, Search, FileText, Crown, Eye } from 'lucide-react';
+import { Users, ShieldCheck, Trash2, ArrowLeft, Search, FileText, Crown, Eye, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Player {
   id: string;
@@ -65,27 +65,18 @@ export default function AdminData() {
 
   const fetchData = async () => {
     try {
-      // Fetch profiles for user details
       const { data: profiles } = await supabase
         .from('profiles')
         .select('id, email, full_name');
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-      // Fetch players - filter by team if not super admin
       let playersQuery = supabase
         .from('players')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (!isSuperAdmin && profile?.team_id) {
-        // Get team member IDs
-        const teamMemberIds = profiles?.filter(p => {
-          // We need to check which profiles belong to the team
-          return true; // Will filter after
-        }).map(p => p.id) || [];
-        
-        // Fetch team member IDs
         const { data: teamProfiles } = await supabase
           .from('profiles')
           .select('id')
@@ -102,7 +93,6 @@ export default function AdminData() {
           return;
         }
       } else if (!isSuperAdmin) {
-        // Regular admin with no team - show only their own data
         playersQuery = playersQuery.eq('scout_id', profile?.id || '');
       }
 
@@ -120,7 +110,6 @@ export default function AdminData() {
       });
       setPlayers(enrichedPlayers);
 
-      // Fetch reports with player names - apply same team filter
       let reportsQuery = supabase
         .from('scouting_reports')
         .select('*, players(full_name)')
@@ -160,7 +149,6 @@ export default function AdminData() {
       });
       setReports(enrichedReports);
 
-      // Fetch teams - only super admins can see all teams
       let teamsData: any[] = [];
       if (isSuperAdmin) {
         const { data, error: teamsError } = await supabase
@@ -171,7 +159,6 @@ export default function AdminData() {
         if (teamsError) throw teamsError;
         teamsData = data || [];
       } else if (profile?.team_id) {
-        // Regular admins can only see their own team
         const { data, error: teamsError } = await supabase
           .from('teams')
           .select('*')
@@ -181,7 +168,6 @@ export default function AdminData() {
         teamsData = data || [];
       }
 
-      // Get member counts
       const { data: teamMembers } = await supabase
         .from('profiles')
         .select('team_id');
@@ -208,7 +194,6 @@ export default function AdminData() {
 
   const deletePlayer = async (id: string) => {
     try {
-      // Delete reports first
       await supabase.from('scouting_reports').delete().eq('player_id', id);
       
       const { error } = await supabase.from('players').delete().eq('id', id);
@@ -237,7 +222,6 @@ export default function AdminData() {
 
   const deleteTeam = async (id: string) => {
     try {
-      // Remove team_id from all members first
       await supabase
         .from('profiles')
         .update({ team_id: null, team_role: null })
@@ -284,30 +268,28 @@ export default function AdminData() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 md:space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/admin">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-                <FileText className="w-7 h-7 text-primary" />
-                {isSuperAdmin ? 'Data Management' : 'Team Data Management'}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {isSuperAdmin ? 'Manage players, reports, and teams' : 'Manage your team\'s players and reports'}
-              </p>
-            </div>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" asChild className="shrink-0">
+            <Link to="/admin">
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+          </Button>
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2">
+              <FileText className="w-6 h-6 md:w-7 md:h-7 text-primary shrink-0" />
+              <span className="truncate">{isSuperAdmin ? 'Data Management' : 'Team Data'}</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1 truncate">
+              {isSuperAdmin ? 'Manage players, reports, and teams' : 'Manage your team\'s data'}
+            </p>
           </div>
         </div>
 
         {/* Search */}
         <Card className="card-glass">
-          <CardContent className="py-4">
+          <CardContent className="py-3 md:py-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
@@ -323,28 +305,28 @@ export default function AdminData() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="players" className="gap-2">
-              <Users className="w-4 h-4" />
-              Players ({players.length})
+            <TabsTrigger value="players" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Users className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Players</span> ({players.length})
             </TabsTrigger>
-            <TabsTrigger value="reports" className="gap-2">
-              <FileText className="w-4 h-4" />
-              Reports ({reports.length})
+            <TabsTrigger value="reports" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <FileText className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Reports</span> ({reports.length})
             </TabsTrigger>
-            <TabsTrigger value="teams" className="gap-2">
-              <Crown className="w-4 h-4" />
-              Teams ({teams.length})
+            <TabsTrigger value="teams" className="gap-1 md:gap-2 text-xs md:text-sm">
+              <Crown className="w-3 h-3 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Teams</span> ({teams.length})
             </TabsTrigger>
           </TabsList>
 
           {/* Players Tab */}
           <TabsContent value="players">
             <Card className="card-glass">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 md:pt-6">
                 {isLoading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                      <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
                     ))}
                   </div>
                 ) : filteredPlayers.length === 0 ? (
@@ -353,71 +335,71 @@ export default function AdminData() {
                     <p>No players found.</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Position</TableHead>
-                        <TableHead>Club</TableHead>
-                        <TableHead>Scout</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPlayers.slice(0, 50).map((player) => (
-                        <TableRow key={player.id}>
-                          <TableCell className="font-medium">{player.full_name}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{player.position.replace('_', ' ')}</Badge>
-                          </TableCell>
-                          <TableCell>{player.current_club || '-'}</TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <p>{player.scout_name || 'Unknown'}</p>
-                              <p className="text-muted-foreground text-xs">{player.scout_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{format(new Date(player.created_at), 'MMM d, yyyy')}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link to={`/players/${player.id}`}>
-                                  <Eye className="w-4 h-4" />
-                                </Link>
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Player</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete {player.full_name}? This will also delete all associated scouting reports.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deletePlayer(player.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-                {filteredPlayers.length > 50 && (
-                  <p className="text-center text-sm text-muted-foreground mt-4">
-                    Showing first 50 of {filteredPlayers.length} players. Use search to filter.
-                  </p>
+                  <div className="space-y-3">
+                    {filteredPlayers.slice(0, 50).map((player) => (
+                      <div key={player.id} className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium truncate">{player.full_name}</p>
+                            <Badge variant="outline" className="text-xs">
+                              {player.position.replace('_', ' ')}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">{player.current_club || 'No club'}</p>
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            Scout: {player.scout_name || 'Unknown'}
+                          </p>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/players/${player.id}`}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Player
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem 
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Player
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Player</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete {player.full_name}? This will also delete all associated scouting reports.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deletePlayer(player.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                    {filteredPlayers.length > 50 && (
+                      <p className="text-center text-sm text-muted-foreground mt-4">
+                        Showing first 50 of {filteredPlayers.length} players. Use search to filter.
+                      </p>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -426,11 +408,11 @@ export default function AdminData() {
           {/* Reports Tab */}
           <TabsContent value="reports">
             <Card className="card-glass">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 md:pt-6">
                 {isLoading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                      <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
                     ))}
                   </div>
                 ) : filteredReports.length === 0 ? (
@@ -439,77 +421,75 @@ export default function AdminData() {
                     <p>No reports found.</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Player</TableHead>
-                        <TableHead>Match Date</TableHead>
-                        <TableHead>Level</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Scout</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredReports.slice(0, 50).map((report) => (
-                        <TableRow key={report.id}>
-                          <TableCell className="font-medium">{report.player_name}</TableCell>
-                          <TableCell>{format(new Date(report.match_date), 'MMM d, yyyy')}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline">{report.competition_level.replace('_', ' ')}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {report.overall_rating ? (
-                              <Badge variant={report.overall_rating >= 7 ? 'default' : 'secondary'}>
-                                {report.overall_rating.toFixed(1)}
+                  <div className="space-y-3">
+                    {filteredReports.slice(0, 50).map((report) => (
+                      <div key={report.id} className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium truncate">{report.player_name}</p>
+                            {report.overall_rating && (
+                              <Badge variant="default" className="text-xs">
+                                {report.overall_rating}/10
                               </Badge>
-                            ) : '-'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <p>{report.scout_name || 'Unknown'}</p>
-                              <p className="text-muted-foreground text-xs">{report.scout_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" asChild>
-                                <Link to={`/reports/${report.id}`}>
-                                  <Eye className="w-4 h-4" />
-                                </Link>
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Report</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this report for {report.player_name}?
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deleteReport(report.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                )}
-                {filteredReports.length > 50 && (
-                  <p className="text-center text-sm text-muted-foreground mt-4">
-                    Showing first 50 of {filteredReports.length} reports. Use search to filter.
-                  </p>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(report.match_date), 'MMM d, yyyy')} · {report.competition_level.replace('_', ' ')}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1 truncate">
+                            Scout: {report.scout_name || 'Unknown'}
+                          </p>
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="shrink-0">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link to={`/reports/${report.id}`}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View Report
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem 
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Report
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Report</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete this scouting report for {report.player_name}?
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteReport(report.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))}
+                    {filteredReports.length > 50 && (
+                      <p className="text-center text-sm text-muted-foreground mt-4">
+                        Showing first 50 of {filteredReports.length} reports. Use search to filter.
+                      </p>
+                    )}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -518,11 +498,11 @@ export default function AdminData() {
           {/* Teams Tab */}
           <TabsContent value="teams">
             <Card className="card-glass">
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 md:pt-6">
                 {isLoading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                      <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
                     ))}
                   </div>
                 ) : filteredTeams.length === 0 ? (
@@ -531,57 +511,50 @@ export default function AdminData() {
                     <p>No teams found.</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Team Name</TableHead>
-                        <TableHead>Owner</TableHead>
-                        <TableHead>Members</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTeams.map((team) => (
-                        <TableRow key={team.id}>
-                          <TableCell className="font-medium">{team.name}</TableCell>
-                          <TableCell>
-                            <div className="text-sm">
-                              <p>{team.owner_name || 'Unknown'}</p>
-                              <p className="text-muted-foreground text-xs">{team.owner_email}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="secondary">{team.member_count} members</Badge>
-                          </TableCell>
-                          <TableCell>{format(new Date(team.created_at), 'MMM d, yyyy')}</TableCell>
-                          <TableCell className="text-right">
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Team</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete {team.name}? This will remove {team.member_count} members from the team (their data will be preserved).
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => deleteTeam(team.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                    Delete Team
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-3">
+                    {filteredTeams.map((team) => (
+                      <div key={team.id} className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg border border-border/50">
+                        <div className="flex-1 min-w-0 pr-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium truncate">{team.name}</p>
+                            <Badge variant="secondary" className="text-xs">
+                              {team.member_count} members
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            Owner: {team.owner_name || 'Unknown'}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Created {format(new Date(team.created_at), 'MMM d, yyyy')}
+                          </p>
+                        </div>
+                        
+                        {isSuperAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive shrink-0">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Team</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete {team.name}? All {team.member_count} members will be removed from the team.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteTeam(team.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                  Delete Team
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
