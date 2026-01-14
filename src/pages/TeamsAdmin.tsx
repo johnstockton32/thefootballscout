@@ -132,7 +132,7 @@ export default function TeamsAdmin() {
     enabled: !!user?.id,
   });
 
-  // Check if user is an admin
+  // Check if user is a system admin
   const { data: isAdmin } = useQuery({
     queryKey: ["is-admin", user?.id],
     queryFn: async () => {
@@ -150,13 +150,37 @@ export default function TeamsAdmin() {
     enabled: !!user?.id,
   });
 
+  // Check if user is a team admin (from profiles.team_role)
+  const isTeamAdmin = profile?.team_role === "team_admin";
+  
+  // Get the team the user belongs to (for team admins who aren't owners)
+  const { data: userTeam } = useQuery({
+    queryKey: ["user-team", profile?.team_id],
+    queryFn: async () => {
+      if (!profile?.team_id) return null;
+      
+      const { data, error } = await supabase
+        .from("teams")
+        .select("*")
+        .eq("id", profile.team_id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!profile?.team_id && !team, // Only fetch if user is not an owner but has a team_id
+  });
+
+  // The effective team is either the owned team or the team the user belongs to
+  const effectiveTeam = team || userTeam;
+
   // Fetch team members (users belonging to this team)
   const { data: teamUsers, isLoading } = useQuery({
-    queryKey: ["team-users", team?.id, isAdmin],
+    queryKey: ["team-users", effectiveTeam?.id, isAdmin, isTeamAdmin],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // If admin, show all team tier users
+      // If system admin, show all team tier users
       if (isAdmin) {
         const { data, error } = await supabase
           .from("profiles")
@@ -168,13 +192,13 @@ export default function TeamsAdmin() {
         return data;
       }
       
-      // If team owner, show only their team members
-      if (team?.id) {
+      // If team owner or team admin, show their team members
+      if (effectiveTeam?.id) {
         const { data, error } = await supabase
           .from("profiles")
           .select("*")
-          .eq("team_id", team.id)
-          .neq("id", user.id) // Exclude the owner themselves
+          .eq("team_id", effectiveTeam.id)
+          .neq("id", user.id) // Exclude self
           .order("created_at", { ascending: false });
 
         if (error) throw error;
@@ -183,7 +207,7 @@ export default function TeamsAdmin() {
       
       return [];
     },
-    enabled: !!user?.id && (!!team?.id || !!isAdmin),
+    enabled: !!user?.id && (!!effectiveTeam?.id || !!isAdmin),
   });
 
   // Create user mutation
@@ -434,14 +458,17 @@ export default function TeamsAdmin() {
     );
   }
 
-  if (!team && !isAdmin) {
+  // Check if user has access: team owner, team admin, or system admin
+  const hasAccess = !!team || isTeamAdmin || isAdmin;
+
+  if (!hasAccess) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
           <Crown className="h-12 w-12 text-muted-foreground mb-4" />
           <h2 className="text-xl font-semibold mb-2">Team Management</h2>
           <p className="text-muted-foreground max-w-md">
-            You need to be a team owner to access this page. 
+            You need to be a team owner or team admin to access this page. 
             Upgrade to a Team plan to create and manage your scouting team.
           </p>
         </div>
@@ -461,7 +488,7 @@ export default function TeamsAdmin() {
             </Button>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Crown className="h-6 w-6 text-primary" />
-              {team ? `${team.name} - Team Management` : 'Team Management'}
+              {effectiveTeam ? `${effectiveTeam.name} - Team Management` : 'Team Management'}
             </h1>
             <p className="text-muted-foreground mt-1">
               {isAdmin ? 'Manage all team tier accounts' : 'Add and manage your team members'}
@@ -473,7 +500,7 @@ export default function TeamsAdmin() {
           </Button>
         </div>
 
-        {/* Team Logo Section */}
+        {/* Team Logo Section - only show to team owners */}
         {team && (
           <Card>
             <CardHeader>
