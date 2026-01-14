@@ -591,6 +591,10 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_in_trial: { Args: { _user_id: string }; Returns: boolean }
       is_team_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_team_admin_of_profile: {
+        Args: { _admin_id: string; _profile_team_id: string }
+        Returns: boolean
+      }
       is_team_member: {
         Args: { _team_id: string; _user_id: string }
         Returns: boolean
