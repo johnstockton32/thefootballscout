@@ -215,20 +215,20 @@ export default function AdminUsers() {
     }
 
     try {
-      await supabase.from('scouting_reports').delete().eq('scout_id', userId);
-      await supabase.from('players').delete().eq('scout_id', userId);
-      await supabase.from('watchlists').delete().eq('user_id', userId);
-      await supabase.from('ai_insights').delete().eq('user_id', userId);
-      await supabase.from('user_roles').delete().eq('user_id', userId);
-      
-      const { error } = await supabase.from('profiles').delete().eq('id', userId);
-      if (error) throw error;
+      // Call the edge function to delete user and their auth account
+      const response = await supabase.functions.invoke('delete-team-user', {
+        body: { userId },
+      });
+
+      if (response.error || response.data?.error) {
+        throw new Error(response.data?.error || 'Failed to delete user');
+      }
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-      toast.success('User and all associated data deleted');
+      toast.success('User completely removed. They will need to sign up again to access the app.');
     } catch (error) {
       console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      toast.error(error instanceof Error ? error.message : 'Failed to delete user');
     }
   };
 

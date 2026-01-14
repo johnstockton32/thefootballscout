@@ -30,21 +30,23 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-  { icon: Users, label: 'Players', href: '/players' },
-  { icon: FileText, label: 'Reports', href: '/reports' },
-  { icon: BarChart3, label: 'Compare', href: '/players/compare' },
+// Base navigation items available to all tiers
+const baseNavItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', minTier: 'free' as const },
+  { icon: Users, label: 'Players', href: '/players', minTier: 'free' as const },
+  { icon: FileText, label: 'Reports', href: '/reports', minTier: 'free' as const },
 ];
 
-const secondaryNavItems = [
-  { icon: List, label: 'Watchlists', href: '/watchlists' },
-  { icon: Activity, label: 'Team Feed', href: '/team-feed' },
-  { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics' },
+// Feature-gated navigation items
+const featureNavItems = [
+  { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
+  { icon: List, label: 'Watchlists', href: '/watchlists', minTier: 'free' as const },
+  { icon: Activity, label: 'Team Feed', href: '/team-feed', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
+  { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
 ];
 
 const teamOwnerNavItems = [
-  { icon: Crown, label: 'Team Admin', href: '/teams-admin' },
+  { icon: Crown, label: 'Team Admin', href: '/teams-admin', minTier: 'team' as const },
 ];
 
 const adminNavItems = [
@@ -60,7 +62,7 @@ const tierConfig = {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { profile, signOut, isAdmin } = useAuth();
-  const { tier, isInTrial, trialDaysRemaining } = useSubscription();
+  const { tier, limits, isInTrial, trialDaysRemaining } = useSubscription();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -83,14 +85,28 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return email?.charAt(0).toUpperCase() || 'U';
   };
 
-  // Build navigation items based on user role
-  let allNavItems = [...navItems, ...secondaryNavItems];
-  if (isTeamOwner) {
-    allNavItems = [...allNavItems, ...teamOwnerNavItems];
-  }
-  if (isAdmin) {
-    allNavItems = [...allNavItems, ...adminNavItems];
-  }
+  // Define tier hierarchy for comparison
+  const tierHierarchy = { free: 0, pro: 1, team: 2, agency: 3 };
+  const currentTierLevel = tierHierarchy[tier] || 0;
+
+  // Build navigation items based on user's subscription tier and role
+  const allNavItems = [
+    ...baseNavItems,
+    ...featureNavItems.filter(item => {
+      // Check tier level
+      const requiredTierLevel = tierHierarchy[item.minTier] || 0;
+      if (currentTierLevel < requiredTierLevel) return false;
+      
+      // Check specific feature if defined
+      if (item.feature && !limits[item.feature]) return false;
+      
+      return true;
+    }),
+    // Add team owner items if applicable
+    ...(isTeamOwner && limits.hasTeamFeatures ? teamOwnerNavItems : []),
+    // Add admin items if applicable
+    ...(isAdmin ? adminNavItems : []),
+  ];
 
   return (
     <div className="min-h-screen bg-background">

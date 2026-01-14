@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Activity,
@@ -15,6 +17,7 @@ import {
   Star,
   TrendingUp,
   MessageSquare,
+  Lock,
 } from 'lucide-react';
 
 interface TeamActivity {
@@ -43,21 +46,23 @@ const activityIcons: Record<string, React.ReactNode> = {
 
 export default function TeamFeed() {
   const { user, profile } = useAuth();
+  const { limits } = useSubscription();
   const [activities, setActivities] = useState<TeamActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Access team_id from profile - it's now properly typed
   const teamId = profile?.team_id || null;
+  const hasTeamFeatures = limits.hasTeamFeatures;
 
   useEffect(() => {
-    if (user && teamId) {
+    if (user && teamId && hasTeamFeatures) {
       fetchActivities();
       const unsubscribe = subscribeToActivities();
       return unsubscribe;
     } else {
       setIsLoading(false);
     }
-  }, [user, teamId]);
+  }, [user, teamId, hasTeamFeatures]);
 
   const fetchActivities = async () => {
     try {
@@ -137,6 +142,20 @@ export default function TeamFeed() {
     }
   };
 
+  // Check for team features first
+  if (!hasTeamFeatures) {
+    return (
+      <SubscriptionGate
+        requiredTier="team"
+        feature="hasTeamFeatures"
+        featureName="Team Feed"
+        featureDescription="See what your team members are working on in real-time. Upgrade to Team or Agency to access this feature."
+      >
+        <div />
+      </SubscriptionGate>
+    );
+  }
+
   if (!teamId) {
     return (
       <DashboardLayout>
@@ -155,7 +174,6 @@ export default function TeamFeed() {
               <p className="text-muted-foreground mb-6">
                 Join or create a team to see activity from your colleagues
               </p>
-              <Badge variant="secondary">Team tier required</Badge>
             </CardContent>
           </Card>
         </div>
