@@ -21,6 +21,7 @@ import Settings from '@/pages/Settings';
 import Pricing from '@/pages/Pricing';
 import Watchlists from '@/pages/Watchlists';
 import TeamFeed from '@/pages/TeamFeed';
+import Install from '@/pages/Install';
 import NotFound from '@/pages/NotFound';
 
 export function AnimatedRoutes() {
@@ -32,6 +33,7 @@ export function AnimatedRoutes() {
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
         <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
+        <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/gdpr-consent" element={<PageTransition><GdprConsent /></PageTransition>} />
         

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AnimatedRoutes } from "@/components/AnimatedRoutes";
 import { ThemeProvider } from "next-themes";
 import { FootballBackground } from "@/components/FootballBackground";
+import { OfflineBanner } from "@/components/OfflineBanner";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <FootballBackground />
+        <OfflineBanner />
         <Toaster />
         <Sonner />
         <BrowserRouter>
