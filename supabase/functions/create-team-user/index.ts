@@ -78,11 +78,27 @@ Deno.serve(async (req) => {
     }
 
     // Parse request body
-    const { email, fullName, organization } = await req.json();
+    const { email, fullName, organization, role } = await req.json();
 
     if (!email || !fullName) {
       return new Response(
         JSON.stringify({ error: "Email and full name are required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!organization) {
+      return new Response(
+        JSON.stringify({ error: "Organization is required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate role
+    const validRoles = ["scout", "senior_scout", "team_admin"];
+    if (!role || !validRoles.includes(role)) {
+      return new Response(
+        JSON.stringify({ error: "Valid role is required (scout, senior_scout, or team_admin)" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -92,6 +108,20 @@ Deno.serve(async (req) => {
     if (!emailRegex.test(email)) {
       return new Response(
         JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if organization already exists (only one person per organization)
+    const { data: existingOrg } = await supabaseAdmin
+      .from("profiles")
+      .select("id, organization")
+      .eq("organization", organization)
+      .maybeSingle();
+
+    if (existingOrg) {
+      return new Response(
+        JSON.stringify({ error: `A user from "${organization}" already exists. Only one user per organization is allowed.` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -117,12 +147,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the profile with team tier, organization, team_id and default role
+    // Update the profile with team tier, organization, team_id and selected role
     const updateData: Record<string, unknown> = {
       subscription_tier: "team",
-      organization: organization || ownedTeam?.name || null,
+      organization: organization,
       subscription_started_at: new Date().toISOString(),
-      team_role: "scout", // Default role for new team members
+      team_role: role, // Use the role provided in the request
     };
 
     // If requesting user is a team owner, add the new user to their team
