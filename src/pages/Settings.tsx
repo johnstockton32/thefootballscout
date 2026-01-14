@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -48,6 +48,10 @@ const profileSchema = z.object({
   organization: z.string().trim().max(200, 'Organization must be less than 200 characters').optional(),
 });
 
+const emailSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+});
+
 const passwordSchema = z.object({
   newPassword: z.string().min(6, 'Password must be at least 6 characters'),
   confirmPassword: z.string(),
@@ -57,6 +61,7 @@ const passwordSchema = z.object({
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
+type EmailFormData = z.infer<typeof emailSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
 
 export default function Settings() {
@@ -67,6 +72,7 @@ export default function Settings() {
   const subscription = useSubscription();
   
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isExportingPlayers, setIsExportingPlayers] = useState(false);
   const [isExportingReports, setIsExportingReports] = useState(false);
@@ -76,6 +82,7 @@ export default function Settings() {
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
@@ -83,6 +90,14 @@ export default function Settings() {
     defaultValues: {
       full_name: profile?.full_name || '',
       organization: profile?.organization || '',
+    },
+  });
+
+  // Email form
+  const emailForm = useForm<EmailFormData>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: {
+      email: user?.email || '',
     },
   });
 
@@ -95,6 +110,13 @@ export default function Settings() {
       });
     }
   }, [profile, profileForm]);
+
+  // Reset email form when user data loads
+  useEffect(() => {
+    if (user?.email) {
+      emailForm.reset({ email: user.email });
+    }
+  }, [user?.email, emailForm]);
 
   // Password form
   const passwordForm = useForm<PasswordFormData>({
@@ -128,6 +150,60 @@ export default function Settings() {
       });
     } finally {
       setIsUpdatingProfile(false);
+    }
+  };
+
+  // Handle email change
+  const onEmailSubmit = async (data: EmailFormData) => {
+    if (data.email === user?.email) {
+      toast({
+        title: 'No change',
+        description: 'The email address is the same as your current email.',
+      });
+      return;
+    }
+
+    setIsChangingEmail(true);
+    try {
+      // Check if email is already in use by another user
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', data.email)
+        .neq('id', user?.id || '')
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingProfile) {
+        toast({
+          title: 'Email already in use',
+          description: 'This email address is already registered to another account.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Update email in Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        email: data.email,
+      });
+      
+      if (error) throw error;
+      
+      setShowEmailForm(false);
+      toast({
+        title: 'Verification email sent',
+        description: 'Please check your new email address to confirm the change.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: handleError(error, 'changing email'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsChangingEmail(false);
     }
   };
 
@@ -414,9 +490,82 @@ export default function Settings() {
                 <Form {...profileForm}>
                   <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-4">
                     <div className="space-y-2">
-                      <Label>Email</Label>
-                      <Input value={user?.email || ''} disabled className="bg-muted" />
-                      <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                      <div className="flex items-center justify-between">
+                        <Label>Email</Label>
+                        {!showEmailForm && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowEmailForm(true)}
+                            className="text-xs h-auto py-1"
+                          >
+                            Change Email
+                          </Button>
+                        )}
+                      </div>
+                      {!showEmailForm ? (
+                        <>
+                          <Input value={user?.email || ''} disabled className="bg-muted" />
+                        </>
+                      ) : (
+                        <Form {...emailForm}>
+                          <div className="space-y-3">
+                            <FormField
+                              control={emailForm.control}
+                              name="email"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                      <Input
+                                        type="email"
+                                        placeholder="Enter new email address"
+                                        className="pl-10"
+                                        {...field}
+                                      />
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={emailForm.handleSubmit(onEmailSubmit)}
+                                disabled={isChangingEmail}
+                              >
+                                {isChangingEmail ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                    Sending...
+                                  </>
+                                ) : (
+                                  'Update Email'
+                                )}
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setShowEmailForm(false);
+                                  emailForm.reset({ email: user?.email || '' });
+                                }}
+                                disabled={isChangingEmail}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              A verification email will be sent to your new email address.
+                            </p>
+                          </div>
+                        </Form>
+                      )}
                     </div>
                     
                     <FormField
