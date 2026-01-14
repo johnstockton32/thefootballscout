@@ -19,6 +19,8 @@ import TeamsAdmin from '@/pages/TeamsAdmin';
 import GdprConsent from '@/pages/GdprConsent';
 import Settings from '@/pages/Settings';
 import Pricing from '@/pages/Pricing';
+import Watchlists from '@/pages/Watchlists';
+import TeamFeed from '@/pages/TeamFeed';
 import NotFound from '@/pages/NotFound';
 
 export function AnimatedRoutes() {
@@ -42,6 +44,8 @@ export function AnimatedRoutes() {
         <Route path="/reports" element={<ProtectedRoute><PageTransition><Reports /></PageTransition></ProtectedRoute>} />
         <Route path="/reports/new" element={<ProtectedRoute><PageTransition><NewReport /></PageTransition></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><PageTransition><ReportDetail /></PageTransition></ProtectedRoute>} />
+        <Route path="/watchlists" element={<ProtectedRoute><PageTransition><Watchlists /></PageTransition></ProtectedRoute>} />
+        <Route path="/team-feed" element={<ProtectedRoute><PageTransition><TeamFeed /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute requireAdmin><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/teams" element={<ProtectedRoute requireAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />

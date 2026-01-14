@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
+import { PlayerTrendChart } from '@/components/charts/PlayerTrendChart';
+import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
+import { AddToWatchlistButton } from '@/components/watchlists/AddToWatchlistButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   supabase, 
   PlayerPosition, 
@@ -36,6 +40,8 @@ import {
   FileText,
   Save,
   X,
+  TrendingUp,
+  Brain,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -72,6 +78,7 @@ interface Report {
   opposition: string | null;
   competition_level: CompetitionLevel;
   overall_rating: number | null;
+  potential_rating: number | null;
   technical_first_touch: number | null;
   technical_passing: number | null;
   technical_dribbling: number | null;
@@ -345,6 +352,7 @@ export default function PlayerDetail() {
                   <Edit className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
+                <AddToWatchlistButton playerId={player.id} />
                 <Button variant="hero" asChild>
                   <Link to={`/reports/new?playerId=${player.id}`}>
                     <Plus className="w-4 h-4 mr-2" />
@@ -594,66 +602,104 @@ export default function PlayerDetail() {
 
           {/* Reports & Chart */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Radar Chart */}
-            {radarData && (
-              <Card className="card-glass">
-                <CardHeader>
-                  <CardTitle className="text-lg">Attribute Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AttributeRadarChart data={radarData} />
-                </CardContent>
-              </Card>
-            )}
+            {/* Radar Chart & Tabs */}
+            <Tabs defaultValue="overview" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="overview" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="trends" className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Trends
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center gap-2">
+                  <Brain className="w-4 h-4" />
+                  AI Insights
+                </TabsTrigger>
+              </TabsList>
 
-            {/* Reports List */}
-            <Card className="card-glass">
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Scouting Reports</CardTitle>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to={`/reports/new?playerId=${player.id}`}>
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Report
-                  </Link>
-                </Button>
-              </CardHeader>
-              <CardContent>
-                {reports.length > 0 ? (
-                  <div className="space-y-3">
-                    {reports.map((report) => (
-                      <Link
-                        key={report.id}
-                        to={`/reports/${report.id}`}
-                        className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="w-4 h-4 text-primary" />
-                            <span className="font-medium">
-                              {format(new Date(report.match_date), 'MMMM d, yyyy')}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            vs {report.opposition || 'Unknown'} • {COMPETITION_LEVEL_LABELS[report.competition_level]}
-                          </p>
-                        </div>
-                        {report.overall_rating && (
-                          <div className="rating-badge-sm">{Math.round(report.overall_rating)}</div>
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <FileText className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground mb-4">No reports yet for this player</p>
-                    <Button variant="hero" size="sm" asChild>
-                      <Link to={`/reports/new?playerId=${player.id}`}>Create First Report</Link>
-                    </Button>
-                  </div>
+              <TabsContent value="overview" className="space-y-6">
+                {/* Radar Chart */}
+                {radarData && (
+                  <Card className="card-glass">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Attribute Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <AttributeRadarChart data={radarData} />
+                    </CardContent>
+                  </Card>
                 )}
-              </CardContent>
-            </Card>
+
+                {/* Reports List */}
+                <Card className="card-glass">
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-lg">Scouting Reports</CardTitle>
+                    <Button variant="ghost" size="sm" asChild>
+                      <Link to={`/reports/new?playerId=${player.id}`}>
+                        <Plus className="w-4 h-4 mr-1" />
+                        Add Report
+                      </Link>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {reports.length > 0 ? (
+                      <div className="space-y-3">
+                        {reports.map((report) => (
+                          <Link
+                            key={report.id}
+                            to={`/reports/${report.id}`}
+                            className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <FileText className="w-4 h-4 text-primary" />
+                                <span className="font-medium">
+                                  {format(new Date(report.match_date), 'MMMM d, yyyy')}
+                                </span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                vs {report.opposition || 'Unknown'} • {COMPETITION_LEVEL_LABELS[report.competition_level]}
+                              </p>
+                            </div>
+                            {report.overall_rating && (
+                              <div className="rating-badge-sm">{Math.round(report.overall_rating)}</div>
+                            )}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <FileText className="w-10 h-10 text-muted-foreground/50 mx-auto mb-3" />
+                        <p className="text-muted-foreground mb-4">No reports yet for this player</p>
+                        <Button variant="hero" size="sm" asChild>
+                          <Link to={`/reports/new?playerId=${player.id}`}>Create First Report</Link>
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="trends">
+                <PlayerTrendChart reports={reports} />
+              </TabsContent>
+
+              <TabsContent value="insights">
+                <AIInsightsPanel 
+                  player={{
+                    id: player.id,
+                    full_name: player.full_name,
+                    position: player.position,
+                    current_club: player.current_club,
+                    nationality: player.nationality,
+                    date_of_birth: player.date_of_birth,
+                  }} 
+                  reports={reports} 
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>

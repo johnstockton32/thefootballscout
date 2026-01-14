@@ -2,9 +2,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
+import { VideoClipManager } from '@/components/video/VideoClipManager';
+import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   supabase, 
   PlayerPosition, 
@@ -26,6 +29,8 @@ import {
   Clock,
   User,
   FileText,
+  Video,
+  Brain,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -353,17 +358,34 @@ export default function ReportDetail() {
 
           {/* Attributes & Analysis */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Radar Chart */}
-            {radarData && (
-              <Card className="card-glass">
-                <CardHeader>
-                  <CardTitle className="text-lg">Attribute Overview</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <AttributeRadarChart data={radarData} />
-                </CardContent>
-              </Card>
-            )}
+            <Tabs defaultValue="attributes" className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
+                <TabsTrigger value="attributes" className="flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  Attributes
+                </TabsTrigger>
+                <TabsTrigger value="video" className="flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  Video Clips
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center gap-2">
+                  <Brain className="w-4 h-4" />
+                  AI Insights
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="attributes" className="space-y-6">
+                {/* Radar Chart */}
+                {radarData && (
+                  <Card className="card-glass">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Attribute Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <AttributeRadarChart data={radarData} />
+                    </CardContent>
+                  </Card>
+                )}
 
             {/* Detailed Attributes */}
             <Card className="card-glass">
@@ -480,6 +502,26 @@ export default function ReportDetail() {
                 </CardContent>
               </Card>
             )}
+              </TabsContent>
+
+              <TabsContent value="video">
+                <VideoClipManager reportId={report.id} />
+              </TabsContent>
+
+              <TabsContent value="insights">
+                <AIInsightsPanel 
+                  player={{
+                    id: report.players?.id || '',
+                    full_name: report.players?.full_name || 'Player',
+                    position: report.players?.position || 'striker',
+                    current_club: report.players?.current_club || null,
+                    nationality: null,
+                    date_of_birth: null,
+                  }} 
+                  reports={[report]} 
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
