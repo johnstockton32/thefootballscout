@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { PlayerCard } from '@/components/players/PlayerCard';
@@ -11,9 +12,26 @@ import { Badge } from '@/components/ui/badge';
 import { supabase, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap } from 'lucide-react';
+import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap, ChevronRight } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    y: -4,
+    transition: { duration: 0.15 },
+  },
+};
 
 interface Player {
   id: string;
@@ -309,8 +327,17 @@ export default function Dashboard() {
                   </div>
                 ) : players.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-4">
-                    {players.map((player) => (
-                      <PlayerCard key={player.id} player={player} />
+                    {players.map((player, index) => (
+                      <motion.div
+                        key={player.id}
+                        custom={index}
+                        variants={cardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        whileHover="hover"
+                      >
+                        <PlayerCard player={player} />
+                      </motion.div>
                     ))}
                   </div>
                 ) : (
@@ -345,28 +372,45 @@ export default function Dashboard() {
                     ))}
                   </div>
                 ) : recentReports.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentReports.map((report) => (
-                      <Link
+                  <div className="space-y-2">
+                    {recentReports.map((report, index) => (
+                      <motion.div
                         key={report.id}
-                        to={`/reports/${report.id}`}
-                        className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                        custom={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ 
+                          opacity: 1, 
+                          x: 0,
+                          transition: { delay: index * 0.05 }
+                        }}
+                        whileHover={{ x: 4 }}
                       >
-                        <div className="min-w-0">
-                          <p className="font-medium truncate">
-                            {report.players?.full_name || 'Unknown Player'}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {format(new Date(report.match_date), 'MMM d, yyyy')}
+                        <Link
+                          to={`/reports/${report.id}`}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted hover:border-primary/30 border border-transparent transition-colors"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText className="w-3 h-3 text-primary" />
+                              <p className="font-medium truncate">
+                                {report.players?.full_name || 'Unknown Player'}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <Calendar className="w-3 h-3" />
+                              {format(new Date(report.match_date), 'MMM d, yyyy')}
+                            </div>
                           </div>
-                        </div>
-                        {report.overall_rating && (
-                          <div className="rating-badge-sm">
-                            {Math.round(report.overall_rating)}
+                          <div className="flex items-center gap-2">
+                            {report.overall_rating && (
+                              <div className="rating-badge-sm">
+                                {Math.round(report.overall_rating)}
+                              </div>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
                           </div>
-                        )}
-                      </Link>
+                        </Link>
+                      </motion.div>
                     ))}
                   </div>
                 ) : (

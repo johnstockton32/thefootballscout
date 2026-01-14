@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { supabase, CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, Star, ArrowLeft } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Report {
@@ -16,6 +18,7 @@ interface Report {
   opposition: string | null;
   competition_level: CompetitionLevel;
   overall_rating: number | null;
+  recommendation: string | null;
   is_draft: boolean;
   players: {
     id: string;
@@ -23,6 +26,32 @@ interface Report {
     position: PlayerPosition;
   };
 }
+
+const reportRowVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    x: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    x: 4,
+    transition: { duration: 0.15 },
+  },
+};
+
+const getRecommendationColor = (rec: string | null) => {
+  switch (rec) {
+    case 'Sign': return 'bg-primary text-primary-foreground';
+    case 'Monitor': return 'bg-amber-500 text-white';
+    case 'Reject': return 'bg-destructive text-destructive-foreground';
+    default: return '';
+  }
+};
 
 export default function Reports() {
   const navigate = useNavigate();
@@ -52,6 +81,7 @@ export default function Reports() {
           opposition,
           competition_level,
           overall_rating,
+          recommendation,
           is_draft,
           players (
             id,
@@ -127,57 +157,75 @@ export default function Reports() {
             ))}
           </div>
         ) : filteredReports.length > 0 ? (
-          <div className="space-y-4">
-            {filteredReports.map((report) => (
-              <Link key={report.id} to={`/reports/${report.id}`}>
-                <Card className="card-glass hover:border-primary/30 transition-all duration-300 hover:scale-[1.01]">
-                  <CardContent className="p-4 md:p-6">
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="flex items-center gap-4 min-w-0">
-                        {/* Position Badge */}
-                        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <span className="text-sm font-bold text-primary">
-                            {report.players?.position ? POSITION_ABBREV[report.players.position] : '?'}
-                          </span>
+          <div className="space-y-3">
+            {filteredReports.map((report, index) => (
+              <motion.div
+                key={report.id}
+                custom={index}
+                variants={reportRowVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover="hover"
+              >
+                <Link to={`/reports/${report.id}`}>
+                  <Card className="card-glass hover:border-primary/30 transition-all duration-300">
+                    <CardContent className="p-4 md:p-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4 min-w-0 flex-1">
+                          {/* Position Badge */}
+                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-primary">
+                              {report.players?.position ? POSITION_ABBREV[report.players.position] : '?'}
+                            </span>
+                          </div>
+
+                          {/* Report Details */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FileText className="w-4 h-4 text-primary flex-shrink-0" />
+                              <h3 className="font-bold truncate">
+                                {report.players?.full_name || 'Unknown Player'}
+                              </h3>
+                              {report.is_draft && (
+                                <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
+                                  Draft
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {format(new Date(report.match_date), 'MMM d, yyyy')}
+                              </span>
+                              {report.opposition && (
+                                <span>vs {report.opposition}</span>
+                              )}
+                              <span className="text-xs px-2 py-0.5 bg-muted rounded-full">
+                                {COMPETITION_LEVEL_LABELS[report.competition_level]}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Report Details */}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold truncate">
-                              {report.players?.full_name || 'Unknown Player'}
-                            </h3>
-                            {report.is_draft && (
-                              <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
-                                Draft
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {format(new Date(report.match_date), 'MMM d, yyyy')}
-                            </span>
-                            {report.opposition && (
-                              <span>vs {report.opposition}</span>
-                            )}
-                            <span className="text-xs px-2 py-0.5 bg-muted rounded-full">
-                              {COMPETITION_LEVEL_LABELS[report.competition_level]}
-                            </span>
-                          </div>
+                        {/* Rating & Recommendation */}
+                        <div className="flex items-center gap-3 flex-shrink-0">
+                          {report.recommendation && !report.is_draft && (
+                            <Badge className={getRecommendationColor(report.recommendation)}>
+                              {report.recommendation}
+                            </Badge>
+                          )}
+                          {report.overall_rating && !report.is_draft && (
+                            <div className="rating-badge-lg">
+                              {Math.round(report.overall_rating)}
+                            </div>
+                          )}
+                          <ChevronRight className="w-4 h-4 text-muted-foreground hidden md:block" />
                         </div>
                       </div>
-
-                      {/* Rating */}
-                      {report.overall_rating && !report.is_draft && (
-                        <div className="rating-badge-lg flex-shrink-0">
-                          {Math.round(report.overall_rating)}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
             ))}
           </div>
         ) : reports.length > 0 ? (
