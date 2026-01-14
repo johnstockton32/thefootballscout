@@ -72,6 +72,7 @@ const editUserSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   organization: z.string().optional(),
   role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
+  newPassword: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -84,9 +85,10 @@ export default function TeamsAdmin() {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
-  const [editingUser, setEditingUser] = useState<{ id: string; full_name: string | null; organization: string | null; team_role: TeamRole | null } | null>(null);
+  const [editingUser, setEditingUser] = useState<{ id: string; email: string; full_name: string | null; organization: string | null; team_role: TeamRole | null } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
 
@@ -107,6 +109,7 @@ export default function TeamsAdmin() {
       fullName: "",
       organization: "",
       role: "scout",
+      newPassword: "",
     },
   });
 
@@ -313,17 +316,37 @@ export default function TeamsAdmin() {
 
   // Edit user mutation
   const editUserMutation = useMutation({
-    mutationFn: async ({ userId, fullName, organization, role }: { userId: string; fullName: string; organization: string; role: TeamRole }) => {
+    mutationFn: async ({ userId, email, fullName, organization, role, newPassword }: { userId: string; email: string; fullName: string; organization: string; role: TeamRole; newPassword?: string }) => {
+      // Update profile
       const { error } = await supabase
         .from("profiles")
         .update({ full_name: fullName, organization: organization, team_role: role })
         .eq("id", userId);
 
       if (error) throw error;
+
+      // If new password is provided, call edge function to reset it
+      if (newPassword && newPassword.length >= 8) {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Not authenticated");
+
+        const response = await supabase.functions.invoke("update-user-password", {
+          body: { userId, email, newPassword },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message || "Failed to update password");
+        }
+
+        if (response.data?.error) {
+          throw new Error(response.data.error);
+        }
+      }
     },
     onSuccess: () => {
       toast.success("User updated successfully");
       setEditingUser(null);
+      setShowEditPassword(false);
       editForm.reset();
       queryClient.invalidateQueries({ queryKey: ["team-users"] });
     },
@@ -336,12 +359,14 @@ export default function TeamsAdmin() {
     updateRoleMutation.mutate({ userId, role });
   };
 
-  const handleEditUser = (user: { id: string; full_name: string | null; organization: string | null; team_role: TeamRole | null }) => {
+  const handleEditUser = (user: { id: string; email: string; full_name: string | null; organization: string | null; team_role: TeamRole | null }) => {
     setEditingUser(user);
+    setShowEditPassword(false);
     editForm.reset({
       fullName: user.full_name || "",
       organization: user.organization || "",
       role: user.team_role || "scout",
+      newPassword: "",
     });
   };
 
@@ -349,9 +374,11 @@ export default function TeamsAdmin() {
     if (!editingUser) return;
     editUserMutation.mutate({
       userId: editingUser.id,
+      email: editingUser.email,
       fullName: values.fullName,
       organization: values.organization || "",
       role: values.role as TeamRole,
+      newPassword: values.newPassword,
     });
   };
 
@@ -739,7 +766,7 @@ export default function TeamsAdmin() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                              <DropdownMenuItem onClick={() => handleEditUser({ ...user, email: user.email })}>
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit User
                               </DropdownMenuItem>
@@ -872,6 +899,57 @@ export default function TeamsAdmin() {
                     </FormItem>
                   )}
                 />
+                
+                {/* Password Reset Section */}
+                <div className="border-t pt-4 mt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <FormLabel className="text-sm font-medium">Reset Password</FormLabel>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowEditPassword(!showEditPassword)}
+                      className="text-xs"
+                    >
+                      {showEditPassword ? "Cancel" : "Set New Password"}
+                    </Button>
+                  </div>
+                  {showEditPassword && (
+                    <FormField
+                      control={editForm.control}
+                      name="newPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="relative">
+                              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="Enter new password (min 8 chars)"
+                                className="pl-10 pr-10"
+                                {...field}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                ) : (
+                                  <Eye className="h-4 w-4 text-muted-foreground" />
+                                )}
+                              </Button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
                 <DialogFooter>
                   <Button
                     type="button"
