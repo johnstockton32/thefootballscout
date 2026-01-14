@@ -36,9 +36,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, RefreshCw, Shield, UserCheck, ArrowLeft } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, Shield, UserCheck, ArrowLeft, MoreHorizontal, Pencil, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -52,7 +67,13 @@ const createUserSchema = z.object({
   role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
 });
 
+const editUserSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  organization: z.string().min(2, "Organization is required"),
+});
+
 type CreateUserForm = z.infer<typeof createUserSchema>;
+type EditUserForm = z.infer<typeof editUserSchema>;
 
 export default function TeamsAdmin() {
   const navigate = useNavigate();
@@ -61,6 +82,9 @@ export default function TeamsAdmin() {
   const [isCreating, setIsCreating] = useState(false);
   const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [resendingEmail, setResendingEmail] = useState<string | null>(null);
+  const [editingUser, setEditingUser] = useState<{ id: string; full_name: string | null; organization: string | null } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
 
   const form = useForm<CreateUserForm>({
     resolver: zodResolver(createUserSchema),
@@ -69,6 +93,14 @@ export default function TeamsAdmin() {
       fullName: "",
       organization: "",
       role: "scout",
+    },
+  });
+
+  const editForm = useForm<EditUserForm>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
+      fullName: "",
+      organization: "",
     },
   });
 
@@ -269,8 +301,54 @@ export default function TeamsAdmin() {
     },
   });
 
+  // Edit user mutation
+  const editUserMutation = useMutation({
+    mutationFn: async ({ userId, fullName, organization }: { userId: string; fullName: string; organization: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ full_name: fullName, organization: organization })
+        .eq("id", userId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("User updated successfully");
+      setEditingUser(null);
+      editForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["team-users"] });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update user");
+    },
+  });
+
   const handleRoleChange = (userId: string, role: TeamRole) => {
     updateRoleMutation.mutate({ userId, role });
+  };
+
+  const handleEditUser = (user: { id: string; full_name: string | null; organization: string | null }) => {
+    setEditingUser(user);
+    editForm.reset({
+      fullName: user.full_name || "",
+      organization: user.organization || "",
+    });
+  };
+
+  const onEditSubmit = (values: EditUserForm) => {
+    if (!editingUser) return;
+    editUserMutation.mutate({
+      userId: editingUser.id,
+      fullName: values.fullName,
+      organization: values.organization,
+    });
+  };
+
+  const handleConfirmDelete = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete.id);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+    }
   };
 
   const getRoleBadgeColor = (role: TeamRole | null) => {
@@ -613,65 +691,41 @@ export default function TeamsAdmin() {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {/* Password reset button - only visible to team admins */}
-                            {(profile?.team_role === 'team_admin' || isAdmin) && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => handleResendInvitation(user.email)}
-                                    disabled={resendingEmail === user.email}
-                                    className="text-muted-foreground hover:text-foreground"
-                                  >
-                                    {resendingEmail === user.email ? (
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                      <RefreshCw className="h-4 w-4" />
-                                    )}
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Reset user password</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  disabled={deletingUserId === user.id}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                                <Pencil className="h-4 w-4 mr-2" />
+                                Edit User
+                              </DropdownMenuItem>
+                              {/* Password reset - only visible to team admins */}
+                              {(profile?.team_role === 'team_admin' || isAdmin) && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleResendInvitation(user.email)}
+                                  disabled={resendingEmail === user.email}
                                 >
-                                  {deletingUserId === user.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Trash2 className="h-4 w-4" />
-                                  )}
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to remove <strong>{user.full_name || user.email}</strong> from the team? 
-                                    This will permanently delete their account and all associated data. This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteUser(user.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove Member
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                                  <KeyRound className="h-4 w-4 mr-2" />
+                                  {resendingEmail === user.email ? "Sending..." : "Reset Password"}
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => {
+                                  setUserToDelete({ id: user.id, name: user.full_name || user.email });
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Remove Member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -689,6 +743,107 @@ export default function TeamsAdmin() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit User Dialog */}
+        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Team Member</DialogTitle>
+              <DialogDescription>
+                Update the team member's information.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                  control={editForm.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="John Doe"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="organization"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Organization</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="Football Club Name"
+                            className="pl-10"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingUser(null)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={editUserMutation.isPending}>
+                    {editUserMutation.isPending && (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove <strong>{userToDelete?.name}</strong> from the team? 
+                This will permanently delete their account and all associated data. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deletingUserId !== null}
+              >
+                {deletingUserId ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Remove Member"
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );
