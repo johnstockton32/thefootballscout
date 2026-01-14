@@ -203,7 +203,7 @@ export default function Dashboard() {
               icon={<FileText className="w-5 h-5" />}
             />
           </Link>
-          <Link to="/reports" className="block">
+          <Link to="/reports/analytics" className="block">
             <StatCard
               title="Avg Rating"
               value={stats.avgRating || '-'}
@@ -211,7 +211,7 @@ export default function Dashboard() {
               variant="gold"
             />
           </Link>
-          <Link to="/reports" className="block">
+          <Link to="/reports/analytics" className="block">
             <StatCard
               title="This Month"
               value={stats.thisMonth}

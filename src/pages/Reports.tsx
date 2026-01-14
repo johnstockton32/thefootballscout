@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase, CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Report {
@@ -130,12 +130,20 @@ export default function Reports() {
               {reports.filter(r => !r.is_draft).length} submitted report{reports.filter(r => !r.is_draft).length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button variant="hero" asChild>
-            <Link to="/reports/new">
-              <Plus className="w-4 h-4 mr-2" />
-              New Report
-            </Link>
-          </Button>
+          <div className="flex gap-3">
+            <Button variant="outline" asChild>
+              <Link to="/reports/analytics">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analytics
+              </Link>
+            </Button>
+            <Button variant="hero" asChild>
+              <Link to="/reports/new">
+                <Plus className="w-4 h-4 mr-2" />
+                New Report
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Search */}
