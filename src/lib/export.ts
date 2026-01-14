@@ -236,16 +236,17 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const margin = 15;
   const contentWidth = pageWidth - margin * 2;
   
-  // Colors (RGB)
-  const primaryColor: [number, number, number] = [46, 139, 87]; // Emerald green
+  // Colors (RGB) - Matching the app's design system
+  const primaryColor: [number, number, number] = [39, 174, 96]; // Emerald green (hsl 158 64% 45%)
   const blueColor: [number, number, number] = [59, 130, 246]; // Blue
-  const amberColor: [number, number, number] = [245, 158, 11]; // Amber
+  const amberColor: [number, number, number] = [245, 158, 11]; // Amber/Gold
   const purpleColor: [number, number, number] = [147, 51, 234]; // Purple
-  const destructiveColor: [number, number, number] = [220, 53, 69]; // Red
-  const textColor: [number, number, number] = [30, 30, 30];
-  const mutedColor: [number, number, number] = [120, 120, 120];
-  const bgMuted: [number, number, number] = [245, 245, 245];
-  const bgLight: [number, number, number] = [250, 250, 250];
+  const destructiveColor: [number, number, number] = [239, 68, 68]; // Red
+  const textDark: [number, number, number] = [30, 30, 30];
+  const textMuted: [number, number, number] = [107, 114, 128];
+  const bgCard: [number, number, number] = [249, 250, 251];
+  const bgMuted: [number, number, number] = [243, 244, 246];
+  const white: [number, number, number] = [255, 255, 255];
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
@@ -264,14 +265,14 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // ========== HEADER ==========
   doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 45, 'F');
+  doc.rect(0, 0, pageWidth, 40, 'F');
   
   // Add team logo if available
   if (teamLogoUrl) {
     const logoBase64 = await loadImageAsBase64(teamLogoUrl);
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', pageWidth - 45, 7, 30, 30);
+        doc.addImage(logoBase64, 'PNG', pageWidth - 42, 5, 28, 28);
       } catch (e) {
         console.warn('Could not add logo to PDF:', e);
       }
@@ -279,118 +280,120 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   }
   
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(22);
+  doc.setFontSize(20);
   doc.setFont('helvetica', 'bold');
-  doc.text('SCOUTING REPORT', margin, 22);
+  doc.text('SCOUTING REPORT', margin, 20);
   
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Generated: ${format(new Date(), 'MMMM d, yyyy')}`, margin, 32);
-  doc.text('The Football Scout', margin, 40);
+  doc.text(`The Football Scout  •  ${format(new Date(), 'MMMM d, yyyy')}`, margin, 30);
 
   // ========== PLAYER INFO SECTION ==========
-  let y = 55;
+  let y = 50;
   
   // Player name and position
-  doc.setTextColor(...textColor);
-  doc.setFontSize(20);
+  doc.setTextColor(...textDark);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text(player?.full_name || 'Unknown Player', margin, y);
   
-  // Overall rating box on the right
+  // Overall rating badge on the right
   if (report.overall_rating || overallScore > 0) {
     const ratingValue = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
-    drawRoundedRect(doc, pageWidth - margin - 35, y - 12, 35, 35, 4, primaryColor);
+    drawRoundedRect(doc, pageWidth - margin - 30, y - 10, 30, 30, 4, primaryColor);
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
-    doc.text(ratingValue.toString(), pageWidth - margin - 17.5, y + 5, { align: 'center' });
-    doc.setFontSize(7);
-    doc.text('OVERALL', pageWidth - margin - 17.5, y + 13, { align: 'center' });
+    doc.text(ratingValue.toString(), pageWidth - margin - 15, y + 4, { align: 'center' });
+    doc.setFontSize(6);
+    doc.text('RATING', pageWidth - margin - 15, y + 11, { align: 'center' });
   }
   
-  y += 8;
-  doc.setTextColor(...mutedColor);
-  doc.setFontSize(11);
+  y += 6;
+  doc.setTextColor(...textMuted);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
   const club = player?.current_club || 'No Club';
-  doc.text(`${position} • ${club}`, margin, y);
-  y += 12;
+  doc.text(`${position}  •  ${club}`, margin, y);
+  y += 10;
 
-  // Player details grid
+  // Player details row
   const details = [
     { label: 'Nationality', value: player?.nationality || 'N/A' },
-    { label: 'Date of Birth', value: player?.date_of_birth || 'N/A' },
-    { label: 'Height', value: player?.height_cm ? `${player.height_cm} cm` : 'N/A' },
-    { label: 'Weight', value: player?.weight_kg ? `${player.weight_kg} kg` : 'N/A' },
-    { label: 'Preferred Foot', value: player?.preferred_foot || 'N/A' },
+    { label: 'DOB', value: player?.date_of_birth || 'N/A' },
+    { label: 'Height', value: player?.height_cm ? `${player.height_cm}cm` : 'N/A' },
+    { label: 'Weight', value: player?.weight_kg ? `${player.weight_kg}kg` : 'N/A' },
+    { label: 'Foot', value: player?.preferred_foot || 'N/A' },
   ];
 
   doc.setFontSize(8);
-  const detailWidth = (contentWidth - 30) / 5;
+  const detailWidth = contentWidth / 5;
   details.forEach((detail, i) => {
-    const x = margin + i * detailWidth + (i * 7);
-    doc.setTextColor(...mutedColor);
+    const x = margin + i * detailWidth;
+    doc.setTextColor(...textMuted);
     doc.text(detail.label, x, y);
-    doc.setTextColor(...textColor);
+    doc.setTextColor(...textDark);
     doc.setFont('helvetica', 'bold');
-    doc.text(detail.value, x, y + 5);
+    doc.text(detail.value, x, y + 4);
     doc.setFont('helvetica', 'normal');
   });
-  y += 15;
+  y += 12;
 
   // ========== MATCH DETAILS BOX ==========
-  drawRoundedRect(doc, margin, y, contentWidth, 22, 3, bgMuted);
-  y += 6;
+  drawRoundedRect(doc, margin, y, contentWidth, 20, 3, bgMuted);
+  y += 5;
   
-  doc.setTextColor(...textColor);
-  doc.setFontSize(10);
+  doc.setTextColor(...textDark);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('Match Details', margin + 5, y);
-  y += 6;
+  doc.text('Match Details', margin + 4, y);
+  y += 5;
   
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(9);
-  doc.setTextColor(...mutedColor);
-  const matchDate = format(new Date(report.match_date), 'MMMM d, yyyy');
+  doc.setFontSize(8);
+  doc.setTextColor(...textMuted);
+  const matchDate = format(new Date(report.match_date), 'MMM d, yyyy');
   const opposition = report.opposition || 'Unknown';
   const competitionLevel = COMPETITION_LEVEL_LABELS[report.competition_level as CompetitionLevel] || report.competition_level;
-  const minutesObserved = report.minutes_observed ? `${report.minutes_observed} mins observed` : '';
-  doc.text(`${matchDate}  •  vs ${opposition}  •  ${competitionLevel}${minutesObserved ? '  •  ' + minutesObserved : ''}`, margin + 5, y);
-  y += 18;
+  const minutesObserved = report.minutes_observed ? `${report.minutes_observed} mins` : '';
+  doc.text(`${matchDate}  •  vs ${opposition}  •  ${competitionLevel}${minutesObserved ? '  •  ' + minutesObserved : ''}`, margin + 4, y);
+  y += 14;
 
   // ========== OVERALL PERFORMANCE SECTION ==========
-  // Draw a gradient-like box for overall score
-  drawRoundedRect(doc, margin, y, contentWidth, 35, 4, [240, 253, 244]); // Light green bg
-  doc.setDrawColor(...primaryColor);
+  // Draw a clean card-style box
+  drawRoundedRect(doc, margin, y, contentWidth, 32, 4, white);
+  doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentWidth, 35, 4, 4, 'S');
+  doc.roundedRect(margin, y, contentWidth, 32, 4, 4, 'S');
   
-  // Overall score on the left
-  doc.setTextColor(...mutedColor);
-  doc.setFontSize(9);
-  doc.text('Overall Match Rating', margin + 8, y + 8);
+  // Overall score on the left with colored accent
+  doc.setFillColor(...primaryColor);
+  doc.rect(margin, y, 4, 32, 'F');
+  
+  doc.setTextColor(...textMuted);
+  doc.setFontSize(8);
+  doc.text('Overall Match Rating', margin + 8, y + 7);
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(32);
+  doc.setFontSize(28);
   doc.setFont('helvetica', 'bold');
-  doc.text(overallScore.toString(), margin + 8, y + 24);
+  doc.text(overallScore.toString(), margin + 8, y + 22);
   
-  doc.setTextColor(...mutedColor);
-  doc.setFontSize(14);
+  doc.setTextColor(...textMuted);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.text('/100', margin + 30, y + 24);
+  doc.text('/100', margin + 26, y + 22);
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text(getScoreLabel(overallScore), margin + 8, y + 31);
+  doc.text(getScoreLabel(overallScore), margin + 8, y + 28);
   
   // Category breakdown bars on the right
-  const barStartX = margin + 80;
-  const barWidth = 90;
-  const barHeight = 4;
+  const barStartX = margin + 75;
+  const barWidth = 85;
+  const barHeight = 3;
   const categories = [
     { name: 'Technical', avg: Math.round(techAvg), color: primaryColor },
     { name: 'Tactical', avg: Math.round(tactAvg), color: blueColor },
@@ -399,66 +402,66 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   ];
   
   categories.forEach((cat, i) => {
-    const catY = y + 7 + i * 7;
-    doc.setTextColor(...mutedColor);
-    doc.setFontSize(8);
+    const catY = y + 6 + i * 6;
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
     doc.text(cat.name, barStartX, catY + 2);
     
-    drawProgressBar(doc, barStartX + 25, catY - 1, barWidth - 40, barHeight, cat.avg, 20, bgMuted, cat.color);
+    drawProgressBar(doc, barStartX + 22, catY, barWidth - 35, barHeight, cat.avg, 20, bgMuted, cat.color);
     
-    doc.setTextColor(...textColor);
+    doc.setTextColor(...textDark);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${cat.avg}/20`, barStartX + barWidth - 8, catY + 2);
+    doc.text(`${cat.avg}/20`, barStartX + barWidth - 6, catY + 2);
   });
   
-  y += 42;
+  y += 38;
 
   // ========== CATEGORY AVERAGES GRID ==========
-  doc.setTextColor(...textColor);
-  doc.setFontSize(12);
+  doc.setTextColor(...textDark);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Category Breakdown', margin, y);
-  y += 8;
+  y += 6;
 
-  const boxWidth = (contentWidth - 10) / 4;
-  const boxHeight = 28;
+  const boxWidth = (contentWidth - 9) / 4;
+  const boxHeight = 24;
   
   categories.forEach((cat, i) => {
-    const boxX = margin + i * (boxWidth + 3.3);
+    const boxX = margin + i * (boxWidth + 3);
     
     // Box background
-    drawRoundedRect(doc, boxX, y, boxWidth, boxHeight, 3, bgLight);
-    doc.setDrawColor(220, 220, 220);
+    drawRoundedRect(doc, boxX, y, boxWidth, boxHeight, 3, white);
+    doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.3);
     doc.roundedRect(boxX, y, boxWidth, boxHeight, 3, 3, 'S');
     
-    // Category header with color indicator
+    // Category color bar on left
     doc.setFillColor(...cat.color);
-    doc.roundedRect(boxX + 4, y + 4, 3, 10, 1, 1, 'F');
+    doc.roundedRect(boxX + 3, y + 4, 2, 16, 1, 1, 'F');
     
-    doc.setTextColor(...textColor);
-    doc.setFontSize(8);
+    doc.setTextColor(...textDark);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text(cat.name, boxX + 10, y + 10);
+    doc.text(cat.name, boxX + 8, y + 9);
     
     // Score
-    doc.setFontSize(16);
-    doc.text(cat.avg.toString(), boxX + 10, y + 22);
-    doc.setTextColor(...mutedColor);
-    doc.setFontSize(9);
+    doc.setFontSize(14);
+    doc.text(cat.avg.toString(), boxX + 8, y + 19);
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text('/20', boxX + 22, y + 22);
+    doc.text('/20', boxX + 18, y + 19);
   });
   
-  y += boxHeight + 10;
+  y += boxHeight + 8;
 
   // ========== DETAILED ATTRIBUTES ==========
-  doc.setTextColor(...textColor);
-  doc.setFontSize(12);
+  doc.setTextColor(...textDark);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
   doc.text('Detailed Attributes', margin, y);
-  y += 5;
+  y += 4;
 
   const technicalAttrs = [
     ['First Touch', report.technical_first_touch],
@@ -504,26 +507,26 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ]),
     theme: 'plain',
     headStyles: { 
-      fillColor: [255, 255, 255], 
+      fillColor: white, 
       textColor: primaryColor,
       fontStyle: 'bold',
-      fontSize: 10,
+      fontSize: 9,
     },
     columnStyles: {
-      0: { cellWidth: 45 },
-      1: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
-      2: { cellWidth: 45 },
-      3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+      0: { cellWidth: 42 },
+      1: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
     },
     margin: { left: margin, right: margin },
-    styles: { fontSize: 9, cellPadding: 2 },
-    alternateRowStyles: { fillColor: bgLight },
+    styles: { fontSize: 8, cellPadding: 2 },
+    alternateRowStyles: { fillColor: bgCard },
   });
 
   const firstTableFinalY = (doc as any).lastAutoTable?.finalY || y + 50;
 
   autoTable(doc, {
-    startY: firstTableFinalY + 3,
+    startY: firstTableFinalY + 2,
     head: [['Physical', '', 'Mental', '']],
     body: physicalAttrs.map((p, i) => [
       p[0],
@@ -533,114 +536,118 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ]),
     theme: 'plain',
     headStyles: { 
-      fillColor: [255, 255, 255], 
+      fillColor: white, 
       textColor: amberColor,
       fontStyle: 'bold',
-      fontSize: 10,
+      fontSize: 9,
     },
     columnStyles: {
-      0: { cellWidth: 45 },
-      1: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
-      2: { cellWidth: 45 },
-      3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+      0: { cellWidth: 42 },
+      1: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
+      2: { cellWidth: 42 },
+      3: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
     },
     margin: { left: margin, right: margin },
-    styles: { fontSize: 9, cellPadding: 2 },
-    alternateRowStyles: { fillColor: bgLight },
+    styles: { fontSize: 8, cellPadding: 2 },
+    alternateRowStyles: { fillColor: bgCard },
   });
 
-  y = (doc as any).lastAutoTable?.finalY + 10 || firstTableFinalY + 60;
+  y = (doc as any).lastAutoTable?.finalY + 8 || firstTableFinalY + 55;
 
   // ========== STRENGTHS & WEAKNESSES ==========
   if (report.strengths || report.weaknesses) {
-    const halfWidth = (contentWidth - 5) / 2;
+    const halfWidth = (contentWidth - 6) / 2;
     
     if (report.strengths) {
-      // Strengths box
-      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 12);
-      const strengthBoxHeight = Math.max(25, 15 + strengthLines.length * 4);
+      // Strengths box - clean green border style
+      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 10);
+      const strengthBoxHeight = Math.max(22, 14 + strengthLines.length * 3.5);
       
-      drawRoundedRect(doc, margin, y, halfWidth, strengthBoxHeight, 3, [240, 253, 244]);
-      doc.setDrawColor(...primaryColor);
-      doc.setLineWidth(0.5);
+      drawRoundedRect(doc, margin, y, halfWidth, strengthBoxHeight, 3, white);
+      doc.setFillColor(...primaryColor);
+      doc.rect(margin, y, 3, strengthBoxHeight, 'F');
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.3);
       doc.roundedRect(margin, y, halfWidth, strengthBoxHeight, 3, 3, 'S');
       
       doc.setTextColor(...primaryColor);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('✓ Strengths', margin + 5, y + 8);
+      doc.text('Strengths', margin + 6, y + 7);
       
-      doc.setTextColor(...textColor);
-      doc.setFontSize(8);
+      doc.setTextColor(...textDark);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text(strengthLines, margin + 5, y + 15);
+      doc.text(strengthLines, margin + 6, y + 13);
     }
 
     if (report.weaknesses) {
-      // Weaknesses box
-      const weaknessLines = doc.splitTextToSize(report.weaknesses, halfWidth - 12);
-      const weaknessBoxHeight = Math.max(25, 15 + weaknessLines.length * 4);
-      const weaknessX = margin + halfWidth + 5;
+      // Weaknesses box - clean red border style
+      const weaknessLines = doc.splitTextToSize(report.weaknesses, halfWidth - 10);
+      const weaknessBoxHeight = Math.max(22, 14 + weaknessLines.length * 3.5);
+      const weaknessX = margin + halfWidth + 6;
       
-      drawRoundedRect(doc, weaknessX, y, halfWidth, weaknessBoxHeight, 3, [254, 242, 242]);
-      doc.setDrawColor(...destructiveColor);
-      doc.setLineWidth(0.5);
+      drawRoundedRect(doc, weaknessX, y, halfWidth, weaknessBoxHeight, 3, white);
+      doc.setFillColor(...destructiveColor);
+      doc.rect(weaknessX, y, 3, weaknessBoxHeight, 'F');
+      doc.setDrawColor(229, 231, 235);
+      doc.setLineWidth(0.3);
       doc.roundedRect(weaknessX, y, halfWidth, weaknessBoxHeight, 3, 3, 'S');
       
       doc.setTextColor(...destructiveColor);
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('✗ Areas to Improve', weaknessX + 5, y + 8);
+      doc.text('Areas to Improve', weaknessX + 6, y + 7);
       
-      doc.setTextColor(...textColor);
-      doc.setFontSize(8);
+      doc.setTextColor(...textDark);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text(weaknessLines, weaknessX + 5, y + 15);
+      doc.text(weaknessLines, weaknessX + 6, y + 13);
       
       const maxBoxHeight = Math.max(
-        report.strengths ? Math.max(25, 15 + doc.splitTextToSize(report.strengths, halfWidth - 12).length * 4) : 0,
+        report.strengths ? Math.max(22, 14 + doc.splitTextToSize(report.strengths, halfWidth - 10).length * 3.5) : 0,
         weaknessBoxHeight
       );
-      y += maxBoxHeight + 8;
+      y += maxBoxHeight + 6;
     } else if (report.strengths) {
-      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 12);
-      y += Math.max(25, 15 + strengthLines.length * 4) + 8;
+      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 10);
+      y += Math.max(22, 14 + strengthLines.length * 3.5) + 6;
     }
   }
 
   // ========== RECOMMENDATION ==========
   if (report.recommendation) {
-    drawRoundedRect(doc, margin, y, contentWidth, 25, 3, bgMuted);
+    drawRoundedRect(doc, margin, y, contentWidth, 22, 3, bgMuted);
     
     doc.setTextColor(...primaryColor);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Scout Recommendation', margin + 5, y + 8);
-    
-    doc.setTextColor(...textColor);
     doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Scout Recommendation', margin + 4, y + 7);
+    
+    doc.setTextColor(...textDark);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    const recLines = doc.splitTextToSize(report.recommendation, contentWidth - 12);
-    doc.text(recLines, margin + 5, y + 15);
-    y += 30;
+    const recLines = doc.splitTextToSize(report.recommendation, contentWidth - 10);
+    doc.text(recLines, margin + 4, y + 13);
+    y += 26;
   }
 
   // ========== POTENTIAL RATING ==========
   if (report.potential_rating) {
-    doc.setTextColor(...mutedColor);
-    doc.setFontSize(9);
-    doc.text(`Potential Rating: `, margin, y);
-    doc.setTextColor(...primaryColor);
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(8);
+    doc.text('Potential Rating: ', margin, y);
+    doc.setTextColor(...amberColor);
     doc.setFont('helvetica', 'bold');
-    doc.text(report.potential_rating.toString(), margin + 28, y);
+    doc.text(report.potential_rating.toString(), margin + 26, y);
   }
 
   // ========== FOOTER ==========
-  doc.setFontSize(8);
-  doc.setTextColor(...mutedColor);
+  doc.setFontSize(7);
+  doc.setTextColor(...textMuted);
   doc.setFont('helvetica', 'normal');
   doc.text('The Football Scout', margin, 287);
-  doc.text(`Report ID: ${report.id.substring(0, 8)}...`, pageWidth - margin, 287, { align: 'right' });
+  doc.text(`Report ID: ${report.id.substring(0, 8)}`, pageWidth - margin, 287, { align: 'right' });
 
   // Save
   const filename = `scouting_report_${player?.full_name?.replace(/\s+/g, '_') || 'unknown'}_${format(new Date(report.match_date), 'yyyy-MM-dd')}.pdf`;
