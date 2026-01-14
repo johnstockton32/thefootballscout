@@ -17,7 +17,7 @@ const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
-  organization: z.string().optional(),
+  organization: z.string().min(2, 'Organization is required'),
   teamName: z.string().optional(),
 });
 
@@ -110,8 +110,15 @@ export default function Auth() {
           email, 
           password, 
           fullName: mode === 'signUp' ? fullName : undefined,
+          organization: mode === 'signUp' ? organization : 'n/a',
           teamName: mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') ? teamName : undefined,
         });
+        
+        // Additional validation for signup
+        if (mode === 'signUp' && !organization.trim()) {
+          setErrors({ organization: 'Organization is required' });
+          return false;
+        }
         
         // Additional validation for team/agency signup
         if (mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') && !teamName.trim()) {
@@ -308,6 +315,26 @@ export default function Auth() {
                       </div>
                       {errors.fullName && (
                         <p className="text-xs text-destructive">{errors.fullName}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="organization" className="text-sm font-medium">
+                        Organization *
+                      </Label>
+                      <div className="relative">
+                        <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          id="organization"
+                          type="text"
+                          placeholder="Your club or agency"
+                          value={organization}
+                          onChange={(e) => setOrganization(e.target.value)}
+                          className="pl-10 bg-input border-border focus:border-primary"
+                        />
+                      </div>
+                      {errors.organization && (
+                        <p className="text-xs text-destructive">{errors.organization}</p>
                       )}
                     </div>
                   </>
