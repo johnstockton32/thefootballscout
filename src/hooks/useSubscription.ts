@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type SubscriptionTier = 'free' | 'pro' | 'team';
+export type SubscriptionTier = 'free' | 'pro' | 'team' | 'agency';
 
 interface SubscriptionLimits {
   maxPlayers: number;
@@ -11,6 +11,9 @@ interface SubscriptionLimits {
   hasAdvancedAnalytics: boolean;
   hasPdfExport: boolean;
   hasTeamFeatures: boolean;
+  hasAIInsights: boolean;
+  hasVideoClips: boolean;
+  maxTeamMembers: number;
 }
 
 interface SubscriptionData {
@@ -42,6 +45,9 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasAdvancedAnalytics: false,
     hasPdfExport: false,
     hasTeamFeatures: false,
+    hasAIInsights: false,
+    hasVideoClips: false,
+    maxTeamMembers: 1,
   },
   pro: {
     maxPlayers: Infinity,
@@ -50,6 +56,9 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasAdvancedAnalytics: true,
     hasPdfExport: true,
     hasTeamFeatures: false,
+    hasAIInsights: true,
+    hasVideoClips: false,
+    maxTeamMembers: 1,
   },
   team: {
     maxPlayers: Infinity,
@@ -58,6 +67,20 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasAdvancedAnalytics: true,
     hasPdfExport: true,
     hasTeamFeatures: true,
+    hasAIInsights: true,
+    hasVideoClips: true,
+    maxTeamMembers: 10,
+  },
+  agency: {
+    maxPlayers: Infinity,
+    maxReportsPerMonth: Infinity,
+    maxComparisonPlayers: 10,
+    hasAdvancedAnalytics: true,
+    hasPdfExport: true,
+    hasTeamFeatures: true,
+    hasAIInsights: true,
+    hasVideoClips: true,
+    maxTeamMembers: Infinity,
   },
 };
 
@@ -203,7 +226,7 @@ export function useSubscription(): SubscriptionData {
     }
   };
 
-  const limits = TIER_LIMITS[tier];
+  const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const isInTrial = tier === 'pro' && trialEndsAt !== null && trialEndsAt > new Date();
   const canCreatePlayer = tier !== 'free' || playerCount < limits.maxPlayers;
   const canCreateReport = tier !== 'free' || monthlyReportCount < limits.maxReportsPerMonth;

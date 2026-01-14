@@ -22,6 +22,8 @@ import {
   Crown,
   Sparkles,
   Building2,
+  List,
+  Activity,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -36,8 +38,8 @@ const navItems = [
 ];
 
 const secondaryNavItems = [
-  { icon: Sparkles, label: 'Watchlists', href: '/watchlists' },
-  { icon: Users, label: 'Team Feed', href: '/team-feed' },
+  { icon: List, label: 'Watchlists', href: '/watchlists' },
+  { icon: Activity, label: 'Team Feed', href: '/team-feed' },
 ];
 
 const adminNavItems = [
