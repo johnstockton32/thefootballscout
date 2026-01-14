@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { VideoClipManager } from '@/components/video/VideoClipManager';
 import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
+import { AttributeBar } from '@/components/reports/AttributeBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   supabase, 
@@ -31,6 +34,14 @@ import {
   FileText,
   Video,
   Brain,
+  Target,
+  BarChart3,
+  Zap,
+  Shield,
+  TrendingUp,
+  X,
+  Star,
+  Trophy,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -375,11 +386,193 @@ export default function ReportDetail() {
               </TabsList>
 
               <TabsContent value="attributes" className="space-y-6">
+                {/* Overall Score Display - matching Demo style */}
+                {(() => {
+                  const tech = [
+                    report.technical_first_touch,
+                    report.technical_passing,
+                    report.technical_dribbling,
+                    report.technical_shooting,
+                    report.technical_crossing,
+                    report.technical_heading,
+                  ].filter(v => v !== null) as number[];
+                  const tact = [
+                    report.tactical_positioning,
+                    report.tactical_decision_making,
+                    report.tactical_awareness,
+                    report.tactical_off_ball_movement,
+                    report.tactical_defensive_contribution,
+                  ].filter(v => v !== null) as number[];
+                  const phys = [
+                    report.physical_pace,
+                    report.physical_agility,
+                    report.physical_strength,
+                    report.physical_stamina,
+                    report.physical_balance,
+                  ].filter(v => v !== null) as number[];
+                  const ment = [
+                    report.mental_composure,
+                    report.mental_concentration,
+                    report.mental_work_rate,
+                    report.mental_leadership,
+                    report.mental_aggression,
+                  ].filter(v => v !== null) as number[];
+                  
+                  const techAvg = tech.length > 0 ? tech.reduce((a, b) => a + b, 0) / tech.length : 0;
+                  const tactAvg = tact.length > 0 ? tact.reduce((a, b) => a + b, 0) / tact.length : 0;
+                  const physAvg = phys.length > 0 ? phys.reduce((a, b) => a + b, 0) / phys.length : 0;
+                  const mentAvg = ment.length > 0 ? ment.reduce((a, b) => a + b, 0) / ment.length : 0;
+                  
+                  const overallScore = Math.round(((techAvg + tactAvg + physAvg + mentAvg) / 4) * 5);
+                  
+                  const getScoreColor = (score: number) => {
+                    if (score >= 85) return 'text-primary';
+                    if (score >= 70) return 'text-amber-500';
+                    if (score >= 55) return 'text-blue-500';
+                    return 'text-muted-foreground';
+                  };
+                  
+                  const getScoreLabel = (score: number) => {
+                    if (score >= 90) return 'World Class';
+                    if (score >= 80) return 'Excellent';
+                    if (score >= 70) return 'Very Good';
+                    if (score >= 60) return 'Good';
+                    if (score >= 50) return 'Average';
+                    return 'Developing';
+                  };
+                  
+                  const categories = [
+                    { name: 'Technical', avg: Math.round(techAvg), icon: Target, color: 'bg-primary', textColor: 'text-primary' },
+                    { name: 'Tactical', avg: Math.round(tactAvg), icon: BarChart3, color: 'bg-blue-500', textColor: 'text-blue-500' },
+                    { name: 'Physical', avg: Math.round(physAvg), icon: Zap, color: 'bg-amber-500', textColor: 'text-amber-500' },
+                    { name: 'Mental', avg: Math.round(mentAvg), icon: Shield, color: 'bg-purple-500', textColor: 'text-purple-500' },
+                  ];
+                  
+                  return (
+                    <>
+                      {/* Overall Score Card */}
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <Card className="card-glass border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+                          <CardContent className="py-6">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="text-sm text-muted-foreground mb-1">Overall Match Rating</p>
+                                <div className="flex items-baseline gap-2">
+                                  <span className={`text-5xl font-bold ${getScoreColor(overallScore)}`}>
+                                    {overallScore}
+                                  </span>
+                                  <span className="text-xl text-muted-foreground">/100</span>
+                                </div>
+                                <p className={`text-sm font-medium mt-1 ${getScoreColor(overallScore)}`}>
+                                  {getScoreLabel(overallScore)}
+                                </p>
+                              </div>
+                              
+                              {/* Circular Progress */}
+                              <div className="relative w-24 h-24">
+                                <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                                  <circle
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    fill="none"
+                                    stroke="hsl(var(--muted))"
+                                    strokeWidth="8"
+                                  />
+                                  <motion.circle
+                                    cx="50"
+                                    cy="50"
+                                    r="40"
+                                    fill="none"
+                                    stroke="hsl(158, 64%, 45%)"
+                                    strokeWidth="8"
+                                    strokeLinecap="round"
+                                    strokeDasharray={251.2}
+                                    initial={{ strokeDashoffset: 251.2 }}
+                                    animate={{ strokeDashoffset: 251.2 - (251.2 * overallScore) / 100 }}
+                                    transition={{ duration: 1, delay: 0.2 }}
+                                  />
+                                </svg>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Star className="w-8 h-8 text-primary" />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Category breakdown bar */}
+                            <div className="mt-4 flex gap-1 h-2 rounded-full overflow-hidden">
+                              {categories.map((cat, i) => (
+                                <motion.div
+                                  key={cat.name}
+                                  initial={{ width: 0 }}
+                                  animate={{ width: '25%' }}
+                                  transition={{ duration: 0.5, delay: 0.3 + i * 0.1 }}
+                                  className={`${cat.color}`}
+                                  style={{ opacity: 0.3 + (cat.avg / 20) * 0.7 }}
+                                  title={`${cat.name}: ${cat.avg}/20`}
+                                />
+                              ))}
+                            </div>
+                            <div className="mt-2 flex justify-between text-xs text-muted-foreground">
+                              <span>Technical</span>
+                              <span>Tactical</span>
+                              <span>Physical</span>
+                              <span>Mental</span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                      
+                      {/* Category Averages Grid */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {categories.map((cat, index) => (
+                          <motion.div
+                            key={cat.name}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                          >
+                            <Card className="card-glass hover:border-primary/30 transition-colors">
+                              <CardContent className="p-4">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className={`w-8 h-8 rounded-lg ${cat.color}/20 flex items-center justify-center`}>
+                                    <cat.icon className={`w-4 h-4 ${cat.textColor}`} />
+                                  </div>
+                                  <span className="text-sm font-medium">{cat.name}</span>
+                                </div>
+                                <div className="flex items-end gap-1">
+                                  <span className="text-2xl font-bold">{cat.avg}</span>
+                                  <span className="text-sm text-muted-foreground mb-0.5">/20</span>
+                                </div>
+                                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(cat.avg / 20) * 100}%` }}
+                                    transition={{ duration: 0.5, delay: 0.3 }}
+                                    className={`h-full ${cat.color} rounded-full`}
+                                  />
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
+
                 {/* Radar Chart */}
                 {radarData && (
                   <Card className="card-glass">
                     <CardHeader>
-                      <CardTitle className="text-lg">Attribute Overview</CardTitle>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-primary" />
+                        Attribute Overview
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <AttributeRadarChart data={radarData} />
@@ -387,121 +580,116 @@ export default function ReportDetail() {
                   </Card>
                 )}
 
-            {/* Detailed Attributes */}
-            <Card className="card-glass">
-              <CardHeader>
-                <CardTitle className="text-lg">Detailed Attributes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid sm:grid-cols-2 gap-6">
-                  {/* Technical */}
-                  <div>
-                    <h4 className="font-semibold text-primary mb-3">Technical</h4>
-                    <div className="space-y-2">
-                      {[
-                        ['First Touch', report.technical_first_touch],
-                        ['Passing', report.technical_passing],
-                        ['Dribbling', report.technical_dribbling],
-                        ['Shooting', report.technical_shooting],
-                        ['Crossing', report.technical_crossing],
-                        ['Heading', report.technical_heading],
-                      ].map(([label, value]) => (
-                        <div key={label as string} className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{label}</span>
-                          <span className="font-medium">{value || '-'}</span>
+                {/* Detailed Attributes with Progress Bars */}
+                <Card className="card-glass">
+                  <CardHeader>
+                    <CardTitle className="text-lg">Detailed Attributes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid md:grid-cols-2 gap-8">
+                      {/* Technical */}
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-primary flex items-center gap-2">
+                          <Target className="w-4 h-4" />
+                          Technical
+                        </h4>
+                        <div className="space-y-2">
+                          <AttributeBar name="First Touch" value={report.technical_first_touch} />
+                          <AttributeBar name="Passing" value={report.technical_passing} />
+                          <AttributeBar name="Dribbling" value={report.technical_dribbling} />
+                          <AttributeBar name="Shooting" value={report.technical_shooting} />
+                          <AttributeBar name="Crossing" value={report.technical_crossing} />
+                          <AttributeBar name="Heading" value={report.technical_heading} />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Tactical */}
-                  <div>
-                    <h4 className="font-semibold text-primary mb-3">Tactical</h4>
-                    <div className="space-y-2">
-                      {[
-                        ['Positioning', report.tactical_positioning],
-                        ['Decision Making', report.tactical_decision_making],
-                        ['Awareness', report.tactical_awareness],
-                        ['Off-Ball Movement', report.tactical_off_ball_movement],
-                        ['Defensive Contribution', report.tactical_defensive_contribution],
-                      ].map(([label, value]) => (
-                        <div key={label as string} className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{label}</span>
-                          <span className="font-medium">{value || '-'}</span>
+                      {/* Tactical */}
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-blue-500 flex items-center gap-2">
+                          <BarChart3 className="w-4 h-4" />
+                          Tactical
+                        </h4>
+                        <div className="space-y-2">
+                          <AttributeBar name="Positioning" value={report.tactical_positioning} />
+                          <AttributeBar name="Decision Making" value={report.tactical_decision_making} />
+                          <AttributeBar name="Awareness" value={report.tactical_awareness} />
+                          <AttributeBar name="Off-Ball Movement" value={report.tactical_off_ball_movement} />
+                          <AttributeBar name="Def. Contribution" value={report.tactical_defensive_contribution} />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Physical */}
-                  <div>
-                    <h4 className="font-semibold text-primary mb-3">Physical</h4>
-                    <div className="space-y-2">
-                      {[
-                        ['Pace', report.physical_pace],
-                        ['Agility', report.physical_agility],
-                        ['Strength', report.physical_strength],
-                        ['Stamina', report.physical_stamina],
-                        ['Balance', report.physical_balance],
-                      ].map(([label, value]) => (
-                        <div key={label as string} className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{label}</span>
-                          <span className="font-medium">{value || '-'}</span>
+                      {/* Physical */}
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-amber-500 flex items-center gap-2">
+                          <Zap className="w-4 h-4" />
+                          Physical
+                        </h4>
+                        <div className="space-y-2">
+                          <AttributeBar name="Pace" value={report.physical_pace} />
+                          <AttributeBar name="Agility" value={report.physical_agility} />
+                          <AttributeBar name="Strength" value={report.physical_strength} />
+                          <AttributeBar name="Stamina" value={report.physical_stamina} />
+                          <AttributeBar name="Balance" value={report.physical_balance} />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Mental */}
-                  <div>
-                    <h4 className="font-semibold text-primary mb-3">Mental</h4>
-                    <div className="space-y-2">
-                      {[
-                        ['Composure', report.mental_composure],
-                        ['Concentration', report.mental_concentration],
-                        ['Work Rate', report.mental_work_rate],
-                        ['Leadership', report.mental_leadership],
-                        ['Aggression', report.mental_aggression],
-                      ].map(([label, value]) => (
-                        <div key={label as string} className="flex justify-between items-center">
-                          <span className="text-sm text-muted-foreground">{label}</span>
-                          <span className="font-medium">{value || '-'}</span>
+                      {/* Mental */}
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-purple-500 flex items-center gap-2">
+                          <Shield className="w-4 h-4" />
+                          Mental
+                        </h4>
+                        <div className="space-y-2">
+                          <AttributeBar name="Composure" value={report.mental_composure} />
+                          <AttributeBar name="Concentration" value={report.mental_concentration} />
+                          <AttributeBar name="Work Rate" value={report.mental_work_rate} />
+                          <AttributeBar name="Leadership" value={report.mental_leadership} />
+                          <AttributeBar name="Aggression" value={report.mental_aggression} />
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
 
-            {/* Analysis */}
-            {(report.strengths || report.weaknesses || report.recommendation) && (
-              <Card className="card-glass">
-                <CardHeader>
-                  <CardTitle className="text-lg">Analysis</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {report.strengths && (
-                    <div>
-                      <h4 className="font-semibold text-green-500 mb-2">Strengths</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{report.strengths}</p>
-                    </div>
-                  )}
-                  {report.weaknesses && (
-                    <div>
-                      <h4 className="font-semibold text-red-500 mb-2">Weaknesses</h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{report.weaknesses}</p>
-                    </div>
-                  )}
-                  {report.recommendation && (
-                    <div>
-                      <h4 className="font-semibold text-primary mb-2">Recommendation</h4>
+                {/* Analysis - Strengths/Weaknesses with styled panels */}
+                {(report.strengths || report.weaknesses || report.recommendation) && (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {report.strengths && (
+                      <Card className="card-glass border-primary/20 bg-primary/5">
+                        <CardContent className="p-5">
+                          <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4" />
+                            Strengths
+                          </h4>
+                          <p className="text-muted-foreground whitespace-pre-wrap text-sm">{report.strengths}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {report.weaknesses && (
+                      <Card className="card-glass border-destructive/20 bg-destructive/5">
+                        <CardContent className="p-5">
+                          <h4 className="font-semibold text-destructive mb-3 flex items-center gap-2">
+                            <X className="w-4 h-4" />
+                            Areas to Improve
+                          </h4>
+                          <p className="text-muted-foreground whitespace-pre-wrap text-sm">{report.weaknesses}</p>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )}
+                
+                {report.recommendation && (
+                  <Card className="card-glass">
+                    <CardContent className="p-5">
+                      <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
+                        <Trophy className="w-4 h-4" />
+                        Recommendation
+                      </h4>
                       <p className="text-muted-foreground whitespace-pre-wrap">{report.recommendation}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
+                    </CardContent>
+                  </Card>
+                )}
               </TabsContent>
 
               <TabsContent value="video">

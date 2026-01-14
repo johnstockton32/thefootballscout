@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PlayerCard } from '@/components/players/PlayerCard';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,24 @@ import { supabase, PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Search, Users, Filter, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.4,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+    },
+  }),
+  hover: {
+    y: -4,
+    scale: 1.02,
+    transition: { duration: 0.2 },
+  },
+};
 
 interface Player {
   id: string;
@@ -134,8 +153,17 @@ export default function Players() {
           </div>
         ) : filteredPlayers.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredPlayers.map((player) => (
-              <PlayerCard key={player.id} player={player} />
+            {filteredPlayers.map((player, index) => (
+              <motion.div
+                key={player.id}
+                custom={index}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                whileHover="hover"
+              >
+                <PlayerCard player={player} />
+              </motion.div>
             ))}
           </div>
         ) : players.length > 0 ? (
