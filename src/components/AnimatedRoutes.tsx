@@ -12,6 +12,7 @@ import NewPlayer from '@/pages/NewPlayer';
 import PlayerDetail from '@/pages/PlayerDetail';
 import PlayerComparison from '@/pages/PlayerComparison';
 import Reports from '@/pages/Reports';
+import ReportsAnalytics from '@/pages/ReportsAnalytics';
 import NewReport from '@/pages/NewReport';
 import ReportDetail from '@/pages/ReportDetail';
 import AdminDashboard from '@/pages/AdminDashboard';
@@ -44,6 +45,7 @@ export function AnimatedRoutes() {
         <Route path="/players/compare" element={<ProtectedRoute><PageTransition><PlayerComparison /></PageTransition></ProtectedRoute>} />
         <Route path="/players/:id" element={<ProtectedRoute><PageTransition><PlayerDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/reports" element={<ProtectedRoute><PageTransition><Reports /></PageTransition></ProtectedRoute>} />
+        <Route path="/reports/analytics" element={<ProtectedRoute><PageTransition><ReportsAnalytics /></PageTransition></ProtectedRoute>} />
         <Route path="/reports/new" element={<ProtectedRoute><PageTransition><NewReport /></PageTransition></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><PageTransition><ReportDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/watchlists" element={<ProtectedRoute><PageTransition><Watchlists /></PageTransition></ProtectedRoute>} />
