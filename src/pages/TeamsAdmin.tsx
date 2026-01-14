@@ -59,6 +59,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type TeamRole = Database["public"]["Enums"]["team_role"];
 import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
+import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -596,6 +597,7 @@ export default function TeamsAdmin() {
                               </button>
                             </div>
                           </FormControl>
+                          <PasswordStrengthIndicator password={field.value} />
                           <FormMessage />
                         </FormItem>
                       )}
@@ -944,6 +946,7 @@ export default function TeamsAdmin() {
                               </Button>
                             </div>
                           </FormControl>
+                          <PasswordStrengthIndicator password={field.value || ""} />
                           <FormMessage />
                         </FormItem>
                       )}

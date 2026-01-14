@@ -12,6 +12,7 @@ import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Us
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { PasswordStrengthIndicator } from '@/components/ui/password-strength-indicator';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -399,6 +400,9 @@ export default function Auth() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
+                    {mode === 'signUp' && password && (
+                      <PasswordStrengthIndicator password={password} />
+                    )}
                     {errors.password && (
                       <p className="text-xs text-destructive">{errors.password}</p>
                     )}
