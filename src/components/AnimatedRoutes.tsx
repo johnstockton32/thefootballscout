@@ -51,6 +51,7 @@ export function AnimatedRoutes() {
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute requireAdmin><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/teams" element={<ProtectedRoute requireAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
+        <Route path="/teams-admin" element={<ProtectedRoute requireTeamOwnerOrAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
         
         {/* Catch-all */}
         <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

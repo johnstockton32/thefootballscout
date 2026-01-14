@@ -42,6 +42,10 @@ const secondaryNavItems = [
   { icon: Activity, label: 'Team Feed', href: '/team-feed' },
 ];
 
+const teamOwnerNavItems = [
+  { icon: Crown, label: 'Team Admin', href: '/teams-admin' },
+];
+
 const adminNavItems = [
   { icon: Shield, label: 'Admin', href: '/admin' },
 ];
@@ -60,6 +64,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Check if user is a team owner (has team_role of team_admin)
+  const isTeamOwner = profile?.team_role === 'team_admin';
+
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
@@ -75,7 +82,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return email?.charAt(0).toUpperCase() || 'U';
   };
 
-  const allNavItems = isAdmin ? [...navItems, ...secondaryNavItems, ...adminNavItems] : [...navItems, ...secondaryNavItems];
+  // Build navigation items based on user role
+  let allNavItems = [...navItems, ...secondaryNavItems];
+  if (isTeamOwner) {
+    allNavItems = [...allNavItems, ...teamOwnerNavItems];
+  }
+  if (isAdmin) {
+    allNavItems = [...allNavItems, ...adminNavItems];
+  }
 
   return (
     <div className="min-h-screen bg-background">

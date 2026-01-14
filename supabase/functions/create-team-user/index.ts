@@ -104,11 +104,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update the profile with team tier, organization, and team_id
+    // Update the profile with team tier, organization, team_id and default role
     const updateData: Record<string, unknown> = {
       subscription_tier: "team",
       organization: organization || ownedTeam?.name || null,
       subscription_started_at: new Date().toISOString(),
+      team_role: "scout", // Default role for new team members
     };
 
     // If requesting user is a team owner, add the new user to their team
