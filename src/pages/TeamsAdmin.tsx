@@ -48,7 +48,8 @@ import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  organization: z.string().optional(),
+  organization: z.string().min(2, "Organization is required"),
+  role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
@@ -67,6 +68,7 @@ export default function TeamsAdmin() {
       email: "",
       fullName: "",
       organization: "",
+      role: "scout",
     },
   });
 
@@ -432,26 +434,65 @@ export default function TeamsAdmin() {
                       )}
                     />
                   </div>
-                  <FormField
-                    control={form.control}
-                    name="organization"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Organization (Optional)</FormLabel>
-                        <FormControl>
-                          <div className="relative">
-                            <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder="Football Club Name"
-                              className="pl-10"
-                              {...field}
-                            />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="organization"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization *</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                placeholder="Football Club Name"
+                                className="pl-10"
+                                {...field}
+                              />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role *</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a role" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="scout">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-3 w-3" />
+                                  Scout
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="senior_scout">
+                                <div className="flex items-center gap-2">
+                                  <UserCheck className="h-3 w-3" />
+                                  Senior Scout
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="team_admin">
+                                <div className="flex items-center gap-2">
+                                  <Shield className="h-3 w-3" />
+                                  Team Admin
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                   <div className="flex gap-3">
                     <Button
                       type="submit"
