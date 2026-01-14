@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_insights: {
+        Row: {
+          confidence_score: number | null
+          content: string
+          created_at: string
+          id: string
+          insight_type: string
+          metadata: Json | null
+          player_id: string | null
+          report_id: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          insight_type: string
+          metadata?: Json | null
+          player_id?: string | null
+          report_id?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          insight_type?: string
+          metadata?: Json | null
+          player_id?: string | null
+          report_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_insights_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_insights_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           created_at: string
@@ -132,6 +183,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      report_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          template_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          template_data?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          template_data?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       scouting_reports: {
         Row: {
@@ -261,6 +345,53 @@ export type Database = {
           },
         ]
       }
+      team_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string | null
+          entity_id: string | null
+          entity_name: string | null
+          entity_type: string
+          id: string
+          metadata: Json | null
+          team_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json | null
+          team_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string | null
+          entity_id?: string | null
+          entity_name?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json | null
+          team_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_activity_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           created_at: string
@@ -305,6 +436,128 @@ export type Database = {
           created_at?: string
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      video_clips: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_seconds: number | null
+          id: string
+          report_id: string
+          thumbnail_url: string | null
+          timestamp_end: number | null
+          timestamp_start: number | null
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          report_id: string
+          thumbnail_url?: string | null
+          timestamp_end?: number | null
+          timestamp_start?: number | null
+          title: string
+          user_id: string
+          video_url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_seconds?: number | null
+          id?: string
+          report_id?: string
+          thumbnail_url?: string | null
+          timestamp_end?: number | null
+          timestamp_start?: number | null
+          title?: string
+          user_id?: string
+          video_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_clips_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "scouting_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlist_players: {
+        Row: {
+          added_at: string
+          id: string
+          notes: string | null
+          player_id: string
+          priority: number | null
+          watchlist_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          notes?: string | null
+          player_id: string
+          priority?: number | null
+          watchlist_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          notes?: string | null
+          player_id?: string
+          priority?: number | null
+          watchlist_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watchlist_players_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watchlist_players_watchlist_id_fkey"
+            columns: ["watchlist_id"]
+            isOneToOne: false
+            referencedRelation: "watchlists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watchlists: {
+        Row: {
+          color: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -363,7 +616,7 @@ export type Database = {
         | "attacking_midfielder"
         | "winger"
         | "striker"
-      subscription_tier: "free" | "pro" | "team"
+      subscription_tier: "free" | "pro" | "team" | "agency"
       team_role: "scout" | "senior_scout" | "team_admin"
     }
     CompositeTypes: {
@@ -510,7 +763,7 @@ export const Constants = {
         "winger",
         "striker",
       ],
-      subscription_tier: ["free", "pro", "team"],
+      subscription_tier: ["free", "pro", "team", "agency"],
       team_role: ["scout", "senior_scout", "team_admin"],
     },
   },

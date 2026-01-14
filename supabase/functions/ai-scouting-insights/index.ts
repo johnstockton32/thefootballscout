@@ -1,0 +1,211 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+interface PlayerData {
+  full_name: string;
+  position: string;
+  current_club: string | null;
+  nationality: string | null;
+  age: number | null;
+}
+
+interface ReportData {
+  match_date: string;
+  opposition: string | null;
+  competition_level: string;
+  overall_rating: number | null;
+  potential_rating: number | null;
+  technical_first_touch: number | null;
+  technical_passing: number | null;
+  technical_dribbling: number | null;
+  technical_shooting: number | null;
+  technical_crossing: number | null;
+  technical_heading: number | null;
+  tactical_positioning: number | null;
+  tactical_decision_making: number | null;
+  tactical_awareness: number | null;
+  tactical_off_ball_movement: number | null;
+  tactical_defensive_contribution: number | null;
+  physical_pace: number | null;
+  physical_agility: number | null;
+  physical_strength: number | null;
+  physical_stamina: number | null;
+  physical_balance: number | null;
+  mental_composure: number | null;
+  mental_concentration: number | null;
+  mental_work_rate: number | null;
+  mental_leadership: number | null;
+  mental_aggression: number | null;
+  strengths: string | null;
+  weaknesses: string | null;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { player, reports, insightType } = await req.json();
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    
+    if (!LOVABLE_API_KEY) {
+      throw new Error("LOVABLE_API_KEY is not configured");
+    }
+
+    const playerData = player as PlayerData;
+    const reportsData = reports as ReportData[];
+
+    // Build context from reports
+    const reportsContext = reportsData.map((r, i) => {
+      const technical = [r.technical_first_touch, r.technical_passing, r.technical_dribbling, r.technical_shooting, r.technical_crossing, r.technical_heading].filter((v): v is number => v !== null);
+      const tactical = [r.tactical_positioning, r.tactical_decision_making, r.tactical_awareness, r.tactical_off_ball_movement, r.tactical_defensive_contribution].filter((v): v is number => v !== null);
+      const physical = [r.physical_pace, r.physical_agility, r.physical_strength, r.physical_stamina, r.physical_balance].filter((v): v is number => v !== null);
+      const mental = [r.mental_composure, r.mental_concentration, r.mental_work_rate, r.mental_leadership, r.mental_aggression].filter((v): v is number => v !== null);
+
+      const techAvg = technical.length ? (technical.reduce((a, b) => a + b, 0) / technical.length).toFixed(1) : 'N/A';
+      const tactAvg = tactical.length ? (tactical.reduce((a, b) => a + b, 0) / tactical.length).toFixed(1) : 'N/A';
+      const physAvg = physical.length ? (physical.reduce((a, b) => a + b, 0) / physical.length).toFixed(1) : 'N/A';
+      const mentAvg = mental.length ? (mental.reduce((a, b) => a + b, 0) / mental.length).toFixed(1) : 'N/A';
+
+      return `Report ${i + 1} (${r.match_date}, vs ${r.opposition || 'Unknown'}, ${r.competition_level}):
+- Overall: ${r.overall_rating}/20, Potential: ${r.potential_rating}/20
+- Technical avg: ${techAvg}
+- Tactical avg: ${tactAvg}
+- Physical avg: ${physAvg}
+- Mental avg: ${mentAvg}
+- Strengths: ${r.strengths || 'Not specified'}
+- Weaknesses: ${r.weaknesses || 'Not specified'}`;
+    }).join('\n\n');
+
+    let systemPrompt = '';
+    let userPrompt = '';
+
+    switch (insightType) {
+      case 'development':
+        systemPrompt = `You are an elite football scout and player development specialist. Provide actionable, specific development recommendations based on scouting data. Focus on concrete drills, training focus areas, and realistic timelines. Be concise but comprehensive.`;
+        userPrompt = `Analyze this player and provide development recommendations:
+
+Player: ${playerData.full_name}
+Position: ${playerData.position}
+Club: ${playerData.current_club || 'Unknown'}
+Age: ${playerData.age || 'Unknown'}
+
+Scouting Reports:
+${reportsContext}
+
+Provide:
+1. Top 3 priority development areas with specific training recommendations
+2. Timeline for improvement (3-6-12 months)
+3. Potential position versatility based on attributes
+4. Key attributes to maintain as strengths`;
+        break;
+
+      case 'comparison':
+        systemPrompt = `You are an expert football analyst who compares players to professional footballers. Provide realistic comparisons based on playing style and attribute profiles, not just hype.`;
+        userPrompt = `Based on this player's profile, suggest professional player comparisons:
+
+Player: ${playerData.full_name}
+Position: ${playerData.position}
+Age: ${playerData.age || 'Unknown'}
+
+Scouting Data:
+${reportsContext}
+
+Provide 2-3 professional player comparisons with:
+- Player name and why they're comparable
+- Key similar attributes
+- What this player would need to reach that level`;
+        break;
+
+      case 'transfer':
+        systemPrompt = `You are a football transfer market analyst. Provide realistic transfer valuations and recommendations based on player attributes, age, and market trends. Be specific about suitable leagues and club types.`;
+        userPrompt = `Provide transfer market analysis for this player:
+
+Player: ${playerData.full_name}
+Position: ${playerData.position}
+Club: ${playerData.current_club || 'Unknown'}
+Age: ${playerData.age || 'Unknown'}
+Nationality: ${playerData.nationality || 'Unknown'}
+
+Performance Data:
+${reportsContext}
+
+Provide:
+1. Suitable league levels (Championship, League One, etc.)
+2. Types of clubs that would benefit from this player
+3. Estimated market value range
+4. Best transfer window timing recommendation`;
+        break;
+
+      default: // summary
+        systemPrompt = `You are a professional football scout providing executive summaries. Be concise, insightful, and focus on what makes this player unique or concerning.`;
+        userPrompt = `Provide a brief executive summary of this player:
+
+Player: ${playerData.full_name}
+Position: ${playerData.position}
+Club: ${playerData.current_club || 'Unknown'}
+Age: ${playerData.age || 'Unknown'}
+
+Scouting Reports:
+${reportsContext}
+
+Provide a 3-4 sentence summary covering:
+- Overall assessment and standout qualities
+- Key concern or area to monitor
+- Recommendation (sign, monitor, pass)`;
+    }
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        max_tokens: 1000,
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const errorText = await response.text();
+      console.error("AI gateway error:", response.status, errorText);
+      throw new Error(`AI gateway error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const insight = data.choices?.[0]?.message?.content || "Unable to generate insight.";
+
+    return new Response(
+      JSON.stringify({ insight, insightType }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error("AI insights error:", error);
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
