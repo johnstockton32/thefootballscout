@@ -21,6 +21,7 @@ import {
   Shield,
   Crown,
   Sparkles,
+  Building2,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -34,6 +35,11 @@ const navItems = [
   { icon: BarChart3, label: 'Compare', href: '/players/compare' },
 ];
 
+const secondaryNavItems = [
+  { icon: Sparkles, label: 'Watchlists', href: '/watchlists' },
+  { icon: Users, label: 'Team Feed', href: '/team-feed' },
+];
+
 const adminNavItems = [
   { icon: Shield, label: 'Admin', href: '/admin' },
 ];
@@ -42,6 +48,7 @@ const tierConfig = {
   free: { label: 'Free', icon: Sparkles, className: 'bg-muted text-muted-foreground' },
   pro: { label: 'Pro', icon: Crown, className: 'bg-primary/20 text-primary' },
   team: { label: 'Team', icon: Users, className: 'bg-accent text-accent-foreground' },
+  agency: { label: 'Agency', icon: Building2, className: 'bg-gradient-to-r from-primary/20 to-accent/20 text-primary' },
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -66,7 +73,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return email?.charAt(0).toUpperCase() || 'U';
   };
 
-  const allNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
+  const allNavItems = isAdmin ? [...navItems, ...secondaryNavItems, ...adminNavItems] : [...navItems, ...secondaryNavItems];
 
   return (
     <div className="min-h-screen bg-background">
