@@ -13,18 +13,11 @@ Deno.serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     
-    // Create admin client with service role
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    // Verify the requesting user is an admin
+    // Verify the requesting user
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       console.log("Missing authorization header");
       return new Response(
         JSON.stringify({ error: "Missing authorization header" }),
@@ -32,10 +25,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create client with user's auth to validate JWT
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    const { data: claims, error: authError } = await supabaseAuth.auth.getClaims(token);
     
-    if (authError || !requestingUser) {
+    if (authError || !claims?.claims?.sub) {
       console.log("Invalid authorization:", authError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid authorization" }),
@@ -43,15 +41,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    const requestingUserId = claims.claims.sub;
+
+    // Create admin client with service role for privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
     // Check if requesting user is an admin
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", requestingUser.id)
+      .eq("user_id", requestingUserId)
       .eq("role", "admin");
 
     if (!roles || roles.length === 0) {
-      console.log("User is not an admin:", requestingUser.id);
+      console.log("User is not an admin:", requestingUserId);
       return new Response(
         JSON.stringify({ error: "Unauthorized: Admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
