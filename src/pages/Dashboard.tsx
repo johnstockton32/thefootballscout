@@ -203,18 +203,22 @@ export default function Dashboard() {
               icon={<FileText className="w-5 h-5" />}
             />
           </Link>
-          <StatCard
-            title="Avg Rating"
-            value={stats.avgRating || '-'}
-            icon={<Star className="w-5 h-5" />}
-            variant="gold"
-          />
-          <StatCard
-            title="This Month"
-            value={stats.thisMonth}
-            subtitle="Reports submitted"
-            icon={<TrendingUp className="w-5 h-5" />}
-          />
+          <Link to="/reports" className="block">
+            <StatCard
+              title="Avg Rating"
+              value={stats.avgRating || '-'}
+              icon={<Star className="w-5 h-5" />}
+              variant="gold"
+            />
+          </Link>
+          <Link to="/reports" className="block">
+            <StatCard
+              title="This Month"
+              value={stats.thisMonth}
+              subtitle="Reports submitted"
+              icon={<TrendingUp className="w-5 h-5" />}
+            />
+          </Link>
         </div>
 
         {/* Subscription Status Card */}
