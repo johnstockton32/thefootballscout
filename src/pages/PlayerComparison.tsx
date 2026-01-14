@@ -4,14 +4,14 @@ import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase, PlayerPosition, POSITION_LABELS, POSITION_ABBREV, calculateAge } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-import { Users, X, Plus, ArrowLeft, Crown } from 'lucide-react';
+import { Users, X, Plus, ArrowLeft, Crown, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Player {
@@ -53,6 +53,7 @@ export default function PlayerComparison() {
   const [selectedPlayers, setSelectedPlayers] = useState<PlayerWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showSelector, setShowSelector] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const maxComparison = limits.maxComparisonPlayers;
 
@@ -267,11 +268,31 @@ export default function PlayerComparison() {
             <CardHeader>
               <CardTitle className="text-lg">Select a Player</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, club, or nationality..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
               <ScrollArea className="h-64">
                 <div className="space-y-2">
                   {allPlayers
                     .filter((p) => !selectedPlayers.some((sp) => sp.id === p.id))
+                    .filter((p) => {
+                      if (!searchQuery.trim()) return true;
+                      const query = searchQuery.toLowerCase();
+                      return (
+                        p.full_name.toLowerCase().includes(query) ||
+                        (p.current_club?.toLowerCase().includes(query)) ||
+                        (p.nationality?.toLowerCase().includes(query)) ||
+                        POSITION_LABELS[p.position].toLowerCase().includes(query)
+                      );
+                    })
                     .map((player) => (
                       <button
                         key={player.id}
@@ -289,6 +310,23 @@ export default function PlayerComparison() {
                         </Badge>
                       </button>
                     ))}
+                  {allPlayers
+                    .filter((p) => !selectedPlayers.some((sp) => sp.id === p.id))
+                    .filter((p) => {
+                      if (!searchQuery.trim()) return true;
+                      const query = searchQuery.toLowerCase();
+                      return (
+                        p.full_name.toLowerCase().includes(query) ||
+                        (p.current_club?.toLowerCase().includes(query)) ||
+                        (p.nationality?.toLowerCase().includes(query)) ||
+                        POSITION_LABELS[p.position].toLowerCase().includes(query)
+                      );
+                    }).length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>No players found</p>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
