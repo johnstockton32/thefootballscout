@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -158,39 +159,14 @@ export default function TeamAnalytics() {
 
   if (!hasTeamFeatures) {
     return (
-      <DashboardLayout>
-        <div className="space-y-6 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/dashboard">
-                <ArrowLeft className="w-5 h-5" />
-              </Link>
-            </Button>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">Team Analytics</h1>
-              <p className="text-muted-foreground">
-                Insights from your team's scouting activity
-              </p>
-            </div>
-          </div>
-
-          <Card className="card-glass">
-            <CardContent className="py-16 text-center">
-              <Building2 className="w-16 h-16 text-muted-foreground/50 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Team Analytics</h2>
-              <p className="text-muted-foreground mb-6">
-                Upgrade to Team or Agency to access team analytics
-              </p>
-              <Button variant="hero" asChild>
-                <Link to="/pricing">
-                  <Crown className="w-4 h-4 mr-2" />
-                  View Plans
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </DashboardLayout>
+      <SubscriptionGate
+        requiredTier="team"
+        feature="hasTeamFeatures"
+        featureName="Team Analytics"
+        featureDescription="Get insights into your team's scouting activity, performance metrics, and collaboration stats. Upgrade to Team or Agency to unlock."
+      >
+        <div />
+      </SubscriptionGate>
     );
   }
 
