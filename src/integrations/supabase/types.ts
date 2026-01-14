@@ -256,6 +256,77 @@ export type Database = {
           },
         ]
       }
+      promo_code_redemptions: {
+        Row: {
+          id: string
+          promo_code_id: string
+          redeemed_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          promo_code_id: string
+          redeemed_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          promo_code_id?: string
+          redeemed_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_code_redemptions_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          current_uses: number | null
+          description: string | null
+          discount_percent: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          tier_upgrade: Database["public"]["Enums"]["subscription_tier"] | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          current_uses?: number | null
+          description?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          tier_upgrade?: Database["public"]["Enums"]["subscription_tier"] | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          current_uses?: number | null
+          description?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          tier_upgrade?: Database["public"]["Enums"]["subscription_tier"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       report_templates: {
         Row: {
           created_at: string
@@ -675,6 +746,10 @@ export type Database = {
         Args: { _owner_id: string; _profile_team_id: string }
         Returns: boolean
       }
+      redeem_promo_code: {
+        Args: { _code: string; _user_id: string }
+        Returns: Json
+      }
       start_pro_trial: { Args: { _user_id: string }; Returns: boolean }
       upgrade_subscription: {
         Args: {
@@ -683,6 +758,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      validate_promo_code: { Args: { _code: string }; Returns: Json }
     }
     Enums: {
       app_role: "scout" | "admin"
