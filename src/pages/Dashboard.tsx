@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useOnboardingTour } from '@/hooks/useOnboardingTour';
+import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap, ChevronRight } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -57,6 +59,7 @@ interface Report {
 export default function Dashboard() {
   const { user, profile } = useAuth();
   const subscription = useSubscription();
+  const tour = useOnboardingTour();
   const [players, setPlayers] = useState<Player[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [stats, setStats] = useState({
@@ -151,6 +154,18 @@ export default function Dashboard() {
 
   return (
     <DashboardLayout>
+      {/* Onboarding Tour */}
+      <OnboardingTour
+        isOpen={tour.isOpen}
+        currentStep={tour.currentStep}
+        totalSteps={tour.totalSteps}
+        currentTourStep={tour.currentTourStep}
+        onNext={tour.nextStep}
+        onPrev={tour.prevStep}
+        onSkip={tour.skipTour}
+        onComplete={tour.completeTour}
+      />
+
       <div className="space-y-8 animate-fade-in">
         {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -171,13 +186,13 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild data-tour="new-report">
               <Link to="/reports/new">
                 <FileText className="w-4 h-4 mr-2" />
                 New Report
               </Link>
             </Button>
-            <Button variant="hero" asChild>
+            <Button variant="hero" asChild data-tour="add-player">
               <Link to="/players/new">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Player
@@ -187,7 +202,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="stats-grid">
           <Link to="/players" className="block">
             <StatCard
               title="Total Players"
@@ -222,7 +237,7 @@ export default function Dashboard() {
         </div>
 
         {/* Subscription Status Card */}
-        <Card className={cn(
+        <Card data-tour="subscription" className={cn(
           "card-glass border-l-4",
           subscription.tier === 'free' ? 'border-l-muted-foreground' : 
           subscription.tier === 'pro' ? 'border-l-primary' : 'border-l-purple-500'

@@ -181,7 +181,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </nav>
 
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
+      <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6">
