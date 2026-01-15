@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders, PlayCircle } from 'lucide-react';
+import { useOnboardingTour } from '@/hooks/useOnboardingTour';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -65,6 +66,29 @@ const passwordSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 type EmailFormData = z.infer<typeof emailSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
+
+// RestartTourButton component
+function RestartTourButton() {
+  const navigate = useNavigate();
+  const { resetTour } = useOnboardingTour();
+  const { toast } = useToast();
+
+  const handleRestartTour = () => {
+    resetTour();
+    toast({
+      title: 'Tour reset',
+      description: 'Redirecting to dashboard to start the tour...',
+    });
+    navigate('/dashboard');
+  };
+
+  return (
+    <Button variant="outline" onClick={handleRestartTour} className="gap-2">
+      <PlayCircle className="h-4 w-4" />
+      Restart Onboarding Tour
+    </Button>
+  );
+}
 
 export default function Settings() {
   const navigate = useNavigate();
@@ -1323,6 +1347,17 @@ export default function Settings() {
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
+            {/* Onboarding Tour */}
+            <Card className="card-glass">
+              <CardHeader>
+                <CardTitle>Onboarding Tour</CardTitle>
+                <CardDescription>Restart the guided tour to learn about all features</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RestartTourButton />
+              </CardContent>
+            </Card>
+
             {/* Sign Out */}
             <Card className="card-glass">
               <CardHeader>
