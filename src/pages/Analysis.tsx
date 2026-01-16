@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,13 +6,38 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Search, Sparkles, Loader2, User, MapPin, Calendar, ArrowRight, GitCompare, X } from 'lucide-react';
+import { 
+  Search, Sparkles, Loader2, User, MapPin, Calendar, ArrowRight, 
+  GitCompare, X, Download, FileText, FileSpreadsheet, Bookmark, 
+  BookmarkPlus, Trash2, ChevronDown, Clock
+} from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { differenceInYears } from 'date-fns';
+import { differenceInYears, format } from 'date-fns';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 
 interface PlayerMatch {
   id: string;
@@ -31,7 +56,15 @@ interface SearchResult {
   summary: string;
 }
 
+interface SavedSearch {
+  id: string;
+  name: string;
+  query: string;
+  created_at: string;
+}
+
 export default function Analysis() {
+  const { user } = useAuth();
   const { limits } = useSubscription();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -39,14 +72,92 @@ export default function Analysis() {
   const [result, setResult] = useState<SearchResult | null>(null);
   const [selectedForComparison, setSelectedForComparison] = useState<Set<string>>(new Set());
   const [isCompareMode, setIsCompareMode] = useState(false);
+  
+  // Saved searches state
+  const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
+  const [isLoadingSaved, setIsLoadingSaved] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [searchName, setSearchName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const exampleQueries = [
     "Fast wingers under 23 with good dribbling",
     "Left-footed centre backs who are strong in the air",
     "Creative midfielders with high work rate",
-    "Strikers who scored in their last 3 reports",
-    "Young goalkeepers from Premier League clubs",
   ];
+
+  // Load saved searches on mount
+  useEffect(() => {
+    if (user) {
+      fetchSavedSearches();
+    }
+  }, [user]);
+
+  const fetchSavedSearches = async () => {
+    setIsLoadingSaved(true);
+    try {
+      const { data, error } = await supabase
+        .from('saved_searches')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSavedSearches(data || []);
+    } catch (error) {
+      console.error('Error fetching saved searches:', error);
+    } finally {
+      setIsLoadingSaved(false);
+    }
+  };
+
+  const handleSaveSearch = async () => {
+    if (!searchName.trim() || !query.trim()) {
+      toast.error('Please enter a name for your search');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const { error } = await supabase.from('saved_searches').insert({
+        user_id: user?.id,
+        name: searchName.trim(),
+        query: query.trim(),
+      });
+
+      if (error) throw error;
+
+      toast.success('Search saved successfully');
+      setShowSaveDialog(false);
+      setSearchName('');
+      fetchSavedSearches();
+    } catch (error) {
+      console.error('Error saving search:', error);
+      toast.error('Failed to save search');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSavedSearch = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_searches')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Search deleted');
+      fetchSavedSearches();
+    } catch (error) {
+      console.error('Error deleting search:', error);
+      toast.error('Failed to delete search');
+    }
+  };
+
+  const handleLoadSavedSearch = (savedQuery: string) => {
+    setQuery(savedQuery);
+  };
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -132,7 +243,6 @@ export default function Analysis() {
       return;
     }
     
-    // Store selected player IDs in sessionStorage for the comparison page
     const playerIds = Array.from(selectedForComparison);
     sessionStorage.setItem('comparePlayerIds', JSON.stringify(playerIds));
     navigate('/players/compare');
@@ -141,6 +251,159 @@ export default function Analysis() {
   const clearSelection = () => {
     setSelectedForComparison(new Set());
     setIsCompareMode(false);
+  };
+
+  // Export as CSV
+  const exportAsCSV = () => {
+    if (!result?.players?.length) return;
+
+    setIsExporting(true);
+    try {
+      const headers = ['Name', 'Position', 'Club', 'Nationality', 'Age', 'Match Score', 'Match Reason'];
+      
+      const rows = result.players.map(player => [
+        player.full_name,
+        POSITION_LABELS[player.position as PlayerPosition] || player.position,
+        player.current_club || 'N/A',
+        player.nationality || 'N/A',
+        player.date_of_birth ? calculateAge(player.date_of_birth)?.toString() || 'N/A' : 'N/A',
+        `${Math.round(player.match_score * 100)}%`,
+        player.match_reason?.replace(/[\n\r]/g, ' ') || '',
+      ]);
+
+      const escapeCSV = (value: string) => {
+        if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      };
+
+      const csvContent = [
+        headers.map(escapeCSV).join(','),
+        ...rows.map(row => row.map(escapeCSV).join(',')),
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `smart_discovery_results_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Exported as CSV');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Export as PDF
+  const exportAsPDF = () => {
+    if (!result?.players?.length) return;
+
+    setIsExporting(true);
+    try {
+      const doc = new jsPDF();
+      const primaryColor: [number, number, number] = [39, 174, 96];
+      const textDark: [number, number, number] = [30, 30, 30];
+      const textMuted: [number, number, number] = [107, 114, 128];
+      
+      // Header
+      doc.setFillColor(...primaryColor);
+      doc.rect(0, 0, 210, 35, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('SMART DISCOVERY RESULTS', 15, 18);
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`The Football Scout  •  ${format(new Date(), 'MMMM d, yyyy')}`, 15, 27);
+      
+      // Search query info
+      let y = 45;
+      doc.setTextColor(...textMuted);
+      doc.setFontSize(10);
+      doc.text('Search Query:', 15, y);
+      doc.setTextColor(...textDark);
+      doc.setFont('helvetica', 'bold');
+      
+      // Word wrap for long queries
+      const queryLines = doc.splitTextToSize(query, 180);
+      doc.text(queryLines, 15, y + 6);
+      y += 6 + queryLines.length * 5;
+      
+      // Summary
+      if (result.summary) {
+        y += 5;
+        doc.setTextColor(...textMuted);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        const summaryLines = doc.splitTextToSize(result.summary, 180);
+        doc.text(summaryLines, 15, y);
+        y += summaryLines.length * 4 + 5;
+      }
+      
+      // Results count
+      y += 5;
+      doc.setTextColor(...primaryColor);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${result.players.length} Matching Players`, 15, y);
+      y += 8;
+      
+      // Table
+      autoTable(doc, {
+        startY: y,
+        head: [['Name', 'Position', 'Club', 'Nationality', 'Age', 'Match']],
+        body: result.players.map(player => [
+          player.full_name,
+          getPositionLabel(player.position),
+          player.current_club || 'N/A',
+          player.nationality || 'N/A',
+          player.date_of_birth ? calculateAge(player.date_of_birth)?.toString() || '-' : '-',
+          `${Math.round(player.match_score * 100)}%`,
+        ]),
+        theme: 'striped',
+        headStyles: {
+          fillColor: primaryColor,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: textDark,
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251],
+        },
+        margin: { left: 15, right: 15 },
+        columnStyles: {
+          0: { cellWidth: 45 },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 15 },
+          5: { cellWidth: 20 },
+        },
+      });
+      
+      // Save PDF
+      doc.save(`smart_discovery_results_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      toast.success('Exported as PDF');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   if (!limits.hasAdvancedAnalytics) {
@@ -160,14 +423,62 @@ export default function Analysis() {
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
-            <Sparkles className="w-7 h-7 text-primary" />
-            Smart Discovery
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Search your player database using natural language. Just describe what you're looking for.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+              <Sparkles className="w-7 h-7 text-primary" />
+              Smart Discovery
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Search your player database using natural language.
+            </p>
+          </div>
+          
+          {/* Saved Searches Dropdown */}
+          {savedSearches.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Bookmark className="w-4 h-4 mr-2" />
+                  Saved Searches
+                  <ChevronDown className="w-4 h-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <ScrollArea className="max-h-64">
+                  {savedSearches.map((search) => (
+                    <DropdownMenuItem
+                      key={search.id}
+                      className="flex items-center justify-between p-2"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <button
+                        onClick={() => handleLoadSavedSearch(search.query)}
+                        className="flex-1 text-left"
+                      >
+                        <p className="font-medium text-sm truncate">{search.name}</p>
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {format(new Date(search.created_at), 'MMM d, yyyy')}
+                        </p>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 ml-2 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSavedSearch(search.id);
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3 text-destructive" />
+                      </Button>
+                    </DropdownMenuItem>
+                  ))}
+                </ScrollArea>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* Search Card */}
@@ -207,23 +518,74 @@ export default function Analysis() {
               ))}
             </div>
 
-            <Button 
-              onClick={handleSearch} 
-              disabled={isSearching || !query.trim()}
-              className="w-full sm:w-auto"
-            >
-              {isSearching ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Search Players
-                </>
+            <div className="flex flex-wrap gap-2">
+              <Button 
+                onClick={handleSearch} 
+                disabled={isSearching || !query.trim()}
+              >
+                {isSearching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    Search Players
+                  </>
+                )}
+              </Button>
+              
+              {query.trim() && (
+                <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline">
+                      <BookmarkPlus className="w-4 h-4 mr-2" />
+                      Save Search
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Save Search</DialogTitle>
+                      <DialogDescription>
+                        Give your search a name so you can quickly access it later.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Search Name</label>
+                        <Input
+                          placeholder="e.g., Young wingers for U23 team"
+                          value={searchName}
+                          onChange={(e) => setSearchName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Query</label>
+                        <p className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                          {query}
+                        </p>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleSaveSearch} disabled={isSaving || !searchName.trim()}>
+                        {isSaving ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          'Save Search'
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               )}
-            </Button>
+            </div>
           </CardContent>
         </Card>
 
@@ -248,7 +610,32 @@ export default function Analysis() {
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <CardTitle>Matching Players ({result.players.length})</CardTitle>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Export buttons */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button size="sm" variant="outline" disabled={isExporting}>
+                            {isExporting ? (
+                              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            ) : (
+                              <Download className="w-4 h-4 mr-1" />
+                            )}
+                            Export
+                            <ChevronDown className="w-4 h-4 ml-1" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={exportAsPDF}>
+                            <FileText className="w-4 h-4 mr-2" />
+                            Export as PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={exportAsCSV}>
+                            <FileSpreadsheet className="w-4 h-4 mr-2" />
+                            Export as CSV
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      
                       {isCompareMode ? (
                         <>
                           <span className="text-sm text-muted-foreground">
