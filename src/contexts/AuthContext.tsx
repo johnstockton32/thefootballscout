@@ -13,7 +13,7 @@ interface Profile {
   photo_url: string | null;
   team_id: string | null;
   team_role: 'scout' | 'senior_scout' | 'team_admin' | null;
-  subscription_tier: 'free' | 'pro' | 'team' | 'agency';
+  subscription_tier: 'free' | 'pro' | 'team';
 }
 
 interface ProfileUpdate {

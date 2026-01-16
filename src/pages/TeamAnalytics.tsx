@@ -165,7 +165,7 @@ export default function TeamAnalytics() {
         requiredTier="team"
         feature="hasTeamFeatures"
         featureName="Team Analytics"
-        featureDescription="Get insights into your team's scouting activity, performance metrics, and collaboration stats. Upgrade to Team or Agency to unlock."
+        featureDescription="Get insights into your team's scouting activity, performance metrics, and collaboration stats. Upgrade to Team to unlock."
       >
         <div />
       </SubscriptionGate>

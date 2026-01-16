@@ -149,7 +149,7 @@ export default function TeamFeed() {
         requiredTier="team"
         feature="hasTeamFeatures"
         featureName="Team Feed"
-        featureDescription="See what your team members are working on in real-time. Upgrade to Team or Agency to access this feature."
+        featureDescription="See what your team members are working on in real-time. Upgrade to Team to access this feature."
       >
         <div />
       </SubscriptionGate>

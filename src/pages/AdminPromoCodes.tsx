@@ -156,7 +156,7 @@ export default function AdminPromoCodes() {
         code: formData.code.toUpperCase().trim(),
         description: formData.description.trim() || null,
         discount_percent: formData.discount_percent,
-        tier_upgrade: (formData.tier_upgrade || null) as 'free' | 'pro' | 'team' | 'agency' | null,
+        tier_upgrade: (formData.tier_upgrade || null) as 'free' | 'pro' | 'team' | null,
         max_uses: formData.max_uses ? parseInt(formData.max_uses) : null,
         expires_at: formData.expires_at ? new Date(formData.expires_at).toISOString() : null,
         is_active: formData.is_active,
@@ -315,7 +315,6 @@ export default function AdminPromoCodes() {
                         <SelectItem value="">None</SelectItem>
                         <SelectItem value="pro">Pro</SelectItem>
                         <SelectItem value="team">Team</SelectItem>
-                        <SelectItem value="agency">Agency</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
