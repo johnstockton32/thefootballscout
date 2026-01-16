@@ -172,45 +172,47 @@ export default function Dashboard() {
         onComplete={tour.completeTour}
       />
 
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-6 sm:space-y-8 animate-fade-in">
         {/* Draft Recovery Banner */}
         <DraftRecoveryBanner />
         {/* Welcome Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-lg">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-primary/20 shadow-lg shrink-0">
               <AvatarImage src={profile?.photo_url || undefined} alt={profile?.full_name || 'Profile'} />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold text-lg">
+              <AvatarFallback className="bg-primary/10 text-primary font-bold text-base sm:text-lg">
                 {getInitials(profile?.full_name)}
               </AvatarFallback>
             </Avatar>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold">
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">
                 Welcome back{profile?.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
               </h1>
-              <p className="text-muted-foreground mt-1">
+              <p className="text-muted-foreground text-sm sm:text-base mt-0.5 sm:mt-1">
                 Here's your scouting overview.
               </p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" asChild data-tour="new-report">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" asChild data-tour="new-report" className="flex-1 sm:flex-none">
               <Link to="/reports/new">
-                <FileText className="w-4 h-4 mr-2" />
-                New Report
+                <FileText className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">New Report</span>
+                <span className="xs:hidden">Report</span>
               </Link>
             </Button>
-            <Button variant="hero" asChild data-tour="add-player">
+            <Button variant="hero" asChild data-tour="add-player" className="flex-1 sm:flex-none">
               <Link to="/players/new">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Player
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Add Player</span>
+                <span className="xs:hidden">Player</span>
               </Link>
             </Button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-tour="stats-grid">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4" data-tour="stats-grid">
           <Link to="/players" className="block">
             <StatCard
               title="Total Players"
@@ -337,7 +339,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Recent Players */}
           <div className="lg:col-span-2">
             <Card className="card-glass">
@@ -351,11 +353,11 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <SkeletonList count={4} variant="player" />
                   </div>
                 ) : players.length > 0 ? (
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     {players.map((player, index) => (
                       <motion.div
                         key={player.id}

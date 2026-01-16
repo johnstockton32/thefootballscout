@@ -29,15 +29,15 @@ export function AttributeSlider({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <Label className="text-sm font-medium">{label}</Label>
+    <div className="space-y-2 sm:space-y-3 py-1">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <Label className="text-xs sm:text-sm font-medium">{label}</Label>
           {description && (
-            <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">{description}</p>
           )}
         </div>
-        <span className={cn('text-lg font-bold tabular-nums', getColor())}>
+        <span className={cn('text-base sm:text-lg font-bold tabular-nums shrink-0', getColor())}>
           {value}
         </span>
       </div>
@@ -47,9 +47,9 @@ export function AttributeSlider({
         min={min}
         max={max}
         step={1}
-        className="cursor-pointer"
+        className="cursor-pointer touch-pan-x"
       />
-      <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex justify-between text-[10px] sm:text-xs text-muted-foreground">
         <span>Poor ({min})</span>
         <span>World Class ({max})</span>
       </div>
