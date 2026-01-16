@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   LayoutDashboard,
@@ -8,22 +9,13 @@ import {
   FileText,
   BarChart3,
   Shield,
+  Sparkles,
 } from 'lucide-react';
-
-const navItems = [
-  { icon: LayoutDashboard, label: 'Home', href: '/dashboard' },
-  { icon: Users, label: 'Players', href: '/players' },
-  { icon: FileText, label: 'Reports', href: '/reports' },
-  { icon: BarChart3, label: 'Compare', href: '/players/compare' },
-];
-
-const adminNavItems = [
-  { icon: Shield, label: 'Admin', href: '/admin' },
-];
 
 export function MobileBottomNav() {
   const location = useLocation();
   const { isAdmin, profile } = useAuth();
+  const { tier, limits } = useSubscription();
 
   const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
     if (name) {
@@ -32,7 +24,27 @@ export function MobileBottomNav() {
     return email?.charAt(0).toUpperCase() || 'U';
   };
 
-  // For admin, add Admin before Settings
+  // Base nav items for all users
+  const baseNavItems = [
+    { icon: LayoutDashboard, label: 'Home', href: '/dashboard' },
+    { icon: Users, label: 'Players', href: '/players' },
+    { icon: FileText, label: 'Reports', href: '/reports' },
+  ];
+
+  // Build nav items based on tier
+  const navItems = [...baseNavItems];
+  
+  // Pro+ features
+  if (limits.hasAdvancedAnalytics) {
+    navItems.push({ icon: Sparkles, label: 'Analysis', href: '/analysis' });
+  }
+
+  // Admin nav item
+  const adminNavItems = [
+    { icon: Shield, label: 'Admin', href: '/admin' },
+  ];
+
+  // For admin, add Admin item
   const displayItems = isAdmin 
     ? [...navItems, adminNavItems[0]]
     : navItems;

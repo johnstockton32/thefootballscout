@@ -38,6 +38,7 @@ const plans = [
       'Unlimited scouting reports',
       'Advanced analytics & radar charts',
       'Player comparison (up to 5)',
+      'Smart Discovery AI search',
       'PDF export',
       'Priority support',
       'Custom attribute weights',
@@ -81,14 +82,16 @@ export default function Pricing() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="cursor-pointer">
-            <Logo size="sm" />
+            <Logo size="sm" showText={false} className="sm:hidden" />
+            <Logo size="sm" className="hidden sm:flex" />
           </button>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/auth')}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
-            <Button variant="hero" onClick={() => navigate('/auth')}>
-              Get Started
+            <Button variant="hero" size="sm" onClick={() => navigate('/auth')}>
+              <span className="hidden sm:inline">Get Started</span>
+              <span className="sm:hidden">Start</span>
             </Button>
           </div>
         </div>
