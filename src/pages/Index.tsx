@@ -43,17 +43,16 @@ export default function Index() {
   return <div className="min-h-screen bg-background pitch-pattern">
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Logo size="sm" showText={false} className="sm:hidden" />
-          <Logo size="sm" className="hidden sm:flex" />
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
+          <Logo size="sm" />
+          <div className="flex items-center gap-1.5 sm:gap-3">
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/pricing')}>
               Pricing
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
+            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-3" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
-            <Button variant="hero" size="sm" className="sm:size-default" onClick={() => navigate('/auth')}>
+            <Button variant="hero" size="sm" className="text-xs sm:text-sm px-2 sm:px-4" onClick={() => navigate('/auth')}>
               <span className="hidden sm:inline">Get Started</span>
               <span className="sm:hidden">Start</span>
             </Button>
@@ -62,81 +61,90 @@ export default function Index() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4">
         <div className="container mx-auto text-center max-w-4xl">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm text-primary font-medium">Professional Scouting Platform</span>
+          {/* Logo Display */}
+          <div className="flex justify-center mb-6 sm:mb-8">
+            <Logo size="xl" />
           </div>
           
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 sm:mb-8">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-xs sm:text-sm text-primary font-medium">Professional Scouting Platform</span>
+          </div>
+          
+          <h1 className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 sm:mb-6 leading-tight">
             <span className="text-foreground">Scout Smarter.</span>
             <br />
             <span className="text-gradient-pitch">Discover Talent.</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">The complete scouting toolkit for identifying, evaluating, and tracking football talent. From grassroots to professional levels</p>
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-8 sm:mb-10 max-w-2xl mx-auto px-2">The complete scouting toolkit for identifying, evaluating, and tracking football talent. From grassroots to professional levels</p>
           
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button variant="hero" size="xl" onClick={() => navigate('/auth')}>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Button variant="hero" size="lg" className="w-full sm:w-auto" onClick={() => navigate('/auth')}>
               Start Scouting Free
               <ArrowRight className="w-5 h-5" />
             </Button>
-            <Button variant="glass" size="lg" onClick={() => navigate('/demo')}>
+            <Button variant="glass" size="lg" className="w-full sm:w-auto" onClick={() => navigate('/demo')}>
               View Demo
             </Button>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 mt-16 max-w-lg mx-auto">
+          <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-12 sm:mt-16 max-w-lg mx-auto">
             <div className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-gradient-pitch">20+</p>
-              <p className="text-sm text-muted-foreground mt-1">Attributes</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-pitch">20+</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Attributes</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-gradient-gold">0-100</p>
-              <p className="text-sm text-muted-foreground mt-1">Rating Scale</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gradient-gold">0-100</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Rating Scale</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl md:text-4xl font-bold text-foreground">8</p>
-              <p className="text-sm text-muted-foreground mt-1">Positions</p>
+              <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground">8</p>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Positions</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-4 bg-card/30">
+      <section className="py-12 sm:py-20 px-4 bg-card/30">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Professional-grade tools designed for scouts at every level</p>
+          <div className="text-center mb-8 sm:mb-12">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Everything You Need</h2>
+            <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto px-2">Professional-grade tools designed for scouts at every level</p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature, index) => <div key={feature.title} className="card-glass p-6 rounded-xl hover:border-primary/30 transition-all duration-300 hover:scale-[1.02]" style={{
-            animationDelay: `${index * 100}ms`
-          }}>
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {features.map((feature, index) => (
+              <div 
+                key={feature.title} 
+                className="card-glass p-4 sm:p-6 rounded-xl hover:border-primary/30 transition-all duration-300 hover:scale-[1.02]" 
+                style={{ animationDelay: `${index * 100}ms` }}
+              >
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-3 sm:mb-4">
+                  <feature.icon className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground">{feature.description}</p>
-              </div>)}
+                <h3 className="text-base sm:text-lg font-bold mb-1.5 sm:mb-2">{feature.title}</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">{feature.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4">
+      <section className="py-12 sm:py-20 px-4">
         <div className="container mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-4 sm:mb-6">
             Ready to find the next star?
           </h2>
-          <p className="text-muted-foreground mb-8">
+          <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8 px-2">
             Join scouts worldwide using The Football Scout to discover and track talent.
           </p>
-          <Button variant="hero" size="xl" onClick={() => navigate('/auth')}>
+          <Button variant="hero" size="lg" className="w-full sm:w-auto" onClick={() => navigate('/auth')}>
             Create Free Account
             <ArrowRight className="w-5 h-5" />
           </Button>
@@ -144,10 +152,10 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-4">
-        <div className="container mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo size="sm" showText={false} />
-          <p className="text-sm text-muted-foreground">
+      <footer className="border-t border-border py-6 sm:py-8 px-4">
+        <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Logo size="sm" />
+          <p className="text-xs sm:text-sm text-muted-foreground text-center">
             © 2026 The Football Scout. GDPR Compliant.
           </p>
         </div>
