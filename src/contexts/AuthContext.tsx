@@ -197,23 +197,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteAccount = async () => {
-    if (!user) return { error: new Error('Not authenticated') };
+    if (!user || !session) return { error: new Error('Not authenticated') };
     
     try {
-      // Delete user's scouting reports first (due to foreign key)
-      await supabase.from('scouting_reports').delete().eq('scout_id', user.id);
-      
-      // Delete user's players
-      await supabase.from('players').delete().eq('scout_id', user.id);
-      
-      // Delete user's profile
-      await supabase.from('profiles').delete().eq('id', user.id);
-      
-      // Delete user roles
-      await supabase.from('user_roles').delete().eq('user_id', user.id);
-      
-      // Sign out the user (auth.users deletion requires admin/service role)
-      await signOut();
+      // Use edge function for secure server-side deletion
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-account`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        return { error: new Error(result.error || 'Failed to delete account') };
+      }
+
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setIsSuperAdmin(false);
+      setRoles([]);
       
       return { error: null };
     } catch (err) {
