@@ -15,12 +15,12 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <TooltipProvider>
-        <FootballBackground />
         <OfflineBanner />
         <Toaster />
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <FootballBackground />
             <AnimatedRoutes />
           </AuthProvider>
         </BrowserRouter>

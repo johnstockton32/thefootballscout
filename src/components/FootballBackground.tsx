@@ -1,6 +1,19 @@
 import { motion } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
+
+// Routes where the football background should be shown (public pages only)
+const PUBLIC_ROUTES = ['/', '/auth', '/pricing', '/demo', '/install', '/gdpr-consent'];
 
 export function FootballBackground() {
+  const location = useLocation();
+  
+  // Only show on public routes
+  const isPublicRoute = PUBLIC_ROUTES.some(route => 
+    location.pathname === route || location.pathname.startsWith('/auth')
+  );
+  
+  if (!isPublicRoute) return null;
+  
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {/* Large football - bottom right */}
@@ -8,7 +21,7 @@ export function FootballBackground() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2, ease: 'easeOut' }}
-        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.012] dark:opacity-[0.008]"
+        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.006] dark:opacity-[0.004]"
       >
         <svg
           viewBox="0 0 100 100"
