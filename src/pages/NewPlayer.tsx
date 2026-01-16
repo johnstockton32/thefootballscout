@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -11,11 +11,15 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { supabase, POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, User, AlertTriangle, Crown } from 'lucide-react';
+import { ArrowLeft, Save, User, AlertTriangle, Crown, Cloud } from 'lucide-react';
 import { z } from 'zod';
 import { handleError } from '@/lib/errorUtils';
 import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
+import { useDebouncedCallback } from 'use-debounce';
+
+const PLAYER_DRAFT_KEY = 'player_draft';
 
 const playerSchema = z.object({
   full_name: z.string().min(2, 'Name must be at least 2 characters').max(100),
@@ -34,6 +38,7 @@ export default function NewPlayer() {
   const { user } = useAuth();
   const { canCreatePlayer, usage, limits, tier, isLoading: subscriptionLoading } = useSubscription();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
@@ -48,6 +53,57 @@ export default function NewPlayer() {
     weight_kg: '',
     preferred_foot: '',
     notes: '',
+  });
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(PLAYER_DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const draft = JSON.parse(savedDraft);
+        setFormData(draft.formData || formData);
+        setPhotoUrl(draft.photoUrl || null);
+      } catch (e) {
+        console.error('Error loading player draft:', e);
+      }
+    }
+  }, []);
+
+  // Autosave draft to localStorage
+  const saveDraft = useDebouncedCallback(() => {
+    if (!formData.full_name && !formData.position) return;
+    
+    setIsSaving(true);
+    try {
+      localStorage.setItem(PLAYER_DRAFT_KEY, JSON.stringify({
+        formData,
+        photoUrl,
+        savedAt: new Date().toISOString(),
+      }));
+    } catch (e) {
+      console.error('Error saving player draft:', e);
+    } finally {
+      setTimeout(() => setIsSaving(false), 500);
+    }
+  }, 1000);
+
+  // Trigger autosave on form changes
+  useEffect(() => {
+    saveDraft();
+  }, [formData, photoUrl]);
+
+  // Clear draft on successful submit
+  const clearDraft = () => {
+    localStorage.removeItem(PLAYER_DRAFT_KEY);
+  };
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onSave: () => {
+      if (formData.full_name && formData.position) {
+        document.querySelector<HTMLFormElement>('form')?.requestSubmit();
+      }
+    },
   });
 
   const handleChange = (field: string, value: string) => {
@@ -107,6 +163,9 @@ export default function NewPlayer() {
 
       if (error) throw error;
 
+      // Clear the draft on successful save
+      clearDraft();
+      
       toast.success('Player added successfully!');
       navigate('/players');
     } catch (error: unknown) {
@@ -125,10 +184,20 @@ export default function NewPlayer() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">Add New Player</h1>
-          <p className="text-muted-foreground mt-1">
-            Create a player profile to start scouting
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold">Add New Player</h1>
+              <p className="text-muted-foreground mt-1">
+                Create a player profile to start scouting
+              </p>
+            </div>
+            {isSaving && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Cloud className="w-4 h-4 animate-pulse" />
+                Saving...
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Subscription Limit Warning */}

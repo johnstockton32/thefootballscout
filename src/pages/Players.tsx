@@ -6,8 +6,10 @@ import { PlayerCard } from '@/components/players/PlayerCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SkeletonList } from '@/components/ui/skeleton-card';
 import { supabase, PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { Plus, Search, Users, Filter, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,6 +49,9 @@ export default function Players() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts();
 
   useEffect(() => {
     if (user) {
@@ -147,9 +152,7 @@ export default function Players() {
         {/* Players Grid */}
         {isLoading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-40 bg-muted rounded-xl animate-pulse" />
-            ))}
+            <SkeletonList count={6} variant="player" />
           </div>
         ) : filteredPlayers.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
