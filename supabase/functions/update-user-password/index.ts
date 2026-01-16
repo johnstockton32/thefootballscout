@@ -93,6 +93,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SECURITY: Verify target user is in the same team as requester
+    const { data: targetProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("team_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (!targetProfile) {
+      return new Response(
+        JSON.stringify({ error: "User not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Team owners can only update passwords for their own team members
+    if (isTeamOwner && ownedTeam) {
+      if (targetProfile.team_id !== ownedTeam.id) {
+        console.log("Team owner attempted to update password for user not in their team");
+        return new Response(
+          JSON.stringify({ error: "You can only update passwords for members of your team" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Team admins can only update passwords for users in the same team
+    if (isTeamAdmin && !isTeamOwner) {
+      if (targetProfile.team_id !== userProfile?.team_id) {
+        console.log("Team admin attempted to update password for user not in their team");
+        return new Response(
+          JSON.stringify({ error: "You can only update passwords for members of your team" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     console.log("Updating password for user:", userId);
 
     // Update the user's password

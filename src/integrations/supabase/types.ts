@@ -765,10 +765,9 @@ export type Database = {
         Args: { _owner_id: string; _profile_team_id: string }
         Returns: boolean
       }
-      redeem_promo_code: {
-        Args: { _code: string; _user_id: string }
-        Returns: Json
-      }
+      redeem_promo_code:
+        | { Args: { _code: string; _user_id: string }; Returns: Json }
+        | { Args: { _code: string; _user_id: string }; Returns: Json }
       start_pro_trial: { Args: { _user_id: string }; Returns: boolean }
       upgrade_subscription: {
         Args: {
