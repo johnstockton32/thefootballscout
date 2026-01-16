@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { NotificationToggle } from '@/components/NotificationToggle';
+import { BulkExportModal } from '@/components/BulkExportModal';
 import {
   LayoutDashboard,
   Users,
@@ -115,7 +118,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-16">
           <Logo size="sm" />
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {/* Theme and Notification Toggles */}
+            <ThemeToggle />
+            <NotificationToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
             {/* Mobile Tier Badge */}
@@ -208,9 +214,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           </div>
 
-          {/* Sync Status */}
-          <div className="px-4 mb-2">
+          {/* Header Controls */}
+          <div className="px-4 mb-2 flex items-center justify-between">
             <SyncStatusIndicator />
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <NotificationToggle />
+            </div>
+          </div>
+
+          {/* Bulk Export */}
+          <div className="px-4 mb-2">
+            <BulkExportModal />
           </div>
 
           {/* Quick Action */}
