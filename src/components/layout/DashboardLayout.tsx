@@ -124,6 +124,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <NotificationToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
+            {/* Sign Out Button */}
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-muted-foreground hover:text-destructive transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
             {/* Mobile Tier Badge */}
             <Link
               to="/settings?tab=plan"
@@ -192,9 +200,16 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Desktop Sidebar */}
       <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6">
+          {/* Logo & Sign Out Header */}
+          <div className="p-6 flex items-center justify-between">
             <Logo size="md" />
+            <button
+              onClick={handleSignOut}
+              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+              title="Sign Out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
 
           {/* Tier Badge */}
@@ -240,8 +255,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-4 space-y-1">
+          {/* Navigation - Scrollable */}
+          <nav className="flex-1 px-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-sidebar-accent scrollbar-track-transparent">
             {allNavItems.map((item) => (
               <Link
                 key={item.href}

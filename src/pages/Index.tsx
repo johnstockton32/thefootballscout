@@ -63,9 +63,17 @@ export default function Index() {
       {/* Hero Section */}
       <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4">
         <div className="container mx-auto text-center max-w-4xl">
-          {/* Logo Display */}
-          <div className="flex justify-center mb-6 sm:mb-8">
-            <Logo size="xl" />
+          {/* Logo Display - Hero Spotlight */}
+          <div className="flex justify-center mb-8 sm:mb-10">
+            <div className="relative">
+              {/* Glow effect behind logo */}
+              <div className="absolute inset-0 bg-primary/30 rounded-full blur-3xl scale-150 animate-pulse" />
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-rating-gold/20 to-primary/20 rounded-full blur-2xl scale-125" />
+              {/* Logo with enhanced styling */}
+              <div className="relative p-4 sm:p-6 rounded-full bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border border-primary/20 shadow-2xl shadow-primary/20">
+                <Logo size="xl" className="drop-shadow-2xl [&_img]:w-28 [&_img]:h-28 sm:[&_img]:w-36 sm:[&_img]:h-36 md:[&_img]:w-44 md:[&_img]:h-44" />
+              </div>
+            </div>
           </div>
           
           <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 sm:mb-8">
