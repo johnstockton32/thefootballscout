@@ -64,6 +64,47 @@ export default function PlayerComparison() {
     }
   }, [user]);
 
+  // Load pre-selected players from sessionStorage (from Analysis page)
+  useEffect(() => {
+    const loadPreselectedPlayers = async () => {
+      const storedIds = sessionStorage.getItem('comparePlayerIds');
+      if (storedIds && allPlayers.length > 0) {
+        try {
+          const playerIds: string[] = JSON.parse(storedIds);
+          sessionStorage.removeItem('comparePlayerIds'); // Clear after reading
+          
+          for (const playerId of playerIds) {
+            const player = allPlayers.find(p => p.id === playerId);
+            if (player && !selectedPlayers.some(sp => sp.id === playerId)) {
+              const stats = await fetchPlayerStats(playerId);
+              setSelectedPlayers(prev => [
+                ...prev,
+                {
+                  ...player,
+                  avgRating: stats.avgRating,
+                  attributes: {
+                    passing: stats.passing,
+                    dribbling: stats.dribbling,
+                    shooting: stats.shooting,
+                    positioning: stats.positioning,
+                    awareness: stats.awareness,
+                    pace: stats.pace,
+                    stamina: stats.stamina,
+                    composure: stats.composure,
+                  },
+                },
+              ]);
+            }
+          }
+        } catch (error) {
+          console.error('Error loading pre-selected players:', error);
+        }
+      }
+    };
+
+    loadPreselectedPlayers();
+  }, [allPlayers]);
+
   const fetchPlayers = async () => {
     try {
       const { data, error } = await supabase
