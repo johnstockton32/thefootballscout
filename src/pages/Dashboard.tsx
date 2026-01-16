@@ -9,10 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { SkeletonCard, SkeletonList } from '@/components/ui/skeleton-card';
+import { DraftRecoveryBanner } from '@/components/drafts/DraftRecoveryBanner';
 import { supabase, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useOnboardingTour } from '@/hooks/useOnboardingTour';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap, ChevronRight } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -69,6 +72,9 @@ export default function Dashboard() {
     thisMonth: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts();
 
   useEffect(() => {
     if (user) {
@@ -167,6 +173,8 @@ export default function Dashboard() {
       />
 
       <div className="space-y-8 animate-fade-in">
+        {/* Draft Recovery Banner */}
+        <DraftRecoveryBanner />
         {/* Welcome Header */}
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -344,9 +352,7 @@ export default function Dashboard() {
               <CardContent>
                 {isLoading ? (
                   <div className="grid md:grid-cols-2 gap-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="h-32 bg-muted rounded-xl animate-pulse" />
-                    ))}
+                    <SkeletonList count={4} variant="player" />
                   </div>
                 ) : players.length > 0 ? (
                   <div className="grid md:grid-cols-2 gap-4">
@@ -390,9 +396,7 @@ export default function Dashboard() {
               <CardContent>
                 {isLoading ? (
                   <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-16 bg-muted rounded-lg animate-pulse" />
-                    ))}
+                    <SkeletonList count={3} variant="report" />
                   </div>
                 ) : recentReports.length > 0 ? (
                   <div className="space-y-2">
