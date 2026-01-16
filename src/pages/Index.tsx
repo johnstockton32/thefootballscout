@@ -61,8 +61,14 @@ export default function Index() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-24 sm:pt-32 pb-12 sm:pb-20 px-4">
-        <div className="container mx-auto text-center max-w-4xl">
+      <section className="relative pt-24 sm:pt-32 pb-12 sm:pb-20 px-4 overflow-hidden">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-rating-gold/5 animate-[gradient-shift_8s_ease-in-out_infinite]" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-[float_6s_ease-in-out_infinite]" />
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-rating-gold/8 rounded-full blur-3xl animate-[float_8s_ease-in-out_infinite_reverse]" />
+        </div>
+        <div className="container mx-auto text-center max-w-4xl relative">
           {/* Logo Display - Hero Spotlight */}
           <div className="flex justify-center mb-8 sm:mb-10">
             <div className="relative">

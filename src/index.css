@@ -318,6 +318,30 @@
     50% { box-shadow: 0 0 40px -5px hsla(158, 64%, 45%, 0.6); }
   }
 
+  /* Gradient shift animation for hero backgrounds */
+  @keyframes gradient-shift {
+    0%, 100% { 
+      opacity: 0.6;
+      transform: scale(1) rotate(0deg);
+    }
+    50% { 
+      opacity: 1;
+      transform: scale(1.05) rotate(1deg);
+    }
+  }
+
+  /* Float animation for ambient blobs */
+  @keyframes float {
+    0%, 100% { 
+      transform: translateY(0) translateX(0);
+      opacity: 0.4;
+    }
+    50% { 
+      transform: translateY(-20px) translateX(10px);
+      opacity: 0.6;
+    }
+  }
+
   /* Number counter animation helper */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
