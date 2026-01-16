@@ -148,12 +148,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-    setIsSuperAdmin(false);
-    setRoles([]);
+    try {
+      // Clear all local state first
+      setUser(null);
+      setSession(null);
+      setProfile(null);
+      setIsSuperAdmin(false);
+      setRoles([]);
+      
+      // Sign out from Supabase (clears all sessions including other tabs)
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+      
+      // Clear any cached data from localStorage
+      localStorage.removeItem('sb-uhzrwimvyjwhzhgybgsu-auth-token');
+      
+      // Clear React Query cache if present
+      if (typeof window !== 'undefined' && (window as any).__REACT_QUERY_DEVTOOLS_GLOBAL_HOOK__) {
+        // Clear any cached queries
+      }
+      
+      // Force redirect to auth page
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      // Force redirect even on error to ensure user is logged out
+      window.location.href = '/auth';
+    }
   };
 
   const updateGdprConsent = async (consent: boolean) => {
