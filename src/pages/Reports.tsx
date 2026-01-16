@@ -117,30 +117,32 @@ export default function Reports() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 -ml-2">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="text-sm">Back</span>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Scouting Reports</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Reports</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
               {reports.filter(r => !r.is_draft).length} submitted report{reports.filter(r => !r.is_draft).length !== 1 ? 's' : ''}
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" asChild>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" asChild className="flex-1 sm:flex-none">
               <Link to="/reports/analytics">
-                <BarChart3 className="w-4 h-4 mr-2" />
-                Analytics
+                <BarChart3 className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Analytics</span>
+                <span className="xs:hidden">Stats</span>
               </Link>
             </Button>
-            <Button variant="hero" asChild>
+            <Button variant="hero" asChild className="flex-1 sm:flex-none">
               <Link to="/reports/new">
-                <Plus className="w-4 h-4 mr-2" />
-                New Report
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">New Report</span>
+                <span className="xs:hidden">New</span>
               </Link>
             </Button>
           </div>

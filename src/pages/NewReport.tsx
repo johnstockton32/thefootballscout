@@ -269,23 +269,23 @@ export default function NewReport() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto animate-fade-in">
+      <div className="w-full max-w-4xl mx-auto animate-fade-in px-0 sm:px-2">
         {/* Header */}
-        <div className="mb-6">
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
+        <div className="mb-4 sm:mb-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 sm:mb-4 -ml-2">
+            <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="text-sm">Back</span>
           </Button>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">New Scouting Report</h1>
-              <p className="text-muted-foreground mt-1">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">New Scouting Report</h1>
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">
                 Record match observations and player ratings
               </p>
             </div>
             {isSaving && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Cloud className="w-4 h-4 animate-pulse" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                <Cloud className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
                 Saving...
               </div>
             )}
@@ -320,7 +320,7 @@ export default function NewReport() {
           </Alert>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
           {/* Match Details */}
           <Card className="card-glass">
             <CardHeader>
@@ -435,22 +435,22 @@ export default function NewReport() {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="technical" className="w-full">
-                <TabsList className="grid w-full grid-cols-4 mb-6">
-                  <TabsTrigger value="technical" className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    <span className="hidden sm:inline">Technical</span>
+                <TabsList className="grid w-full grid-cols-4 mb-4 sm:mb-6 h-auto p-1">
+                  <TabsTrigger value="technical" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                    <Zap className="w-4 h-4 shrink-0" />
+                    <span className="hidden xs:inline text-[10px] sm:text-sm">Technical</span>
                   </TabsTrigger>
-                  <TabsTrigger value="tactical" className="flex items-center gap-2">
-                    <Brain className="w-4 h-4" />
-                    <span className="hidden sm:inline">Tactical</span>
+                  <TabsTrigger value="tactical" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                    <Brain className="w-4 h-4 shrink-0" />
+                    <span className="hidden xs:inline text-[10px] sm:text-sm">Tactical</span>
                   </TabsTrigger>
-                  <TabsTrigger value="physical" className="flex items-center gap-2">
-                    <Target className="w-4 h-4" />
-                    <span className="hidden sm:inline">Physical</span>
+                  <TabsTrigger value="physical" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                    <Target className="w-4 h-4 shrink-0" />
+                    <span className="hidden xs:inline text-[10px] sm:text-sm">Physical</span>
                   </TabsTrigger>
-                  <TabsTrigger value="mental" className="flex items-center gap-2">
-                    <Heart className="w-4 h-4" />
-                    <span className="hidden sm:inline">Mental</span>
+                  <TabsTrigger value="mental" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                    <Heart className="w-4 h-4 shrink-0" />
+                    <span className="hidden xs:inline text-[10px] sm:text-sm">Mental</span>
                   </TabsTrigger>
                 </TabsList>
 

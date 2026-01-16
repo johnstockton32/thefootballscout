@@ -103,25 +103,26 @@ export default function Players() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 -ml-2">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="text-sm">Back</span>
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">Players</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Players</h1>
+            <p className="text-muted-foreground text-sm sm:text-base mt-1">
               {players.length} player{players.length !== 1 ? 's' : ''} in your database
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <BulkCSVImport onSuccess={fetchPlayers} />
-            <Button variant="hero" asChild>
+            <Button variant="hero" asChild className="flex-1 sm:flex-none">
               <Link to="/players/new">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Player
+                <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Add Player</span>
+                <span className="xs:hidden">Add</span>
               </Link>
             </Button>
           </div>
@@ -156,11 +157,11 @@ export default function Players() {
 
         {/* Players Grid */}
         {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <SkeletonList count={6} variant="player" />
           </div>
         ) : filteredPlayers.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {filteredPlayers.map((player, index) => (
               <motion.div
                 key={player.id}

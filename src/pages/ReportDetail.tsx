@@ -246,27 +246,27 @@ export default function ReportDetail() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-4">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 sm:mb-4 -ml-2">
+              <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="text-sm">Back</span>
             </Button>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-                <FileText className="w-6 h-6 text-primary" />
+            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Scouting Report</h1>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Report</h1>
                 <Link
                   to={`/players/${report.players?.id}`}
-                  className="text-primary hover:underline flex items-center gap-2 mt-1"
+                  className="text-primary hover:underline flex items-center gap-1 sm:gap-2 mt-1 text-sm sm:text-base flex-wrap"
                 >
-                  <User className="w-4 h-4" />
-                  {report.players?.full_name}
-                  <Badge className="position-badge ml-1">
+                  <User className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
+                  <span className="truncate">{report.players?.full_name}</span>
+                  <Badge className="position-badge text-xs">
                     {POSITION_ABBREV[report.players?.position]}
                   </Badge>
                 </Link>
@@ -274,27 +274,28 @@ export default function ReportDetail() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleExportPDF} disabled={isExporting}>
-              <Download className="w-4 h-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export PDF'}
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={handleExportPDF} disabled={isExporting} className="flex-1 sm:flex-none text-sm">
+              <Download className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">{isExporting ? 'Exporting...' : 'Export PDF'}</span>
+              <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="shrink-0">
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </AlertDialogTrigger>
-              <AlertDialogContent>
+              <AlertDialogContent className="max-w-[90vw] sm:max-w-lg">
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Report</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete this scouting report. This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground w-full sm:w-auto">
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -303,43 +304,43 @@ export default function ReportDetail() {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Match Info */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <Card className="card-glass">
-              <CardHeader>
-                <CardTitle className="text-lg">Match Details</CardTitle>
+              <CardHeader className="pb-2 sm:pb-4">
+                <CardTitle className="text-base sm:text-lg">Match Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Calendar className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Date</p>
-                    <p className="font-medium">{format(new Date(report.match_date), 'MMMM d, yyyy')}</p>
+              <CardContent className="space-y-3 sm:space-y-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Date</p>
+                    <p className="font-medium text-sm sm:text-base truncate">{format(new Date(report.match_date), 'MMMM d, yyyy')}</p>
                   </div>
                 </div>
                 {report.opposition && (
-                  <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Opposition</p>
-                      <p className="font-medium">{report.opposition}</p>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <User className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Opposition</p>
+                      <p className="font-medium text-sm sm:text-base truncate">{report.opposition}</p>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-3">
-                  <FileText className="w-4 h-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Competition Level</p>
-                    <p className="font-medium">{COMPETITION_LEVEL_LABELS[report.competition_level]}</p>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground">Competition Level</p>
+                    <p className="font-medium text-sm sm:text-base truncate">{COMPETITION_LEVEL_LABELS[report.competition_level]}</p>
                   </div>
                 </div>
                 {report.minutes_observed && (
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Minutes Observed</p>
-                      <p className="font-medium">{report.minutes_observed} min</p>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <Clock className="w-4 h-4 text-muted-foreground shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground">Minutes Observed</p>
+                      <p className="font-medium text-sm sm:text-base">{report.minutes_observed} min</p>
                     </div>
                   </div>
                 )}
@@ -348,17 +349,17 @@ export default function ReportDetail() {
 
             {/* Ratings */}
             <Card className="card-gold-glow">
-              <CardContent className="py-6">
-                <div className="grid grid-cols-2 gap-4 text-center">
+              <CardContent className="py-4 sm:py-6">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 text-center">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Overall</p>
-                    <p className="text-4xl font-bold text-gradient-gold">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Overall</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gradient-gold">
                       {report.overall_rating ? Math.round(report.overall_rating) : '-'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground mb-1">Potential</p>
-                    <p className="text-4xl font-bold text-gradient-pitch">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Potential</p>
+                    <p className="text-3xl sm:text-4xl font-bold text-gradient-pitch">
                       {report.potential_rating || '-'}
                     </p>
                   </div>
@@ -368,20 +369,20 @@ export default function ReportDetail() {
           </div>
 
           {/* Attributes & Analysis */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <Tabs defaultValue="attributes" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="attributes" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Attributes
+              <TabsList className="grid w-full grid-cols-3 mb-3 sm:mb-4 h-auto p-1">
+                <TabsTrigger value="attributes" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span className="hidden xs:inline">Attributes</span>
                 </TabsTrigger>
-                <TabsTrigger value="video" className="flex items-center gap-2">
-                  <Video className="w-4 h-4" />
-                  Video Clips
+                <TabsTrigger value="video" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                  <Video className="w-4 h-4 shrink-0" />
+                  <span className="hidden xs:inline">Video</span>
                 </TabsTrigger>
-                <TabsTrigger value="insights" className="flex items-center gap-2">
-                  <Brain className="w-4 h-4" />
-                  AI Insights
+                <TabsTrigger value="insights" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                  <Brain className="w-4 h-4 shrink-0" />
+                  <span className="hidden xs:inline">AI Insights</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -457,23 +458,23 @@ export default function ReportDetail() {
                         transition={{ duration: 0.4 }}
                       >
                         <Card className="card-glass border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-                          <CardContent className="py-6">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-muted-foreground mb-1">Overall Match Rating</p>
-                                <div className="flex items-baseline gap-2">
-                                  <span className={`text-5xl font-bold ${getScoreColor(overallScore)}`}>
+                          <CardContent className="py-4 sm:py-6">
+                            <div className="flex items-center justify-between gap-4">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-xs sm:text-sm text-muted-foreground mb-1">Overall Match Rating</p>
+                                <div className="flex items-baseline gap-1 sm:gap-2">
+                                  <span className={`text-3xl sm:text-4xl md:text-5xl font-bold ${getScoreColor(overallScore)}`}>
                                     {overallScore}
                                   </span>
-                                  <span className="text-xl text-muted-foreground">/100</span>
+                                  <span className="text-base sm:text-xl text-muted-foreground">/100</span>
                                 </div>
-                                <p className={`text-sm font-medium mt-1 ${getScoreColor(overallScore)}`}>
+                                <p className={`text-xs sm:text-sm font-medium mt-1 ${getScoreColor(overallScore)}`}>
                                   {getScoreLabel(overallScore)}
                                 </p>
                               </div>
                               
                               {/* Circular Progress */}
-                              <div className="relative w-24 h-24">
+                              <div className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 shrink-0">
                                 <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
                                   <circle
                                     cx="50"
@@ -498,7 +499,7 @@ export default function ReportDetail() {
                                   />
                                 </svg>
                                 <div className="absolute inset-0 flex items-center justify-center">
-                                  <Star className="w-8 h-8 text-primary" />
+                                  <Star className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary" />
                                 </div>
                               </div>
                             </div>
@@ -528,7 +529,7 @@ export default function ReportDetail() {
                       </motion.div>
                       
                       {/* Category Averages Grid */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
                         {categories.map((cat, index) => (
                           <motion.div
                             key={cat.name}
@@ -537,18 +538,18 @@ export default function ReportDetail() {
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                           >
                             <Card className="card-glass hover:border-primary/30 transition-colors">
-                              <CardContent className="p-4">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <div className={`w-8 h-8 rounded-lg ${cat.color}/20 flex items-center justify-center`}>
-                                    <cat.icon className={`w-4 h-4 ${cat.textColor}`} />
+                              <CardContent className="p-3 sm:p-4">
+                                <div className="flex items-center gap-1.5 sm:gap-2 mb-2">
+                                  <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-lg ${cat.color}/20 flex items-center justify-center shrink-0`}>
+                                    <cat.icon className={`w-3 h-3 sm:w-4 sm:h-4 ${cat.textColor}`} />
                                   </div>
-                                  <span className="text-sm font-medium">{cat.name}</span>
+                                  <span className="text-xs sm:text-sm font-medium truncate">{cat.name}</span>
                                 </div>
                                 <div className="flex items-end gap-1">
-                                  <span className="text-2xl font-bold">{cat.avg}</span>
-                                  <span className="text-sm text-muted-foreground mb-0.5">/20</span>
+                                  <span className="text-xl sm:text-2xl font-bold">{cat.avg}</span>
+                                  <span className="text-xs sm:text-sm text-muted-foreground mb-0.5">/20</span>
                                 </div>
-                                <div className="mt-2 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="mt-2 h-1 sm:h-1.5 bg-muted rounded-full overflow-hidden">
                                   <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${(cat.avg / 20) * 100}%` }}
@@ -586,7 +587,7 @@ export default function ReportDetail() {
                     <CardTitle className="text-lg">Detailed Attributes</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 md:gap-8">
                       {/* Technical */}
                       <div className="space-y-3">
                         <h4 className="font-semibold text-primary flex items-center gap-2">
