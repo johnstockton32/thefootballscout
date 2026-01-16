@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type SubscriptionTier = 'free' | 'pro' | 'team' | 'agency';
+export type SubscriptionTier = 'free' | 'pro' | 'team';
 
 interface SubscriptionLimits {
   maxPlayers: number;
@@ -13,6 +13,7 @@ interface SubscriptionLimits {
   hasTeamFeatures: boolean;
   hasAIInsights: boolean;
   hasVideoClips: boolean;
+  hasWhiteLabel: boolean;
   maxTeamMembers: number;
 }
 
@@ -47,6 +48,7 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasTeamFeatures: false,
     hasAIInsights: false,
     hasVideoClips: false,
+    hasWhiteLabel: false,
     maxTeamMembers: 1,
   },
   pro: {
@@ -58,20 +60,10 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasTeamFeatures: false,
     hasAIInsights: true,
     hasVideoClips: false,
+    hasWhiteLabel: false,
     maxTeamMembers: 1,
   },
   team: {
-    maxPlayers: Infinity,
-    maxReportsPerMonth: Infinity,
-    maxComparisonPlayers: 5,
-    hasAdvancedAnalytics: true,
-    hasPdfExport: true,
-    hasTeamFeatures: true,
-    hasAIInsights: true,
-    hasVideoClips: true,
-    maxTeamMembers: 10,
-  },
-  agency: {
     maxPlayers: Infinity,
     maxReportsPerMonth: Infinity,
     maxComparisonPlayers: 10,
@@ -80,6 +72,7 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasTeamFeatures: true,
     hasAIInsights: true,
     hasVideoClips: true,
+    hasWhiteLabel: true,
     maxTeamMembers: Infinity,
   },
 };

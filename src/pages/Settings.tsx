@@ -429,7 +429,6 @@ export default function Settings() {
       case 'free': return <Zap className="h-5 w-5" />;
       case 'pro': return <Crown className="h-5 w-5" />;
       case 'team': return <Building2 className="h-5 w-5" />;
-      case 'agency': return <Briefcase className="h-5 w-5" />;
       default: return <Zap className="h-5 w-5" />;
     }
   };
@@ -439,7 +438,6 @@ export default function Settings() {
       case 'free': return 'bg-muted text-muted-foreground';
       case 'pro': return 'bg-primary text-primary-foreground';
       case 'team': return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white';
-      case 'agency': return 'bg-gradient-to-r from-amber-500 to-orange-500 text-white';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -835,25 +833,6 @@ export default function Settings() {
                     </Button>
                   </div>
 
-                  {/* Upgrade to Agency */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-5 w-5 text-amber-500" />
-                        <h4 className="font-semibold">Agency Plan</h4>
-                        <span className="text-lg font-bold">£199/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Enterprise features for agencies & large clubs
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('agency')}
-                      disabled={isUpgrading}
-                    >
-                      {isUpgrading ? 'Upgrading...' : 'Upgrade to Agency'}
-                    </Button>
-                  </div>
                 </CardContent>
               </Card>
             )}
@@ -885,24 +864,6 @@ export default function Settings() {
                     </Button>
                   </div>
 
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-5 w-5 text-amber-500" />
-                        <h4 className="font-semibold">Upgrade to Agency</h4>
-                        <span className="text-lg font-bold">£199/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Enterprise features for agencies
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('agency')}
-                      disabled={isUpgrading}
-                    >
-                      {isUpgrading ? 'Upgrading...' : 'Upgrade'}
-                    </Button>
-                  </div>
                   
                   <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
                     <div>
@@ -960,31 +921,13 @@ export default function Settings() {
                   <CardDescription>Modify your subscription</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="h-5 w-5 text-amber-500" />
-                        <h4 className="font-semibold">Upgrade to Agency</h4>
-                        <span className="text-lg font-bold">£199/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Unlimited team members & enterprise features
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('agency')}
-                      disabled={isUpgrading}
-                    >
-                      {isUpgrading ? 'Upgrading...' : 'Upgrade'}
-                    </Button>
-                  </div>
 
                   <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
                     <div>
                       <div className="flex items-center gap-2">
                         <Crown className="h-5 w-5 text-primary" />
                         <h4 className="font-semibold">Downgrade to Pro</h4>
-                        <span className="text-lg font-bold">£29/month</span>
+                        <span className="text-lg font-bold">£10/month</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Keep unlimited players & reports, lose team features
@@ -1027,61 +970,6 @@ export default function Settings() {
               </Card>
             )}
 
-            {/* Agency Plan Management */}
-            {subscription.tier === 'agency' && (
-              <Card className="card-glass">
-                <CardHeader>
-                  <CardTitle>Plan Management</CardTitle>
-                  <CardDescription>Modify your subscription</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-purple-500" />
-                        <h4 className="font-semibold">Downgrade to Team</h4>
-                        <span className="text-lg font-bold">£99/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Keep team features, limited to 10 members
-                      </p>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline">
-                          Downgrade
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Downgrade to Team?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            You will be downgraded to the Team plan. You'll keep:
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                              <li>Unlimited players & reports</li>
-                              <li>Team collaboration features</li>
-                              <li>Up to 10 team members</li>
-                            </ul>
-                            <p className="mt-2 text-amber-600 dark:text-amber-400">
-                              You'll lose unlimited team members, API access, and white-label reports.
-                            </p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Keep Agency Plan</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleUpgrade('team')}
-                            disabled={isUpgrading}
-                          >
-                            {isUpgrading ? 'Processing...' : 'Downgrade to Team'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Cancel Subscription */}
             {(subscription.tier !== 'free') && (

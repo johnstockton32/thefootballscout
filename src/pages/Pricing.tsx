@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, ArrowRight, Zap, Users, Building2, Briefcase } from 'lucide-react';
+import { Check, ArrowRight, Zap, Users, Building2 } from 'lucide-react';
 
 const plans = [
   {
@@ -29,8 +29,8 @@ const plans = [
   {
     name: 'Pro',
     description: 'For serious scouts',
-    monthlyPrice: '29',
-    annualPrice: '24',
+    monthlyPrice: '10',
+    annualPrice: '8',
     period: 'month',
     icon: Users,
     features: [
@@ -56,34 +56,17 @@ const plans = [
     icon: Building2,
     features: [
       'Everything in Pro',
-      'Up to 10 team members',
+      'Unlimited team members',
       'Shared player database',
       'Team analytics dashboard',
       'Team activity feed',
       'Video clip attachments',
+      'White-label reports',
+      'Priority support 24/7',
       'Dedicated account manager',
     ],
     cta: 'Contact Sales',
     variant: 'glass' as const,
-    popular: false,
-  },
-  {
-    name: 'Agency',
-    description: 'For agencies & large clubs',
-    monthlyPrice: '199',
-    annualPrice: '159',
-    period: 'month',
-    icon: Briefcase,
-    features: [
-      'Everything in Team',
-      'Unlimited team members',
-      'White-label reports',
-      'Priority support 24/7',
-      'Custom onboarding',
-      'Advanced permissions',
-    ],
-    cta: 'Contact Sales',
-    variant: 'outline' as const,
     popular: false,
   },
 ];
@@ -146,7 +129,7 @@ export default function Pricing() {
       {/* Pricing Cards */}
       <section className="pb-20 px-4">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {plans.map((plan) => {
               const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
               const period = plan.period === 'forever' ? 'forever' : isAnnual ? 'month (billed annually)' : 'month';
