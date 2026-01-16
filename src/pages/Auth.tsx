@@ -347,28 +347,28 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background pitch-pattern flex flex-col">
       {/* Header */}
-      <header className="p-4 md:p-6 flex items-center gap-4">
+      <header className="p-3 sm:p-4 md:p-6 flex items-center gap-3 sm:gap-4">
         <Button 
           variant="ghost" 
           size="sm" 
           onClick={() => navigate('/')}
-          className="gap-2"
+          className="gap-2 px-2 sm:px-3"
         >
           <ArrowLeft className="w-4 h-4" />
           <span className="hidden sm:inline">Back</span>
         </Button>
-        <Logo size="md" />
+        <Logo size="sm" />
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4 pb-8">
+      <main className="flex-1 flex items-center justify-center px-3 sm:px-4 pb-8">
         <div className="w-full max-w-md animate-fade-in">
           <Card className="card-glass border-border/50">
-            <CardHeader className="text-center pb-2">
-              <CardTitle className="text-2xl font-bold">
+            <CardHeader className="text-center pb-2 px-4 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl font-bold">
                 {getTitle()}
               </CardTitle>
-              <CardDescription className="text-muted-foreground">
+              <CardDescription className="text-sm sm:text-base text-muted-foreground">
                 {getDescription()}
               </CardDescription>
             </CardHeader>
