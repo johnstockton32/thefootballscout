@@ -26,6 +26,7 @@ import Pricing from '@/pages/Pricing';
 import Watchlists from '@/pages/Watchlists';
 import TeamFeed from '@/pages/TeamFeed';
 import TeamAnalytics from '@/pages/TeamAnalytics';
+import Analysis from '@/pages/Analysis';
 import Install from '@/pages/Install';
 import NotFound from '@/pages/NotFound';
 
@@ -53,6 +54,7 @@ export function AnimatedRoutes() {
         <Route path="/reports/new" element={<ProtectedRoute><PageTransition><NewReport /></PageTransition></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><PageTransition><ReportDetail /></PageTransition></ProtectedRoute>} />
         <Route path="/watchlists" element={<ProtectedRoute><PageTransition><Watchlists /></PageTransition></ProtectedRoute>} />
+        <Route path="/analysis" element={<ProtectedRoute><PageTransition><Analysis /></PageTransition></ProtectedRoute>} />
         <Route path="/team-feed" element={<ProtectedRoute><PageTransition><TeamFeed /></PageTransition></ProtectedRoute>} />
         <Route path="/team-analytics" element={<ProtectedRoute><PageTransition><TeamAnalytics /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />

@@ -39,6 +39,7 @@ const baseNavItems = [
 
 // Feature-gated navigation items
 const featureNavItems = [
+  { icon: Sparkles, label: 'Analysis', href: '/analysis', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
   { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
   { icon: List, label: 'Watchlists', href: '/watchlists', minTier: 'free' as const },
   { icon: Activity, label: 'Team Feed', href: '/team-feed', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
@@ -85,7 +86,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   // Define tier hierarchy for comparison
-  const tierHierarchy = { free: 0, pro: 1, team: 2, agency: 3 };
+  const tierHierarchy = { free: 0, pro: 1, team: 2 };
   const currentTierLevel = tierHierarchy[tier] || 0;
 
   // Build navigation items based on user's subscription tier and role

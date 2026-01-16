@@ -154,7 +154,7 @@ export default function AdminUsers() {
         .update({
           full_name: editFullName,
           organization: editOrganization,
-          subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team' | 'agency',
+          subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team',
         })
         .eq('id', editingUser.id);
 
@@ -194,7 +194,7 @@ export default function AdminUsers() {
       // Update local state
       setUsers(prev => prev.map(u => 
         u.id === editingUser.id 
-          ? { ...u, full_name: editFullName, organization: editOrganization, subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team' | 'agency', role: editRole }
+          ? { ...u, full_name: editFullName, organization: editOrganization, subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team', role: editRole }
           : u
       ));
 
@@ -290,7 +290,6 @@ export default function AdminUsers() {
                     <SelectItem value="free">Free</SelectItem>
                     <SelectItem value="pro">Pro</SelectItem>
                     <SelectItem value="team">Team</SelectItem>
-                    <SelectItem value="agency">Agency</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -487,7 +486,6 @@ export default function AdminUsers() {
                   <SelectItem value="free">Free</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
                   <SelectItem value="team">Team</SelectItem>
-                  <SelectItem value="agency">Agency</SelectItem>
                 </SelectContent>
               </Select>
             </div>
