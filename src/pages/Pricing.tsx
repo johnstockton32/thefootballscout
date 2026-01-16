@@ -61,7 +61,7 @@ const plans = [
     icon: Building2,
     features: [
       'Everything in Pro',
-      'Unlimited team members',
+      'Up to 10 team members',
       'Shared player database',
       'Team analytics dashboard',
       'Team activity feed',
