@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,8 @@ import { supabase, POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { VoiceInputButton } from '@/components/ui/voice-input-button';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, User, AlertTriangle, Crown, Cloud } from 'lucide-react';
 import { z } from 'zod';
@@ -41,6 +43,28 @@ export default function NewPlayer() {
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  // Voice-to-text for notes
+  const handleVoiceTranscript = useCallback((text: string) => {
+    setFormData((prev) => ({ ...prev, notes: text }));
+  }, []);
+
+  const { 
+    isListening, 
+    isSupported: voiceSupported, 
+    transcript,
+    toggleListening,
+  } = useVoiceToText({ 
+    onTranscript: handleVoiceTranscript,
+    continuous: true,
+  });
+
+  // Update notes when transcript changes during listening
+  useEffect(() => {
+    if (isListening && transcript) {
+      setFormData((prev) => ({ ...prev, notes: transcript }));
+    }
+  }, [transcript, isListening]);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -395,16 +419,33 @@ export default function NewPlayer() {
                 </div>
               </div>
 
-              {/* Notes */}
+              {/* Notes with Voice Input */}
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="notes">Notes</Label>
+                  {voiceSupported && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      {isListening && <span className="text-destructive animate-pulse">Recording...</span>}
+                      <VoiceInputButton
+                        isListening={isListening}
+                        isSupported={voiceSupported}
+                        onClick={toggleListening}
+                      />
+                    </div>
+                  )}
+                </div>
                 <Textarea
                   id="notes"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
-                  placeholder="Add any additional notes about the player..."
+                  placeholder={voiceSupported ? "Add notes or click the mic to dictate..." : "Add any additional notes about the player..."}
                   className="bg-input min-h-[100px]"
                 />
+                {voiceSupported && (
+                  <p className="text-xs text-muted-foreground">
+                    Tip: Use the microphone button to dictate notes hands-free
+                  </p>
+                )}
               </div>
 
               {/* Submit */}
