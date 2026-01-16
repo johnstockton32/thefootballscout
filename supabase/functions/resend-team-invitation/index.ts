@@ -86,6 +86,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // SECURITY: Verify target user is in the same team as requester
+    const { data: targetProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("team_id, email")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (!targetProfile) {
+      return new Response(
+        JSON.stringify({ error: "User not found in any team" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Team owners can only resend invitations to their own team members
+    if (isTeamOwner && ownedTeam) {
+      if (targetProfile.team_id !== ownedTeam.id) {
+        console.log("Team owner attempted to resend invitation for user not in their team");
+        return new Response(
+          JSON.stringify({ error: "User is not in your team" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Team admins can only resend invitations to users in the same team
+    if (isTeamAdmin && !isTeamOwner) {
+      if (targetProfile.team_id !== userProfile?.team_id) {
+        console.log("Team admin attempted to resend invitation for user not in their team");
+        return new Response(
+          JSON.stringify({ error: "User is not in your team" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     console.log("Resending invitation to:", email);
 
     // Generate a new recovery link - Supabase will send the email
