@@ -44,16 +44,18 @@ export default function Index() {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Logo size="sm" />
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/pricing')}>
+          <Logo size="sm" showText={false} className="sm:hidden" />
+          <Logo size="sm" className="hidden sm:flex" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/pricing')}>
               Pricing
             </Button>
-            <Button variant="ghost" onClick={() => navigate('/auth')}>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
-            <Button variant="hero" onClick={() => navigate('/auth')}>
-              Get Started
+            <Button variant="hero" size="sm" className="sm:size-default" onClick={() => navigate('/auth')}>
+              <span className="hidden sm:inline">Get Started</span>
+              <span className="sm:hidden">Start</span>
             </Button>
           </div>
         </div>
