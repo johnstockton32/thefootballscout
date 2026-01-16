@@ -73,7 +73,7 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasAIInsights: true,
     hasVideoClips: true,
     hasWhiteLabel: true,
-    maxTeamMembers: Infinity,
+    maxTeamMembers: 10,
   },
 };
 

@@ -77,6 +77,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Check team member limit (max 10 members per team)
+    if (ownedTeam) {
+      const { count: memberCount, error: countError } = await supabaseAdmin
+        .from("profiles")
+        .select("*", { count: "exact", head: true })
+        .eq("team_id", ownedTeam.id);
+
+      if (countError) {
+        console.error("Error counting team members:", countError);
+        return new Response(
+          JSON.stringify({ error: "Failed to verify team member limit" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const MAX_TEAM_MEMBERS = 10;
+      if ((memberCount ?? 0) >= MAX_TEAM_MEMBERS) {
+        return new Response(
+          JSON.stringify({ error: `Team member limit reached. Maximum ${MAX_TEAM_MEMBERS} members allowed per team.` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Parse request body
     const { email, fullName, organization, role, password } = await req.json();
 
