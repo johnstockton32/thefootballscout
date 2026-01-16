@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { MobileBottomNav } from './MobileBottomNav';
 import { useSubscription } from '@/hooks/useSubscription';
+import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import {
   LayoutDashboard,
   Users,
@@ -115,6 +116,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center justify-between px-4 h-16">
           <Logo size="sm" />
           <div className="flex items-center gap-2">
+            {/* Sync Status */}
+            <SyncStatusIndicator />
             {/* Mobile Tier Badge */}
             <Link
               to="/settings?tab=plan"
@@ -203,6 +206,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="text-xs opacity-75">({trialDaysRemaining}d left)</span>
               )}
             </Link>
+          </div>
+
+          {/* Sync Status */}
+          <div className="px-4 mb-2">
+            <SyncStatusIndicator />
           </div>
 
           {/* Quick Action */}
