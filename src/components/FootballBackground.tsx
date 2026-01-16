@@ -21,7 +21,7 @@ export function FootballBackground() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 2, ease: 'easeOut' }}
-        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.006] dark:opacity-[0.004]"
+        className="absolute -bottom-24 -right-24 w-[450px] h-[450px] opacity-[0.003] dark:opacity-[0.002]"
       >
         <svg
           viewBox="0 0 100 100"
