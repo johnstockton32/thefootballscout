@@ -34,15 +34,15 @@ export function BrandingSettings() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isAgency = tier === 'agency';
+  const isTeam = tier === 'team';
 
   useEffect(() => {
-    if (user && isAgency) {
+    if (user && isTeam) {
       loadBranding();
     } else {
       setIsLoading(false);
     }
-  }, [user, isAgency]);
+  }, [user, isTeam]);
 
   const loadBranding = async () => {
     try {
@@ -137,7 +137,7 @@ export function BrandingSettings() {
     }
   };
 
-  if (!isAgency) {
+  if (!isTeam) {
     return (
       <Card className="card-glass border-muted">
         <CardHeader>
@@ -146,7 +146,7 @@ export function BrandingSettings() {
             White-Label Reports
             <Badge variant="secondary" className="ml-auto">
               <Building2 className="w-3 h-3 mr-1" />
-              Agency
+              Team
             </Badge>
           </CardTitle>
           <CardDescription>
@@ -157,11 +157,11 @@ export function BrandingSettings() {
           <div className="text-center py-8">
             <Lock className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
             <p className="text-muted-foreground mb-4">
-              Upgrade to Agency to add your company branding to exported reports
+              Upgrade to Team to add your company branding to exported reports
             </p>
             <Button variant="outline" onClick={() => window.location.href = '/settings?tab=plan'}>
               <Crown className="w-4 h-4 mr-2" />
-              Upgrade to Agency
+              Upgrade to Team
             </Button>
           </div>
         </CardContent>

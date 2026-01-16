@@ -57,7 +57,6 @@ const tierConfig = {
   free: { label: 'Free', icon: Sparkles, className: 'bg-muted text-muted-foreground' },
   pro: { label: 'Pro', icon: Crown, className: 'bg-primary/20 text-primary' },
   team: { label: 'Team', icon: Users, className: 'bg-accent text-accent-foreground' },
-  agency: { label: 'Agency', icon: Building2, className: 'bg-gradient-to-r from-primary/20 to-accent/20 text-primary' },
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {

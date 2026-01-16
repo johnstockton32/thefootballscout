@@ -28,7 +28,7 @@ const resetSchema = z.object({
 });
 
 type AuthMode = 'signIn' | 'signUp' | 'resetPassword';
-type SubscriptionTier = 'free' | 'pro' | 'team' | 'agency';
+type SubscriptionTier = 'free' | 'pro' | 'team';
 
 const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; description: string; price: string; features: string[] }[] = [
   {
@@ -44,7 +44,7 @@ const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; 
     label: 'Pro',
     icon: Crown,
     description: '14-day free trial included',
-    price: '£29/month',
+    price: '£10/month',
     features: ['Unlimited players', 'Unlimited reports', '5-player comparison'],
   },
   {
@@ -53,15 +53,7 @@ const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; 
     icon: Users,
     description: 'For professional scouting teams',
     price: '£99/month',
-    features: ['Everything in Pro', 'Team collaboration', 'Priority support'],
-  },
-  {
-    tier: 'agency',
-    label: 'Agency',
-    icon: Shield,
-    description: 'For agencies & large clubs',
-    price: '£199/month',
-    features: ['Everything in Team', 'Unlimited team members', 'API access'],
+    features: ['Everything in Pro', 'Unlimited team members', 'White-label reports'],
   },
 ];
 
@@ -96,8 +88,8 @@ export default function Auth() {
       setMode(modeParam);
     }
     
-    if (tierParam && ['free', 'pro', 'team', 'agency'].includes(tierParam)) {
-      setSelectedTier(tierParam);
+    if (tierParam && ['free', 'pro', 'team'].includes(tierParam)) {
+      setSelectedTier(tierParam as SubscriptionTier);
       setMode('signUp');
     }
   }, [searchParams]);
@@ -164,7 +156,7 @@ export default function Auth() {
           password, 
           fullName: mode === 'signUp' ? fullName : undefined,
           organization: mode === 'signUp' ? organization : 'n/a',
-          teamName: mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') ? teamName : undefined,
+          teamName: mode === 'signUp' && selectedTier === 'team' ? teamName : undefined,
         });
         
         // Additional validation for signup
@@ -173,8 +165,8 @@ export default function Auth() {
           return false;
         }
         
-        // Additional validation for team/agency signup
-        if (mode === 'signUp' && (selectedTier === 'team' || selectedTier === 'agency') && !teamName.trim()) {
+        // Additional validation for team signup
+        if (mode === 'signUp' && selectedTier === 'team' && !teamName.trim()) {
           setErrors({ teamName: 'Team/Organization name is required' });
           return false;
         }
@@ -274,7 +266,7 @@ export default function Auth() {
           if (!promoAppliedTier) {
             if (selectedTier === 'pro') {
               await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
-            } else if (selectedTier === 'team' || selectedTier === 'agency') {
+            } else if (selectedTier === 'team') {
               // First upgrade the subscription tier
               await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
               
@@ -538,18 +530,18 @@ export default function Auth() {
                       </div>
                     </div>
                     
-                    {/* Team Name Field - For Team and Agency tiers */}
-                    {(selectedTier === 'team' || selectedTier === 'agency') && (
+                    {/* Team Name Field - For Team tier */}
+                    {selectedTier === 'team' && (
                       <div className="space-y-2">
                         <Label htmlFor="teamName" className="text-sm font-medium">
-                          {selectedTier === 'agency' ? 'Agency/Organization Name' : 'Team Name'}
+                          Team Name
                         </Label>
                         <div className="relative">
                           <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                           <Input
                             id="teamName"
                             type="text"
-                            placeholder={selectedTier === 'agency' ? "Your Agency Name" : "Your Scouting Organization"}
+                            placeholder="Your Scouting Organization"
                             value={teamName}
                             onChange={(e) => setTeamName(e.target.value)}
                             className="pl-10 bg-input border-border focus:border-primary"
@@ -559,7 +551,7 @@ export default function Auth() {
                           <p className="text-xs text-destructive">{errors.teamName}</p>
                         )}
                         <p className="text-xs text-muted-foreground">
-                          You'll be the admin of this {selectedTier === 'agency' ? 'organization' : 'team'} and can invite other scouts.
+                          You'll be the admin of this team and can invite other scouts.
                         </p>
                       </div>
                     )}
