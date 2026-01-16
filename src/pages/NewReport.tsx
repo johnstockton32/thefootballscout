@@ -19,10 +19,14 @@ import {
 } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { VoiceInputButton } from '@/components/ui/voice-input-button';
 import { toast } from 'sonner';
 import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud, AlertTriangle, Crown } from 'lucide-react';
 import { handleError } from '@/lib/errorUtils';
 import { useDebouncedCallback } from 'use-debounce';
+
+type VoiceField = 'strengths' | 'weaknesses' | 'recommendation' | 'match_details' | null;
 
 interface Player {
   id: string;
@@ -65,6 +69,7 @@ export default function NewReport() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(null);
+  const [activeVoiceField, setActiveVoiceField] = useState<VoiceField>(null);
 
   const [formData, setFormData] = useState({
     match_date: new Date().toISOString().split('T')[0],
@@ -79,6 +84,47 @@ export default function NewReport() {
   });
 
   const [attributes, setAttributes] = useState(INITIAL_ATTRIBUTES);
+
+  // Voice-to-text for notes
+  const handleVoiceTranscript = useCallback((text: string) => {
+    if (activeVoiceField) {
+      setFormData((prev) => ({ ...prev, [activeVoiceField]: text }));
+    }
+  }, [activeVoiceField]);
+
+  const { 
+    isListening, 
+    isSupported: voiceSupported, 
+    transcript,
+    startListening,
+    stopListening,
+    resetTranscript,
+  } = useVoiceToText({ 
+    onTranscript: handleVoiceTranscript,
+    continuous: true,
+  });
+
+  // Update field when transcript changes during listening
+  useEffect(() => {
+    if (isListening && transcript && activeVoiceField) {
+      setFormData((prev) => ({ ...prev, [activeVoiceField]: transcript }));
+    }
+  }, [transcript, isListening, activeVoiceField]);
+
+  const toggleVoiceForField = useCallback((field: VoiceField) => {
+    if (isListening && activeVoiceField === field) {
+      stopListening();
+      setActiveVoiceField(null);
+    } else if (isListening) {
+      stopListening();
+      resetTranscript();
+      setActiveVoiceField(field);
+      setTimeout(() => startListening(), 100);
+    } else {
+      setActiveVoiceField(field);
+      startListening();
+    }
+  }, [isListening, activeVoiceField, stopListening, startListening, resetTranscript]);
 
   useEffect(() => {
     if (user) {
@@ -355,11 +401,20 @@ export default function NewReport() {
               </div>
 
               <div className="space-y-2">
-                <Label>Match Notes</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Match Notes</Label>
+                  {voiceSupported && (
+                    <VoiceInputButton
+                      isListening={isListening && activeVoiceField === 'match_details'}
+                      isSupported={voiceSupported}
+                      onClick={() => toggleVoiceForField('match_details')}
+                    />
+                  )}
+                </div>
                 <Textarea
                   value={formData.match_details}
                   onChange={(e) => setFormData(prev => ({ ...prev, match_details: e.target.value }))}
-                  placeholder="Additional context about the match..."
+                  placeholder={voiceSupported ? "Add notes or click mic to dictate..." : "Additional context about the match..."}
                   className="bg-input"
                 />
               </div>
@@ -443,7 +498,16 @@ export default function NewReport() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Strengths</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Strengths</Label>
+                    {voiceSupported && (
+                      <VoiceInputButton
+                        isListening={isListening && activeVoiceField === 'strengths'}
+                        isSupported={voiceSupported}
+                        onClick={() => toggleVoiceForField('strengths')}
+                      />
+                    )}
+                  </div>
                   <Textarea
                     value={formData.strengths}
                     onChange={(e) => setFormData(prev => ({ ...prev, strengths: e.target.value }))}
@@ -452,7 +516,16 @@ export default function NewReport() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Weaknesses</Label>
+                  <div className="flex items-center justify-between">
+                    <Label>Weaknesses</Label>
+                    {voiceSupported && (
+                      <VoiceInputButton
+                        isListening={isListening && activeVoiceField === 'weaknesses'}
+                        isSupported={voiceSupported}
+                        onClick={() => toggleVoiceForField('weaknesses')}
+                      />
+                    )}
+                  </div>
                   <Textarea
                     value={formData.weaknesses}
                     onChange={(e) => setFormData(prev => ({ ...prev, weaknesses: e.target.value }))}
@@ -478,7 +551,16 @@ export default function NewReport() {
               </div>
 
               <div className="space-y-2">
-                <Label>Recommendation</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Recommendation</Label>
+                  {voiceSupported && (
+                    <VoiceInputButton
+                      isListening={isListening && activeVoiceField === 'recommendation'}
+                      isSupported={voiceSupported}
+                      onClick={() => toggleVoiceForField('recommendation')}
+                    />
+                  )}
+                </div>
                 <Textarea
                   value={formData.recommendation}
                   onChange={(e) => setFormData(prev => ({ ...prev, recommendation: e.target.value }))}

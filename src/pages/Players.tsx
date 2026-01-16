@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PlayerCard } from '@/components/players/PlayerCard';
+import { BulkCSVImport } from '@/components/players/BulkCSVImport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -63,8 +64,9 @@ export default function Players() {
     filterPlayers();
   }, [players, searchQuery, positionFilter]);
 
-  const fetchPlayers = async () => {
+  const fetchPlayers = useCallback(async () => {
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('players')
         .select('*')
@@ -77,7 +79,7 @@ export default function Players() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   const filterPlayers = () => {
     let filtered = [...players];
@@ -114,12 +116,15 @@ export default function Players() {
               {players.length} player{players.length !== 1 ? 's' : ''} in your database
             </p>
           </div>
-          <Button variant="hero" asChild>
-            <Link to="/players/new">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Player
-            </Link>
-          </Button>
+          <div className="flex gap-2">
+            <BulkCSVImport onSuccess={fetchPlayers} />
+            <Button variant="hero" asChild>
+              <Link to="/players/new">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Player
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
