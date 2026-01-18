@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export type SubscriptionTier = 'free' | 'pro' | 'team';
 
@@ -31,11 +32,15 @@ interface SubscriptionData {
   trialEndsAt: Date | null;
   trialDaysRemaining: number;
   subscriptionStartedAt: Date | null;
+  subscriptionEndsAt: Date | null;
   canStartTrial: boolean;
   startTrial: () => Promise<boolean>;
   upgradePlan: (tier: SubscriptionTier) => Promise<boolean>;
   cancelSubscription: () => Promise<boolean>;
   refreshSubscription: () => Promise<void>;
+  openCustomerPortal: () => Promise<void>;
+  createCheckout: (tier: SubscriptionTier) => Promise<void>;
+  isSubscribedViaStripe: boolean;
 }
 
 const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
@@ -78,14 +83,45 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
 };
 
 export function useSubscription(): SubscriptionData {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [tier, setTier] = useState<SubscriptionTier>('free');
   const [playerCount, setPlayerCount] = useState(0);
   const [monthlyReportCount, setMonthlyReportCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [trialEndsAt, setTrialEndsAt] = useState<Date | null>(null);
   const [subscriptionStartedAt, setSubscriptionStartedAt] = useState<Date | null>(null);
+  const [subscriptionEndsAt, setSubscriptionEndsAt] = useState<Date | null>(null);
   const [canStartTrial, setCanStartTrial] = useState(false);
+  const [isSubscribedViaStripe, setIsSubscribedViaStripe] = useState(false);
+
+  const checkStripeSubscription = useCallback(async () => {
+    if (!session?.access_token) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) {
+        console.error('Error checking Stripe subscription:', error);
+        return;
+      }
+
+      if (data) {
+        if (data.tier && data.tier !== 'free') {
+          setTier(data.tier as SubscriptionTier);
+          setIsSubscribedViaStripe(data.subscribed);
+        }
+        if (data.subscription_end) {
+          setSubscriptionEndsAt(new Date(data.subscription_end));
+        }
+      }
+    } catch (error) {
+      console.error('Error invoking check-subscription:', error);
+    }
+  }, [session?.access_token]);
 
   const fetchSubscriptionData = useCallback(async () => {
     if (!user) {
@@ -95,7 +131,7 @@ export function useSubscription(): SubscriptionData {
 
     setIsLoading(true);
     try {
-      // Fetch user's subscription tier
+      // Fetch user's subscription tier from profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier, trial_ends_at, subscription_started_at')
@@ -144,16 +180,30 @@ export function useSubscription(): SubscriptionData {
         .gte('created_at', startOfMonth.toISOString());
 
       setMonthlyReportCount(reports ?? 0);
+
+      // Check Stripe subscription status
+      await checkStripeSubscription();
     } catch (error) {
       console.error('Error fetching subscription data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, checkStripeSubscription]);
 
   useEffect(() => {
     fetchSubscriptionData();
   }, [fetchSubscriptionData]);
+
+  // Periodically refresh subscription status (every 60 seconds)
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(() => {
+      checkStripeSubscription();
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [user, checkStripeSubscription]);
 
   const startTrial = async (): Promise<boolean> => {
     if (!user) return false;
@@ -176,8 +226,80 @@ export function useSubscription(): SubscriptionData {
     }
   };
 
+  const createCheckout = async (checkoutTier: SubscriptionTier): Promise<void> => {
+    if (!session?.access_token) {
+      toast.error('Please sign in to subscribe');
+      return;
+    }
+
+    if (checkoutTier === 'free') {
+      toast.error('Free tier does not require payment');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { tier: checkoutTier },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open checkout in new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No checkout URL returned');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast.error('Failed to start checkout. Please try again.');
+    }
+  };
+
+  const openCustomerPortal = async (): Promise<void> => {
+    if (!session?.access_token) {
+      toast.error('Please sign in to manage subscription');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        // Open portal in new tab
+        window.open(data.url, '_blank');
+      } else {
+        throw new Error('No portal URL returned');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      toast.error('Failed to open subscription management. Please try again.');
+    }
+  };
+
   const upgradePlan = async (newTier: SubscriptionTier): Promise<boolean> => {
     if (!user) return false;
+    
+    // For Stripe subscribers, redirect to customer portal
+    if (isSubscribedViaStripe) {
+      await openCustomerPortal();
+      return true;
+    }
+    
+    // For non-Stripe users (trials, etc.), create new checkout
+    if (newTier !== 'free') {
+      await createCheckout(newTier);
+      return true;
+    }
     
     try {
       const { data, error } = await supabase.rpc('upgrade_subscription', {
@@ -200,6 +322,12 @@ export function useSubscription(): SubscriptionData {
 
   const cancelSubscription = async (): Promise<boolean> => {
     if (!user) return false;
+    
+    // For Stripe subscribers, redirect to customer portal
+    if (isSubscribedViaStripe) {
+      await openCustomerPortal();
+      return true;
+    }
     
     try {
       const { data, error } = await supabase.rpc('cancel_subscription', {
@@ -243,10 +371,14 @@ export function useSubscription(): SubscriptionData {
     trialEndsAt,
     trialDaysRemaining,
     subscriptionStartedAt,
+    subscriptionEndsAt,
     canStartTrial,
     startTrial,
     upgradePlan,
     cancelSubscription,
     refreshSubscription: fetchSubscriptionData,
+    openCustomerPortal,
+    createCheckout,
+    isSubscribedViaStripe,
   };
 }

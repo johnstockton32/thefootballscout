@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders, PlayCircle } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders, PlayCircle, CreditCard, ExternalLink } from 'lucide-react';
 import { useOnboardingTour } from '@/hooks/useOnboardingTour';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -109,6 +109,7 @@ export default function Settings() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isOpeningPortal, setIsOpeningPortal] = useState(false);
 
   // Profile form
   const profileForm = useForm<ProfileFormData>({
@@ -657,6 +658,53 @@ export default function Settings() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Stripe Subscription Management */}
+                {subscription.isSubscribedViaStripe && (
+                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                          <span className="font-semibold text-green-700 dark:text-green-300">Active Subscription</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {subscription.subscriptionEndsAt && (
+                            <>Next billing: {format(subscription.subscriptionEndsAt, 'MMMM d, yyyy')}</>
+                          )}
+                        </p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        onClick={async () => {
+                          setIsOpeningPortal(true);
+                          try {
+                            await subscription.openCustomerPortal();
+                          } finally {
+                            setIsOpeningPortal(false);
+                          }
+                        }}
+                        disabled={isOpeningPortal}
+                        className="gap-2"
+                      >
+                        {isOpeningPortal ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Opening...
+                          </>
+                        ) : (
+                          <>
+                            <ExternalLink className="h-4 w-4" />
+                            Manage Billing
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      View invoices, update payment method, upgrade, downgrade, or cancel your subscription.
+                    </p>
+                  </div>
+                )}
+
                 {/* Trial Status */}
                 {subscription.isInTrial && subscription.trialEndsAt && (
                   <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
@@ -799,7 +847,7 @@ export default function Settings() {
                       <div className="flex items-center gap-2">
                         <Crown className="h-5 w-5 text-primary" />
                         <h4 className="font-semibold">Pro Plan</h4>
-                        <span className="text-lg font-bold">£29/month</span>
+                        <span className="text-lg font-bold">£10/month</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Unlimited players, reports, and advanced features
