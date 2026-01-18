@@ -3,7 +3,19 @@ project_id = "uhzrwimvyjwhzhgybgsu"
 [functions.ai-scouting-insights]
 verify_jwt = false
 
+[functions.check-subscription]
+verify_jwt = false
+
+[functions.create-checkout]
+verify_jwt = false
+
 [functions.create-team-user]
+verify_jwt = false
+
+[functions.customer-portal]
+verify_jwt = false
+
+[functions.delete-account]
 verify_jwt = false
 
 [functions.delete-team-user]
@@ -13,6 +25,12 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.resend-team-invitation]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.smart-discovery]
 verify_jwt = false
 
 [functions.update-user-password]

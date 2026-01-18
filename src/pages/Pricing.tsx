@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, ArrowRight, Zap, Users, Building2 } from 'lucide-react';
-
+import { Check, ArrowRight, Zap, Users, Building2, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { toast } from 'sonner';
 const plans = [
   {
     name: 'Free',
@@ -79,8 +81,87 @@ const plans = [
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isAnnual, setIsAnnual] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
+  const { user } = useAuth();
+  const subscription = useSubscription();
 
+  // Handle subscription cancelled message
+  useEffect(() => {
+    if (searchParams.get('subscription') === 'cancelled') {
+      toast.info('Checkout was cancelled. You can try again anytime.');
+    }
+  }, [searchParams]);
+
+  const handlePlanAction = async (planName: string) => {
+    const tierName = planName.toLowerCase();
+    
+    // Free plan - just redirect to signup
+    if (tierName === 'free') {
+      navigate('/auth?mode=signUp&tier=free');
+      return;
+    }
+
+    // If not logged in, redirect to auth with tier
+    if (!user) {
+      navigate(`/auth?mode=signUp&tier=${tierName}`);
+      return;
+    }
+
+    // If already on this tier
+    if (subscription.tier === tierName) {
+      toast.info(`You're already on the ${planName} plan.`);
+      return;
+    }
+
+    // Start checkout process
+    setIsCheckingOut(tierName);
+    try {
+      await subscription.createCheckout(tierName as 'pro' | 'team');
+    } finally {
+      setIsCheckingOut(null);
+    }
+  };
+
+  const getButtonText = (planName: string, cta: string) => {
+    const tierName = planName.toLowerCase();
+    
+    if (isCheckingOut === tierName) {
+      return (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Processing...
+        </>
+      );
+    }
+
+    if (user && subscription.tier === tierName) {
+      return 'Current Plan';
+    }
+
+    if (user && tierName !== 'free') {
+      if (subscription.tier === 'free') {
+        return `Subscribe to ${planName}`;
+      }
+      // Upgrade or downgrade
+      const tierOrder = { free: 0, pro: 1, team: 2 };
+      const currentOrder = tierOrder[subscription.tier as keyof typeof tierOrder] || 0;
+      const targetOrder = tierOrder[tierName as keyof typeof tierOrder] || 0;
+      
+      if (targetOrder > currentOrder) {
+        return `Upgrade to ${planName}`;
+      }
+      return `Downgrade to ${planName}`;
+    }
+
+    return (
+      <>
+        {cta}
+        <ArrowRight className="w-4 h-4" />
+      </>
+    );
+  };
   return (
     <div className="min-h-screen bg-background pitch-pattern">
       {/* Header */}
@@ -182,10 +263,10 @@ export default function Pricing() {
                     variant={plan.variant} 
                     className="w-full" 
                     size="lg"
-                    onClick={() => navigate(`/auth?mode=signUp&tier=${plan.name.toLowerCase()}`)}
+                    onClick={() => handlePlanAction(plan.name)}
+                    disabled={isCheckingOut !== null || (user && subscription.tier === plan.name.toLowerCase())}
                   >
-                    {plan.cta}
-                    <ArrowRight className="w-4 h-4" />
+                    {getButtonText(plan.name, plan.cta)}
                   </Button>
                 </CardContent>
               </Card>
