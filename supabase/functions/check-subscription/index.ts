@@ -16,6 +16,16 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// Safe date conversion helper
+const safeTimestampToISO = (timestamp: number | undefined | null): string | null => {
+  if (!timestamp || typeof timestamp !== 'number') return null;
+  try {
+    return new Date(timestamp * 1000).toISOString();
+  } catch {
+    return null;
+  }
+};
+
 serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -73,33 +83,39 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    logStep("Fetching active subscriptions");
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
+    logStep("Active subscriptions fetched", { count: subscriptions.data.length });
 
     const hasActiveSub = subscriptions.data.length > 0;
     let tier = "free";
-    let subscriptionEnd = null;
-    let subscriptionId = null;
+    let subscriptionEnd: string | null = null;
+    let subscriptionId: string | null = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      subscriptionEnd = safeTimestampToISO(subscription.current_period_end);
       subscriptionId = subscription.id;
       logStep("Active subscription found", { subscriptionId, endDate: subscriptionEnd });
       
-      const productId = subscription.items.data[0].price.product as string;
+      const productId = subscription.items.data[0]?.price?.product as string;
       tier = PRODUCT_TO_TIER[productId] || "free";
       logStep("Determined subscription tier", { productId, tier });
       
       // Update profile with active subscription tier
+      const startDate = safeTimestampToISO(subscription.start_date) || 
+                        safeTimestampToISO(subscription.created) || 
+                        new Date().toISOString();
+      
       await supabaseClient
         .from('profiles')
         .update({ 
           subscription_tier: tier,
-          subscription_started_at: new Date(subscription.start_date * 1000).toISOString()
+          subscription_started_at: startDate
         })
         .eq('id', user.id);
     } else {
@@ -111,18 +127,20 @@ serve(async (req) => {
         status: "canceled",
         limit: 1,
       });
+      logStep("Canceled subscriptions fetched", { count: canceledSubs.data.length });
       
       if (canceledSubs.data.length > 0) {
         const canceledSub = canceledSubs.data[0];
-        const endDate = new Date(canceledSub.current_period_end * 1000);
+        const endTimestamp = canceledSub.current_period_end;
         
-        if (endDate > new Date()) {
+        if (endTimestamp && endTimestamp * 1000 > Date.now()) {
           // Still has access until end of period
-          subscriptionEnd = endDate.toISOString();
-          const productId = canceledSub.items.data[0].price.product as string;
+          subscriptionEnd = safeTimestampToISO(endTimestamp);
+          const productId = canceledSub.items.data[0]?.price?.product as string;
           tier = PRODUCT_TO_TIER[productId] || "free";
           logStep("Canceled subscription still active until", { endDate: subscriptionEnd, tier });
         } else {
+          logStep("Canceled subscription expired, updating to free");
           // Update to free tier
           await supabaseClient
             .from('profiles')
@@ -130,6 +148,7 @@ serve(async (req) => {
             .eq('id', user.id);
         }
       } else {
+        logStep("No canceled subscriptions, updating to free");
         // Update to free tier
         await supabaseClient
           .from('profiles')
@@ -138,6 +157,7 @@ serve(async (req) => {
       }
     }
 
+    logStep("Returning response", { subscribed: hasActiveSub, tier });
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       tier,
