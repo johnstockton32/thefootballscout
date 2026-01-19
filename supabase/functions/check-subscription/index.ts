@@ -9,8 +9,8 @@ const corsHeaders = {
 
 // Map Stripe product IDs to subscription tiers
 const PRODUCT_TO_TIER: Record<string, string> = {
-  "prod_ToXAMpLM3dqPpa": "pro",
-  "prod_ToXCUClXBM3ZWg": "team",
+  "prod_Tosg17axMRBxhO": "pro",
+  "prod_TosgIYUQYqmIWk": "team",
 };
 
 const logStep = (step: string, details?: any) => {
