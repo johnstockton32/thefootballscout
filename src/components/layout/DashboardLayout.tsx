@@ -123,9 +123,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
           <Logo size="sm" />
           <div className="flex items-center gap-0.5 sm:gap-1">
-            {/* Theme and Notification Toggles */}
+            {/* Theme Toggle */}
             <ThemeToggle />
-            <NotificationToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
             {/* Mobile Tier Badge */}
