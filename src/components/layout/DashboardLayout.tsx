@@ -161,7 +161,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile Navigation Menu */}
       <nav
         className={cn(
-          'lg:hidden fixed top-16 left-0 right-0 z-50 bg-card border-b border-border transition-transform duration-300',
+          'lg:hidden fixed top-16 left-0 right-0 z-50 bg-card border-b border-border transition-transform duration-300 max-h-[calc(100vh-4rem)] overflow-y-auto',
           mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
         )}
       >
@@ -182,6 +182,36 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="font-medium">{item.label}</span>
             </Link>
           ))}
+          
+          {/* Divider */}
+          <div className="h-px bg-border my-2" />
+          
+          {/* Settings Link */}
+          <Link
+            to="/settings"
+            onClick={() => setMobileMenuOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+              location.pathname === '/settings'
+                ? 'bg-primary/10 text-primary'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+          >
+            <Settings className="w-5 h-5" />
+            <span className="font-medium">Settings</span>
+          </Link>
+          
+          {/* Sign Out Button */}
+          <button
+            onClick={() => {
+              setMobileMenuOpen(false);
+              handleSignOut();
+            }}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors w-full text-left text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign Out</span>
+          </button>
         </div>
       </nav>
 

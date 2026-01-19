@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2, WifiOff } from 'lucide-react';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
@@ -61,6 +62,7 @@ export default function Auth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user, signIn, signUp, updateGdprConsent } = useAuth();
+  const { isOnline } = useOfflineStatus();
   
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [email, setEmail] = useState('');
@@ -211,6 +213,12 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if offline
+    if (!isOnline) {
+      toast.error('You are currently offline. Please check your internet connection and try again.');
+      return;
+    }
+    
     if (mode === 'resetPassword') {
       await handlePasswordReset();
       return;
@@ -342,8 +350,16 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background pitch-pattern flex flex-col">
+      {/* Offline Banner */}
+      {!isOnline && (
+        <div className="bg-destructive/90 text-destructive-foreground px-4 py-3 flex items-center justify-center gap-2 text-sm font-medium">
+          <WifiOff className="w-4 h-4" />
+          <span>You're offline. Please connect to the internet to sign in.</span>
+        </div>
+      )}
+      
       {/* Header */}
-      <header className="p-3 sm:p-4 md:p-6 flex items-center gap-3 sm:gap-4">
+      <header className="p-3 sm:p-4 md:p-6 flex items-center gap-3 sm:gap-4 safe-area-top">
         <Button 
           variant="ghost" 
           size="sm" 
