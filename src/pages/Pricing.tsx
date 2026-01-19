@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, ArrowRight, Zap, Users, Building2, Loader2 } from 'lucide-react';
+import { Check, ArrowRight, Zap, Users, Building2, Loader2, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
@@ -172,6 +172,10 @@ export default function Pricing() {
             <Logo size="sm" className="hidden sm:flex" />
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/install')}>
+              <Download className="w-4 h-4 mr-1" />
+              Install
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
