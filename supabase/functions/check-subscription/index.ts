@@ -106,18 +106,28 @@ serve(async (req) => {
       tier = PRODUCT_TO_TIER[productId] || "free";
       logStep("Determined subscription tier", { productId, tier });
       
-      // Update profile with active subscription tier
-      const startDate = safeTimestampToISO(subscription.start_date) || 
-                        safeTimestampToISO(subscription.created) || 
-                        new Date().toISOString();
-      
-      await supabaseClient
-        .from('profiles')
-        .update({ 
-          subscription_tier: tier,
-          subscription_started_at: startDate
-        })
-        .eq('id', user.id);
+      // Update profile with active subscription tier - use safe date handling
+      try {
+        const updateData: { subscription_tier: string; subscription_started_at?: string } = { 
+          subscription_tier: tier 
+        };
+        
+        // Only set subscription_started_at if we have a valid date
+        const startDate = safeTimestampToISO(subscription.start_date) || 
+                          safeTimestampToISO(subscription.created);
+        if (startDate) {
+          updateData.subscription_started_at = startDate;
+        }
+        
+        logStep("Updating profile", updateData);
+        await supabaseClient
+          .from('profiles')
+          .update(updateData)
+          .eq('id', user.id);
+        logStep("Profile updated successfully");
+      } catch (updateError) {
+        logStep("Profile update failed, continuing", { error: String(updateError) });
+      }
     } else {
       logStep("No active subscription found, checking for canceled");
       
