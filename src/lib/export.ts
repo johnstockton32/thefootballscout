@@ -456,52 +456,54 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   y += cardHeight + 6;
 
   // ========== DETAILED ATTRIBUTES SECTION ==========
-  drawRoundedRect(doc, margin, y, contentWidth, 88, 6, bgCard);
+  const attrSectionHeight = 105;
+  drawRoundedRect(doc, margin, y, contentWidth, attrSectionHeight, 6, bgCard);
   
   doc.setTextColor(...white);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Detailed Attributes', margin + 10, y + 12);
+  doc.text('Detailed Attributes', margin + 10, y + 11);
   
   // Attribute layout - 2 columns
   const colWidth = (contentWidth - 20) / 2;
   const leftColX = margin + 10;
   const rightColX = margin + 10 + colWidth + 5;
-  const attrBarWidth = 45;
-  const attrBarHeight = 4;
-  let leftY = y + 22;
-  let rightY = y + 22;
+  const attrBarWidth = 42;
+  const attrBarHeight = 3;
+  let leftY = y + 20;
+  let rightY = y + 20;
+  const attrRowHeight = 7;
 
   // Helper to draw attribute row
   const drawAttributeRow = (x: number, attrY: number, name: string, value: number | null, color: [number, number, number]) => {
     const val = value || 0;
     doc.setTextColor(...textLight);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'normal');
     doc.text(name, x, attrY);
     
     // Progress bar
-    const barX = x + 35;
+    const barX = x + 32;
     doc.setFillColor(...bgMuted);
-    doc.roundedRect(barX, attrY - 3, attrBarWidth, attrBarHeight, 2, 2, 'F');
+    doc.roundedRect(barX, attrY - 2.5, attrBarWidth, attrBarHeight, 1.5, 1.5, 'F');
     if (val > 0) {
       doc.setFillColor(...color);
-      doc.roundedRect(barX, attrY - 3, (val / 20) * attrBarWidth, attrBarHeight, 2, 2, 'F');
+      doc.roundedRect(barX, attrY - 2.5, (val / 20) * attrBarWidth, attrBarHeight, 1.5, 1.5, 'F');
     }
     
     // Value
     doc.setTextColor(...white);
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
-    doc.text(val.toString(), barX + attrBarWidth + 4, attrY);
+    doc.text(val.toString(), barX + attrBarWidth + 3, attrY);
   };
 
   // TECHNICAL (left column)
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.text('Technical', leftColX, leftY);
-  leftY += 7;
+  leftY += 6;
   
   const technicalAttrs: [string, number | null][] = [
     ['First Touch', report.technical_first_touch],
@@ -514,34 +516,36 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   
   technicalAttrs.forEach(([name, value]) => {
     drawAttributeRow(leftColX, leftY, name, value, primaryColor);
-    leftY += 8;
+    leftY += attrRowHeight;
   });
 
   // PHYSICAL (left column, continued)
-  leftY += 3;
+  leftY += 2;
   doc.setTextColor(...accentColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.text('Physical', leftColX, leftY);
-  leftY += 7;
+  leftY += 6;
   
   const physicalAttrs: [string, number | null][] = [
     ['Pace', report.physical_pace],
     ['Agility', report.physical_agility],
     ['Strength', report.physical_strength],
+    ['Stamina', report.physical_stamina],
+    ['Balance', report.physical_balance],
   ];
   
   physicalAttrs.forEach(([name, value]) => {
     drawAttributeRow(leftColX, leftY, name, value, accentColor);
-    leftY += 8;
+    leftY += attrRowHeight;
   });
 
   // TACTICAL (right column)
   doc.setTextColor(...blueColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.text('Tactical', rightColX, rightY);
-  rightY += 7;
+  rightY += 6;
   
   const tacticalAttrs: [string, number | null][] = [
     ['Positioning', report.tactical_positioning],
@@ -553,33 +557,35 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   
   tacticalAttrs.forEach(([name, value]) => {
     drawAttributeRow(rightColX, rightY, name, value, blueColor);
-    rightY += 8;
+    rightY += attrRowHeight;
   });
 
   // MENTAL (right column, continued)
-  rightY += 3;
+  rightY += 2;
   doc.setTextColor(...purpleColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.text('Mental', rightColX, rightY);
-  rightY += 7;
+  rightY += 6;
   
   const mentalAttrs: [string, number | null][] = [
     ['Composure', report.mental_composure],
     ['Concentration', report.mental_concentration],
     ['Work Rate', report.mental_work_rate],
+    ['Leadership', report.mental_leadership],
+    ['Aggression', report.mental_aggression],
   ];
   
   mentalAttrs.forEach(([name, value]) => {
     drawAttributeRow(rightColX, rightY, name, value, purpleColor);
-    rightY += 8;
+    rightY += attrRowHeight;
   });
   
-  y += 93;
+  y += attrSectionHeight + 5;
 
   // ========== STRENGTHS & AREAS TO IMPROVE ==========
   const halfWidth = (contentWidth - 6) / 2;
-  const observationCardHeight = 35;
+  const observationCardHeight = 32;
   
   // Strengths card (left)
   drawRoundedRect(doc, margin, y, halfWidth, observationCardHeight, 4, bgCard);
@@ -588,16 +594,16 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.rect(margin + 1.5, y, 1.5, observationCardHeight, 'F');
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('Strengths', margin + 8, y + 9);
+  doc.text('Strengths', margin + 8, y + 8);
   
   doc.setTextColor(...textLight);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   const strengthText = report.strengths || 'No strengths noted.';
   const strengthLines = doc.splitTextToSize(strengthText, halfWidth - 14);
-  doc.text(strengthLines.slice(0, 3).join('\n'), margin + 8, y + 17);
+  doc.text(strengthLines.slice(0, 4).join('\n'), margin + 8, y + 15);
   
   // Areas to Improve card (right)
   drawRoundedRect(doc, margin + halfWidth + 6, y, halfWidth, observationCardHeight, 4, bgCard);
@@ -606,30 +612,30 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.rect(margin + halfWidth + 7.5, y, 1.5, observationCardHeight, 'F');
   
   doc.setTextColor(...destructiveColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('Areas to Improve', margin + halfWidth + 14, y + 9);
+  doc.text('Areas to Improve', margin + halfWidth + 14, y + 8);
   
   doc.setTextColor(...textLight);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   const weaknessText = report.weaknesses || 'No areas noted.';
   const weaknessLines = doc.splitTextToSize(weaknessText, halfWidth - 14);
-  doc.text(weaknessLines.slice(0, 3).join('\n'), margin + halfWidth + 14, y + 17);
+  doc.text(weaknessLines.slice(0, 4).join('\n'), margin + halfWidth + 14, y + 15);
   
-  y += observationCardHeight + 6;
+  y += observationCardHeight + 5;
 
   // ========== RECOMMENDATION ==========
-  const recCardHeight = 26;
+  const recCardHeight = 22;
   drawRoundedRect(doc, margin, y, contentWidth, recCardHeight, 4, bgCard);
   doc.setFillColor(...primaryLight);
   doc.roundedRect(margin, y, 3, recCardHeight, 4, 0, 'F');
   doc.rect(margin + 1.5, y, 1.5, recCardHeight, 'F');
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('Recommendation', margin + 8, y + 9);
+  doc.text('Recommendation', margin + 8, y + 8);
   
   // Recommendation badge
   const recBadge = report.recommendation || 'No recommendation';
@@ -639,11 +645,11 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   else if (recBadge.toLowerCase().includes('reject') || recBadge.toLowerCase().includes('pass')) badgeColor = destructiveColor;
   
   doc.setTextColor(...badgeColor);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(recBadge, margin + 8, y + 19);
+  doc.text(recBadge, margin + 8, y + 17);
   
-  y += recCardHeight + 8;
+  y += recCardHeight + 6;
 
   // ========== FOOTER ==========
   doc.setTextColor(...textMuted);
