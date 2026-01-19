@@ -119,7 +119,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <OfflineBanner />
       
       {/* Mobile Header */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
+      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
         <div className="flex items-center justify-between px-4 h-16">
           <Logo size="sm" />
           <div className="flex items-center gap-1">
