@@ -372,17 +372,17 @@ export default function ReportDetail() {
           <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             <Tabs defaultValue="attributes" className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-3 sm:mb-4 h-auto p-1">
-                <TabsTrigger value="attributes" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                <TabsTrigger value="attributes" className="flex items-center justify-center gap-1 sm:gap-2 py-2.5 px-2 sm:px-3 text-xs sm:text-sm cursor-pointer">
                   <FileText className="w-4 h-4 shrink-0" />
-                  <span className="hidden xs:inline">Attributes</span>
+                  <span>Attributes</span>
                 </TabsTrigger>
-                <TabsTrigger value="video" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                <TabsTrigger value="video" className="flex items-center justify-center gap-1 sm:gap-2 py-2.5 px-2 sm:px-3 text-xs sm:text-sm cursor-pointer">
                   <Video className="w-4 h-4 shrink-0" />
-                  <span className="hidden xs:inline">Video</span>
+                  <span>Video</span>
                 </TabsTrigger>
-                <TabsTrigger value="insights" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 py-2 px-1 sm:px-3 text-xs sm:text-sm">
+                <TabsTrigger value="insights" className="flex items-center justify-center gap-1 sm:gap-2 py-2.5 px-2 sm:px-3 text-xs sm:text-sm cursor-pointer">
                   <Brain className="w-4 h-4 shrink-0" />
-                  <span className="hidden xs:inline">AI Insights</span>
+                  <span>AI</span>
                 </TabsTrigger>
               </TabsList>
 
