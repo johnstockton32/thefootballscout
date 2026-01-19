@@ -11,6 +11,7 @@ import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { NotificationToggle } from '@/components/NotificationToggle';
 import { BulkExportModal } from '@/components/BulkExportModal';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import {
   LayoutDashboard,
   Users,
@@ -114,6 +115,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Offline Banner */}
+      <OfflineBanner />
+      
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
         <div className="flex items-center justify-between px-4 h-16">
