@@ -89,8 +89,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check team member limit (max 10 members per team)
+    // Check team member limit based on purchased licenses
     if (effectiveTeamId) {
+      // Get team's license count
+      const { data: teamData, error: teamError } = await supabaseAdmin
+        .from("teams")
+        .select("license_count")
+        .eq("id", effectiveTeamId)
+        .single();
+
+      if (teamError) {
+        console.error("Error fetching team data:", teamError);
+        return new Response(
+          JSON.stringify({ error: "Failed to verify team license" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const licenseLimit = teamData?.license_count ?? 10;
+
       const { count: memberCount, error: countError } = await supabaseAdmin
         .from("profiles")
         .select("*", { count: "exact", head: true })
@@ -104,10 +121,14 @@ Deno.serve(async (req) => {
         );
       }
 
-      const MAX_TEAM_MEMBERS = 10;
-      if ((memberCount ?? 0) >= MAX_TEAM_MEMBERS) {
+      if ((memberCount ?? 0) >= licenseLimit) {
         return new Response(
-          JSON.stringify({ error: `Team member limit reached. Maximum ${MAX_TEAM_MEMBERS} members allowed per team.` }),
+          JSON.stringify({ 
+            error: `Team license limit reached. You have ${licenseLimit} licenses. Purchase additional licenses to add more members.`,
+            needsUpgrade: true,
+            currentMembers: memberCount,
+            licenseLimit: licenseLimit
+          }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }

@@ -617,6 +617,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          license_count: number
           logo_url: string | null
           name: string
           owner_id: string
@@ -625,6 +626,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          license_count?: number
           logo_url?: string | null
           name: string
           owner_id: string
@@ -633,6 +635,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          license_count?: number
           logo_url?: string | null
           name?: string
           owner_id?: string
