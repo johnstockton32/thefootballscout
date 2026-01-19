@@ -818,29 +818,6 @@ export default function Settings() {
                   <CardDescription>Unlock more features with a paid plan</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* Start Trial */}
-                  {subscription.canStartTrial && (
-                    <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-semibold">Try Pro Free for 14 Days</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Experience unlimited players, reports, and advanced analytics
-                          </p>
-                        </div>
-                        <Button 
-                          variant="hero" 
-                          onClick={handleStartTrial}
-                          disabled={isStartingTrial}
-                        >
-                          {isStartingTrial ? 'Starting...' : 'Start Free Trial'}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  <Separator />
-
                   {/* Upgrade to Pro */}
                   <div className="flex items-center justify-between p-4 rounded-lg border">
                     <div>
