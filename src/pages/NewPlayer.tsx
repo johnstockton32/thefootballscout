@@ -8,14 +8,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { supabase, POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
+import { POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { useOfflinePlayers } from '@/hooks/useOfflinePlayers';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { VoiceInputButton } from '@/components/ui/voice-input-button';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, User, AlertTriangle, Crown, Cloud } from 'lucide-react';
+import { ArrowLeft, Save, User, AlertTriangle, Crown, Cloud, WifiOff } from 'lucide-react';
 import { z } from 'zod';
 import { handleError } from '@/lib/errorUtils';
 import { PlayerPhotoUpload } from '@/components/players/PlayerPhotoUpload';
@@ -39,6 +41,8 @@ export default function NewPlayer() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { canCreatePlayer, usage, limits, tier, isLoading: subscriptionLoading } = useSubscription();
+  const { isOnline } = useOfflineStatus();
+  const { createPlayer } = useOfflinePlayers();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -93,7 +97,7 @@ export default function NewPlayer() {
     }
   }, []);
 
-  // Autosave draft to localStorage
+  // Autosave draft to localStorage (works offline too since it's local storage)
   const saveDraft = useDebouncedCallback(() => {
     if (!formData.full_name && !formData.position) return;
     
@@ -170,8 +174,7 @@ export default function NewPlayer() {
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from('players').insert({
-        scout_id: user.id,
+      const playerData = {
         full_name: formData.full_name.trim(),
         position: formData.position as PlayerPosition,
         secondary_position: formData.secondary_position ? formData.secondary_position as PlayerPosition : null,
@@ -182,15 +185,23 @@ export default function NewPlayer() {
         weight_kg: formData.weight_kg ? parseInt(formData.weight_kg) : null,
         preferred_foot: formData.preferred_foot || null,
         notes: formData.notes.trim() || null,
-        photo_url: photoUrl,
-      });
+        photo_url: isOnline ? photoUrl : null, // Photos can't be uploaded offline
+      };
 
-      if (error) throw error;
+      const result = await createPlayer(playerData);
+      
+      if (!result) {
+        throw new Error('Failed to create player');
+      }
 
       // Clear the draft on successful save
       clearDraft();
       
-      toast.success('Player added successfully!');
+      if (isOnline) {
+        toast.success('Player added successfully!');
+      } else {
+        toast.success('Player saved offline. Will sync when online.');
+      }
       navigate('/players');
     } catch (error: unknown) {
       toast.error(handleError(error, 'Create player'));
@@ -215,12 +226,20 @@ export default function NewPlayer() {
                 Create a player profile to start scouting
               </p>
             </div>
-            {isSaving && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Cloud className="w-4 h-4 animate-pulse" />
-                Saving...
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {!isOnline && (
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full">
+                  <WifiOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Offline Mode
+                </div>
+              )}
+              {isSaving && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Cloud className="w-4 h-4 animate-pulse" />
+                  Saving...
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -267,13 +286,19 @@ export default function NewPlayer() {
               {/* Player Photo */}
               {user && (
                 <div className="space-y-2">
-                  <Label>Player Photo</Label>
-                  <PlayerPhotoUpload
-                    photoUrl={photoUrl}
-                    onPhotoChange={setPhotoUrl}
-                    playerName={formData.full_name}
-                    userId={user.id}
-                  />
+                  <Label>Player Photo {!isOnline && <span className="text-xs text-muted-foreground">(unavailable offline)</span>}</Label>
+                  {isOnline ? (
+                    <PlayerPhotoUpload
+                      photoUrl={photoUrl}
+                      onPhotoChange={setPhotoUrl}
+                      playerName={formData.full_name}
+                      userId={user.id}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-24 border-2 border-dashed border-muted rounded-lg">
+                      <p className="text-sm text-muted-foreground">Photo upload requires internet connection</p>
+                    </div>
+                  )}
                 </div>
               )}
 
