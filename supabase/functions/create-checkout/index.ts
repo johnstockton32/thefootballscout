@@ -95,7 +95,7 @@ serve(async (req) => {
     const priceId = STRIPE_PRICES[priceKey];
     const baseTier = TIER_TO_BASE[priceKey];
     const isPro = baseTier === "pro";
-    logStep("Creating checkout session", { priceId, priceKey, baseTier, hasTrial: isPro && !isAnnual });
+    logStep("Creating checkout session", { priceId, priceKey, baseTier, hasTrial: isPro });
 
     const sessionParams: any = {
       customer: customerId,
@@ -117,12 +117,12 @@ serve(async (req) => {
       },
     };
 
-    // Add 14-day free trial for Pro monthly tier only
-    if (isPro && !isAnnual) {
+    // Add 14-day free trial for all Pro subscriptions (monthly and annual)
+    if (isPro) {
       sessionParams.subscription_data = {
         trial_period_days: 14,
       };
-      logStep("Added 14-day trial for Pro monthly tier");
+      logStep("Added 14-day trial for Pro tier");
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
