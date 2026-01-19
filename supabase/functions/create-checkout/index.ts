@@ -9,8 +9,8 @@ const corsHeaders = {
 
 // Stripe product/price mapping
 const STRIPE_PRICES = {
-  pro: "price_1Squ64PejFFscQuSYovCRUbw", // £10/month
-  team: "price_1Squ86PejFFscQuSm4cxO04a", // £99/month
+  pro: "price_1SrEv2A04SaxzpjBDWUcr1r9", // £10/month
+  team: "price_1SrEvGA04SaxzpjBmrSMu7Nj", // £99/month
 };
 
 const logStep = (step: string, details?: any) => {
