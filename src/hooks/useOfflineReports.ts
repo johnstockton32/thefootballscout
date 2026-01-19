@@ -9,9 +9,18 @@ type ScoutingReport = Tables<'scouting_reports'>;
 type ReportInsert = TablesInsert<'scouting_reports'>;
 type ReportUpdate = TablesUpdate<'scouting_reports'>;
 
+// Extended type that includes player info
+export type ReportWithPlayer = ScoutingReport & {
+  players: {
+    id: string;
+    full_name: string;
+    position: string;
+  } | null;
+};
+
 export function useOfflineReports() {
   const { user } = useAuth();
-  const [reports, setReports] = useState<ScoutingReport[]>([]);
+  const [reports, setReports] = useState<ReportWithPlayer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const isOnline = navigator.onLine;
 
@@ -24,7 +33,7 @@ export function useOfflineReports() {
       if (isOnline) {
         const { data, error } = await supabase
           .from('scouting_reports')
-          .select('*')
+          .select('*, players(id, full_name, position)')
           .eq('scout_id', user.id)
           .order('match_date', { ascending: false });
 
@@ -37,10 +46,10 @@ export function useOfflineReports() {
           const merged = [...localRecords.filter(l => l.scout_id === user.id), ...data];
           
           const unique = merged.reduce((acc, report) => {
-            const existing = acc.find((r: ScoutingReport) => r.id === report.id);
-            if (!existing) acc.push(report);
+            const existing = acc.find((r: ReportWithPlayer) => r.id === report.id);
+            if (!existing) acc.push(report as ReportWithPlayer);
             return acc;
-          }, [] as ScoutingReport[]);
+          }, [] as ReportWithPlayer[]);
 
           setReports(unique);
         }
@@ -50,10 +59,10 @@ export function useOfflineReports() {
         const merged = [...local.filter(l => l.scout_id === user.id), ...cached.filter(c => c.scout_id === user.id)];
         
         const unique = merged.reduce((acc, report) => {
-          const existing = acc.find((r: ScoutingReport) => r.id === report.id);
-          if (!existing) acc.push(report);
+          const existing = acc.find((r: ReportWithPlayer) => r.id === report.id);
+          if (!existing) acc.push(report as ReportWithPlayer);
           return acc;
-        }, [] as ScoutingReport[]);
+        }, [] as ReportWithPlayer[]);
 
         setReports(unique);
       }
@@ -114,13 +123,13 @@ export function useOfflineReports() {
         const { data, error } = await supabase
           .from('scouting_reports')
           .insert(newReport)
-          .select()
+          .select('*, players(id, full_name, position)')
           .single();
 
         if (error) throw error;
         
         await offlineStorage.cacheRecord('scouting_reports', data.id, data);
-        setReports(prev => [data, ...prev]);
+        setReports(prev => [data as ReportWithPlayer, ...prev]);
         return data;
       } else {
         await offlineStorage.saveLocalRecord('scouting_reports', newReport.id, newReport);
@@ -130,7 +139,8 @@ export function useOfflineReports() {
           data: newReport,
         });
 
-        setReports(prev => [newReport, ...prev]);
+        const reportWithPlayer: ReportWithPlayer = { ...newReport, players: null };
+        setReports(prev => [reportWithPlayer, ...prev]);
         toast.info('Report saved offline. Will sync when online.');
         return newReport;
       }
@@ -144,7 +154,8 @@ export function useOfflineReports() {
         data: newReport,
       });
 
-      setReports(prev => [newReport, ...prev]);
+      const reportWithPlayer: ReportWithPlayer = { ...newReport, players: null };
+      setReports(prev => [reportWithPlayer, ...prev]);
       toast.info('Report saved offline. Will sync when online.');
       return newReport;
     }

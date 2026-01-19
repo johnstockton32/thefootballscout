@@ -1,27 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
-import { useOfflineReports } from '@/hooks/useOfflineReports';
+import { CompetitionLevel, COMPETITION_LEVEL_LABELS } from '@/lib/supabase';
+import { useOfflineReports, ReportWithPlayer } from '@/hooks/useOfflineReports';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-
-interface Report {
-  id: string;
-  match_date: string;
-  opposition: string | null;
-  competition_level: CompetitionLevel;
-  overall_rating: number | null;
-  recommendation: string | null;
-  is_draft: boolean;
-  player_id: string;
-}
+import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff, User } from 'lucide-react';
 
 const reportRowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -51,23 +39,23 @@ const getRecommendationColor = (rec: string | null) => {
 
 export default function Reports() {
   const navigate = useNavigate();
-  // Use offline-capable hook instead of direct Supabase queries
   const { reports, isLoading, isOnline } = useOfflineReports();
-  const [filteredReports, setFilteredReports] = useState<Report[]>([]);
+  const [filteredReports, setFilteredReports] = useState<ReportWithPlayer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!searchQuery) {
-      setFilteredReports(reports as unknown as Report[]);
+      setFilteredReports(reports);
       return;
     }
 
     const query = searchQuery.toLowerCase();
     const filtered = reports.filter(
       (r) =>
+        r.players?.full_name?.toLowerCase().includes(query) ||
         r.opposition?.toLowerCase().includes(query) ||
         r.recommendation?.toLowerCase().includes(query)
-    ) as unknown as Report[];
+    );
     setFilteredReports(filtered);
   }, [reports, searchQuery]);
 
@@ -154,8 +142,15 @@ export default function Reports() {
                           {/* Report Details */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold truncate">
-                                Report #{report.id.slice(0, 8)}
+                              <h3 className="font-bold truncate flex items-center gap-2">
+                                {report.players?.full_name ? (
+                                  <>
+                                    <User className="w-4 h-4 text-primary flex-shrink-0" />
+                                    {report.players.full_name}
+                                  </>
+                                ) : (
+                                  `Report #${report.id.slice(0, 8)}`
+                                )}
                               </h3>
                               {report.is_draft && (
                                 <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
