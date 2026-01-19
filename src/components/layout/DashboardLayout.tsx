@@ -120,9 +120,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       
       {/* Mobile Header */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
-        <div className="flex items-center justify-between px-4 h-16">
+        <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
           <Logo size="sm" />
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {/* Theme and Notification Toggles */}
             <ThemeToggle />
             <NotificationToggle />
@@ -132,19 +132,20 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Link
               to="/settings?tab=plan"
               className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-colors',
+                'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-colors touch-target',
                 currentTier.className
               )}
             >
-              <TierIcon className="w-3.5 h-3.5" />
-              <span>{currentTier.label}</span>
-              {isInTrial && <span className="text-[10px] opacity-75">Trial</span>}
+              <TierIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              <span className="hidden xs:inline">{currentTier.label}</span>
+              {isInTrial && <span className="hidden sm:inline text-[9px] opacity-75">Trial</span>}
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-2 sm:p-2.5 text-muted-foreground hover:text-foreground transition-colors touch-target"
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
             </button>
           </div>
         </div>
@@ -161,25 +162,25 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Mobile Navigation Menu */}
       <nav
         className={cn(
-          'lg:hidden fixed top-16 left-0 right-0 z-50 bg-card border-b border-border transition-transform duration-300 max-h-[calc(100vh-4rem)] overflow-y-auto',
+          'lg:hidden fixed top-14 sm:top-16 left-0 right-0 z-50 bg-card border-b border-border transition-transform duration-300 max-h-[calc(100vh-3.5rem)] sm:max-h-[calc(100vh-4rem)] overflow-y-auto safe-area-inset',
           mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
         )}
       >
-        <div className="p-4 space-y-2">
+        <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
           {allNavItems.map((item) => (
             <Link
               key={item.href}
               to={item.href}
               onClick={() => setMobileMenuOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                'flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors touch-target',
                 location.pathname === item.href
                   ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  : 'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80'
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <span className="font-medium text-sm sm:text-base">{item.label}</span>
             </Link>
           ))}
           
@@ -191,14 +192,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             to="/settings"
             onClick={() => setMobileMenuOpen(false)}
             className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+              'flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors touch-target',
               location.pathname === '/settings'
                 ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80'
             )}
           >
-            <Settings className="w-5 h-5" />
-            <span className="font-medium">Settings</span>
+            <Settings className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium text-sm sm:text-base">Settings</span>
           </Link>
           
           {/* Sign Out Button */}
@@ -207,10 +208,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               setMobileMenuOpen(false);
               handleSignOut();
             }}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors w-full text-left text-destructive hover:bg-destructive/10"
+            className="flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors w-full text-left text-destructive hover:bg-destructive/10 active:bg-destructive/20 touch-target"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sign Out</span>
+            <LogOut className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium text-sm sm:text-base">Sign Out</span>
           </button>
         </div>
       </nav>
@@ -228,7 +229,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <Link
               to="/settings?tab=plan"
               className={cn(
-                'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80',
+                'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80 hover-scale',
                 currentTier.className
               )}
             >
@@ -258,7 +259,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="px-4 mb-4">
             <Button
               variant="hero"
-              className="w-full justify-start"
+              className="w-full justify-start hover-lift"
               onClick={() => navigate('/players/new')}
             >
               <Plus className="w-4 h-4" />
@@ -273,7 +274,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group',
+                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group hover-lift',
                   location.pathname === item.href
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent'
@@ -333,9 +334,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen pb-24 lg:pb-0 safe-area-bottom">
-        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
-          {children}
+      <main className="lg:pl-64 pt-14 sm:pt-16 lg:pt-0 min-h-screen pb-20 sm:pb-24 lg:pb-0 safe-area-bottom">
+        <div className="responsive-padding py-3 sm:py-4 md:py-6 lg:py-8">
+          <div className="content-container-lg">
+            {children}
+          </div>
         </div>
       </main>
 

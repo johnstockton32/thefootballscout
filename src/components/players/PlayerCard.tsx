@@ -22,9 +22,9 @@ export function PlayerCard({ player, latestRating, reportsCount = 0 }: PlayerCar
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
 
   return (
-    <Link to={`/players/${player.id}`}>
-      <Card className="card-glass player-card-shine overflow-hidden group hover:border-primary/30 transition-all duration-300 hover:scale-[1.02]">
-        <div className="p-4">
+    <Link to={`/players/${player.id}`} className="block">
+      <Card className="card-glass player-card-shine overflow-hidden group hover:border-primary/30 transition-all duration-300 hover-scale active:scale-[0.98]">
+        <div className="p-3 sm:p-4">
           <div className="flex items-start gap-4">
             {/* Player Photo/Avatar */}
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">

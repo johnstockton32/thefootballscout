@@ -150,9 +150,17 @@
     @apply border-border;
   }
 
+  html {
+    /* Prevent double-tap zoom on mobile for faster interactions */
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    /* Prevent pull-to-refresh on mobile when not at top */
+    overscroll-behavior-y: contain;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -183,10 +191,25 @@
     padding-right: env(safe-area-inset-right, 0);
   }
 
-  /* Touch-friendly tap targets */
+  /* Safe area margins (for elements that need margin instead of padding) */
+  .safe-area-margin-bottom {
+    margin-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-margin-top {
+    margin-top: env(safe-area-inset-top, 0);
+  }
+
+  /* Touch-friendly tap targets - minimum 44x44 for accessibility */
   .touch-target {
     min-height: 44px;
     min-width: 44px;
+  }
+
+  /* Larger touch targets for primary actions */
+  .touch-target-lg {
+    min-height: 48px;
+    min-width: 48px;
   }
 
   /* Mobile-optimized text */
@@ -200,6 +223,11 @@
     word-break: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
+  }
+
+  /* Interactive elements with proper touch behavior */
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
 }
 
@@ -377,5 +405,71 @@
   /* Number counter animation helper */
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Desktop-only hover effects */
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift {
+      @apply transition-transform duration-200;
+    }
+    .hover-lift:hover {
+      @apply -translate-y-0.5;
+    }
+
+    .hover-scale {
+      @apply transition-transform duration-200;
+    }
+    .hover-scale:hover {
+      @apply scale-[1.02];
+    }
+
+    .hover-glow {
+      @apply transition-shadow duration-200;
+    }
+    .hover-glow:hover {
+      box-shadow: var(--shadow-glow-green);
+    }
+  }
+
+  /* Fluid grid system */
+  .grid-fluid-1 {
+    @apply grid grid-cols-1;
+  }
+  .grid-fluid-2 {
+    @apply grid grid-cols-1 sm:grid-cols-2;
+  }
+  .grid-fluid-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .grid-fluid-4 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  /* Content container with max-width for large screens */
+  .content-container {
+    @apply mx-auto w-full max-w-6xl;
+  }
+
+  .content-container-lg {
+    @apply mx-auto w-full max-w-7xl;
+  }
+
+  /* Mobile-first responsive padding */
+  .responsive-padding {
+    @apply px-3 sm:px-4 md:px-6 lg:px-8;
+  }
+
+  /* Hide on touch devices, show on mouse devices */
+  @media (hover: none) {
+    .mouse-only {
+      display: none !important;
+    }
+  }
+
+  /* Hide on mouse devices, show on touch devices */
+  @media (hover: hover) and (pointer: fine) {
+    .touch-only {
+      display: none !important;
+    }
   }
 }

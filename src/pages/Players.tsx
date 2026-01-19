@@ -135,13 +135,13 @@ export default function Players() {
           </Select>
         </div>
 
-        {/* Players Grid */}
+        {/* Players Grid - Fluid responsive grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid-fluid-3 gap-3 sm:gap-4">
             <SkeletonList count={6} variant="player" />
           </div>
         ) : filteredPlayers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="grid-fluid-3 gap-3 sm:gap-4">
             {filteredPlayers.map((player, index) => (
               <motion.div
                 key={player.id}
