@@ -116,17 +116,9 @@ Deno.serve(async (req) => {
     // Parse request body
     const { email, fullName, organization, role, password } = await req.json();
 
-    if (!email || !fullName || !password) {
+    if (!email || !fullName) {
       return new Response(
-        JSON.stringify({ error: "Email, full name, and password are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Validate password strength
-    if (password.length < 8) {
-      return new Response(
-        JSON.stringify({ error: "Password must be at least 8 characters" }),
+        JSON.stringify({ error: "Email and full name are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -145,6 +137,82 @@ Deno.serve(async (req) => {
     if (!emailRegex.test(email)) {
       return new Response(
         JSON.stringify({ error: "Invalid email format" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check if user already exists in profiles
+    const { data: existingProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, email, team_id, subscription_tier")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (existingProfile) {
+      // User already exists - add them to the team instead of creating new
+      console.log("User already exists, adding to team:", existingProfile.id);
+
+      // Check if user is already in a team
+      if (existingProfile.team_id) {
+        if (existingProfile.team_id === effectiveTeamId) {
+          return new Response(
+            JSON.stringify({ error: "This user is already a member of your team" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          return new Response(
+            JSON.stringify({ error: "This user is already a member of another team. They must leave their current team first." }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
+      // Add existing user to the team
+      const { error: updateError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          team_id: effectiveTeamId,
+          team_role: role,
+          subscription_tier: "team",
+          subscription_started_at: new Date().toISOString(),
+        })
+        .eq("id", existingProfile.id);
+
+      if (updateError) {
+        console.error("Error adding user to team:", updateError);
+        return new Response(
+          JSON.stringify({ error: "Failed to add user to team" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Existing user added to your team successfully.",
+          user: {
+            id: existingProfile.id,
+            email: existingProfile.email,
+          },
+          isExistingUser: true,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // User doesn't exist - create new user
+    // Password is required for new users
+    if (!password) {
+      return new Response(
+        JSON.stringify({ error: "Password is required for new users" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Validate password strength
+    if (password.length < 8) {
+      return new Response(
+        JSON.stringify({ error: "Password must be at least 8 characters" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -172,7 +240,7 @@ Deno.serve(async (req) => {
       subscription_tier: "team",
       organization: organization || null,
       subscription_started_at: new Date().toISOString(),
-      team_role: role, // Use the role provided in the request
+      team_role: role,
     };
 
     // If requesting user has a team (owner or team admin), add the new user to their team
@@ -192,11 +260,12 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        message: "User created successfully.",
+        message: "New user created and added to your team successfully.",
         user: {
           id: newUser.user.id,
           email: newUser.user.email,
         },
+        isExistingUser: false,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
