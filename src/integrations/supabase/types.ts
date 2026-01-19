@@ -423,6 +423,7 @@ export type Database = {
           created_at: string
           id: string
           is_draft: boolean | null
+          is_private: boolean
           match_date: string
           match_details: string | null
           mental_aggression: number | null
@@ -462,6 +463,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_draft?: boolean | null
+          is_private?: boolean
           match_date: string
           match_details?: string | null
           mental_aggression?: number | null
@@ -501,6 +503,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_draft?: boolean | null
+          is_private?: boolean
           match_date?: string
           match_details?: string | null
           mental_aggression?: number | null
