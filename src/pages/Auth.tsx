@@ -76,6 +76,7 @@ export default function Auth() {
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formError, setFormError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
   const [promoCodeStatus, setPromoCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [promoCodeMessage, setPromoCodeMessage] = useState<string>('');
@@ -232,14 +233,29 @@ export default function Auth() {
     }
 
     setIsLoading(true);
+    setFormError(null);
 
     try {
       if (mode === 'signUp') {
+        // Check if email already exists
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email.toLowerCase().trim())
+          .maybeSingle();
+        
+        if (existingProfile) {
+          setFormError('An account with this email already exists. Please use a different email address or sign in to your existing account.');
+          setIsLoading(false);
+          return;
+        }
+
         const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please sign in instead.');
+          if (error.message.includes('already registered') || error.message.includes('already been registered')) {
+            setFormError('An account with this email already exists. Please use a different email address or sign in to your existing account.');
           } else {
+            setFormError(error.message);
             toast.error(error.message);
           }
           return;
@@ -389,6 +405,24 @@ export default function Auth() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Form Error Banner */}
+              {formError && (
+                <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-start gap-2">
+                  <XCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">{formError}</p>
+                    {formError.includes('already exists') && (
+                      <button
+                        type="button"
+                        onClick={() => { setMode('signIn'); setFormError(null); }}
+                        className="underline hover:no-underline mt-1 text-sm"
+                      >
+                        Sign in instead →
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-4">
                 {mode === 'signUp' && (
                   <>
@@ -467,6 +501,7 @@ export default function Auth() {
                           onClick={() => {
                             setMode('resetPassword');
                             setErrors({});
+                            setFormError(null);
                           }}
                           className="text-xs text-primary hover:text-primary/80 transition-colors"
                         >
@@ -709,6 +744,7 @@ export default function Auth() {
                     onClick={() => {
                       setMode('signIn');
                       setErrors({});
+                      setFormError(null);
                     }}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors inline-flex items-center gap-1"
                   >
@@ -721,6 +757,7 @@ export default function Auth() {
                     onClick={() => {
                       setMode(mode === 'signUp' ? 'signIn' : 'signUp');
                       setErrors({});
+                      setFormError(null);
                     }}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >

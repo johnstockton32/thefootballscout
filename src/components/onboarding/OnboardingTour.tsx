@@ -168,10 +168,10 @@ export function OnboardingTour({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed z-[102] w-[380px] max-w-[calc(100vw-32px)]"
+            className="fixed z-[102] w-[340px] sm:w-[380px] max-w-[calc(100vw-24px)] mx-3"
             style={getTooltipPosition()}
           >
-            <Card className="border-primary/20 shadow-2xl overflow-hidden">
+            <Card className="border-primary/20 shadow-2xl overflow-hidden bg-card">
               {/* Progress Bar */}
               <div className="h-1 bg-muted">
                 <motion.div
@@ -182,24 +182,27 @@ export function OnboardingTour({
                 />
               </div>
 
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 {/* Close Button */}
                 <button
                   onClick={onSkip}
-                  className="absolute top-3 right-3 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
+                  aria-label="Close tour"
                 >
                   <X className="w-4 h-4" />
                 </button>
 
                 {/* Icon & Step Counter */}
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3 sm:mb-4 pr-6">
                   <div className={cn(
-                    "w-14 h-14 rounded-2xl flex items-center justify-center",
+                    "w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0",
                     "bg-gradient-to-br from-primary/20 to-primary/5 text-primary"
                   )}>
-                    {stepIcons[currentTourStep.id] || <Sparkles className="w-8 h-8" />}
+                    <div className="w-6 h-6 sm:w-8 sm:h-8">
+                      {stepIcons[currentTourStep.id] || <Sparkles className="w-full h-full" />}
+                    </div>
                   </div>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-xs sm:text-sm text-muted-foreground">
                     {currentStep + 1} of {totalSteps}
                   </span>
                 </div>
@@ -212,42 +215,44 @@ export function OnboardingTour({
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <h3 className="text-xl font-bold mb-2">{currentTourStep.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                  <h3 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2">{currentTourStep.title}</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                     {currentTourStep.description}
                   </p>
                 </motion.div>
 
                 {/* Navigation Buttons */}
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
-                  <div>
+                <div className="flex items-center justify-between mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-border gap-2">
+                  <div className="shrink-0">
                     {!isFirstStep && (
-                      <Button variant="ghost" size="sm" onClick={onPrev}>
-                        <ChevronLeft className="w-4 h-4 mr-1" />
-                        Back
+                      <Button variant="ghost" size="sm" onClick={onPrev} className="text-xs sm:text-sm px-2 sm:px-3">
+                        <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
+                        <span className="hidden xs:inline">Back</span>
                       </Button>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     {!isLastStep && (
-                      <Button variant="ghost" size="sm" onClick={onSkip}>
-                        Skip Tour
+                      <Button variant="ghost" size="sm" onClick={onSkip} className="text-xs sm:text-sm px-2 sm:px-3">
+                        Skip
                       </Button>
                     )}
                     <Button 
                       variant="hero" 
                       size="sm" 
                       onClick={isLastStep ? onComplete : onNext}
+                      className="text-xs sm:text-sm px-3 sm:px-4"
                     >
                       {isLastStep ? (
                         <>
-                          Get Started
-                          <Rocket className="w-4 h-4 ml-1" />
+                          <span className="hidden xs:inline">Get Started</span>
+                          <span className="xs:hidden">Start</span>
+                          <Rocket className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                         </>
                       ) : (
                         <>
                           Next
-                          <ChevronRight className="w-4 h-4 ml-1" />
+                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5 sm:ml-1" />
                         </>
                       )}
                     </Button>
@@ -255,12 +260,12 @@ export function OnboardingTour({
                 </div>
 
                 {/* Step Indicators */}
-                <div className="flex justify-center gap-1.5 mt-4">
+                <div className="flex justify-center gap-1 sm:gap-1.5 mt-3 sm:mt-4">
                   {Array.from({ length: totalSteps }).map((_, i) => (
                     <motion.div
                       key={i}
                       className={cn(
-                        "w-2 h-2 rounded-full transition-colors",
+                        "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors",
                         i === currentStep ? "bg-primary" : "bg-muted"
                       )}
                       animate={i === currentStep ? { scale: [1, 1.2, 1] } : {}}
