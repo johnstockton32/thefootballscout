@@ -3,10 +3,12 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Map Stripe product IDs to subscription tiers
+// Map Stripe product IDs to subscription tiers (monthly and annual products)
 const PRODUCT_TO_TIER: Record<string, string> = {
-  "prod_Tosg17axMRBxhO": "pro",
-  "prod_TosgIYUQYqmIWk": "team",
+  "prod_Tosg17axMRBxhO": "pro",     // Pro Monthly
+  "prod_Tou2sHCFkvlj2D": "pro",     // Pro Annual
+  "prod_TosgIYUQYqmIWk": "team",    // Team Monthly
+  "prod_Tou2uJNSTQ3yeF": "team",    // Team Annual
 };
 
 const logStep = (step: string, details?: any) => {

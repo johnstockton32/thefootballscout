@@ -118,7 +118,7 @@ export default function Pricing() {
     // Start checkout process
     setIsCheckingOut(tierName);
     try {
-      await subscription.createCheckout(tierName as 'pro' | 'team');
+      await subscription.createCheckout(tierName as 'pro' | 'team', isAnnual);
     } finally {
       setIsCheckingOut(null);
     }

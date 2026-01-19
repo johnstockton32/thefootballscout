@@ -3,10 +3,20 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Stripe product/price mapping
+// Stripe product/price mapping - Monthly and Annual
 const STRIPE_PRICES = {
-  pro: "price_1SrEv2A04SaxzpjBDWUcr1r9", // £10/month
-  team: "price_1SrEvGA04SaxzpjBmrSMu7Nj", // £99/month
+  pro_monthly: "price_1SrEv2A04SaxzpjBDWUcr1r9", // £10/month
+  pro_annual: "price_1SrGE1A04SaxzpjBO7ecPFzD", // £96/year (£8/month)
+  team_monthly: "price_1SrEvGA04SaxzpjBmrSMu7Nj", // £99/month
+  team_annual: "price_1SrGEJA04SaxzpjBD7xTzrrm", // £948/year (£79/month)
+};
+
+// Map tier keys to base tier names for profile updates
+const TIER_TO_BASE: Record<string, string> = {
+  pro_monthly: "pro",
+  pro_annual: "pro",
+  team_monthly: "team",
+  team_annual: "team",
 };
 
 const logStep = (step: string, details?: any) => {
@@ -50,14 +60,20 @@ serve(async (req) => {
     
     logStep("Origin determined", { origin });
 
-    const { tier } = await req.json();
-    logStep("Requested tier", { tier });
+    const { tier, isAnnual } = await req.json();
+    logStep("Requested tier", { tier, isAnnual });
 
-    if (!tier || !STRIPE_PRICES[tier as keyof typeof STRIPE_PRICES]) {
-      throw new Error("Invalid tier specified");
+    // Construct the price key based on tier and billing period
+    const billingPeriod = isAnnual ? "annual" : "monthly";
+    const priceKey = `${tier}_${billingPeriod}` as keyof typeof STRIPE_PRICES;
+    
+    if (!tier || !STRIPE_PRICES[priceKey]) {
+      throw new Error(`Invalid tier or billing period: ${tier}, ${billingPeriod}`);
     }
 
-    const authHeader = req.headers.get("Authorization")!;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+    
     const token = authHeader.replace("Bearer ", "");
     const { data } = await supabaseClient.auth.getUser(token);
     const user = data.user;
@@ -76,9 +92,10 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    const priceId = STRIPE_PRICES[tier as keyof typeof STRIPE_PRICES];
-    const isPro = tier === "pro";
-    logStep("Creating checkout session", { priceId, tier, hasTrial: isPro });
+    const priceId = STRIPE_PRICES[priceKey];
+    const baseTier = TIER_TO_BASE[priceKey];
+    const isPro = baseTier === "pro";
+    logStep("Creating checkout session", { priceId, priceKey, baseTier, hasTrial: isPro && !isAnnual });
 
     const sessionParams: any = {
       customer: customerId,
@@ -95,16 +112,17 @@ serve(async (req) => {
       cancel_url: `${origin}/pricing?subscription=cancelled`,
       metadata: {
         user_id: user.id,
-        tier: tier,
+        tier: baseTier,
+        billing_period: billingPeriod,
       },
     };
 
-    // Add 14-day free trial for Pro tier
-    if (isPro) {
+    // Add 14-day free trial for Pro monthly tier only
+    if (isPro && !isAnnual) {
       sessionParams.subscription_data = {
         trial_period_days: 14,
       };
-      logStep("Added 14-day trial for Pro tier");
+      logStep("Added 14-day trial for Pro monthly tier");
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
