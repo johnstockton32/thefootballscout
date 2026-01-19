@@ -327,9 +327,9 @@ export default function Watchlists() {
         </div>
 
         {isLoading ? (
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="h-64 bg-muted rounded-xl animate-pulse" />
-            <div className="md:col-span-2 h-64 bg-muted rounded-xl animate-pulse" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            <div className="h-48 md:h-64 bg-muted rounded-xl animate-pulse" />
+            <div className="md:col-span-2 h-48 md:h-64 bg-muted rounded-xl animate-pulse" />
           </div>
         ) : watchlists.length === 0 ? (
           <Card className="card-glass">
@@ -346,19 +346,19 @@ export default function Watchlists() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Watchlist Sidebar */}
-            <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+            {/* Watchlist Sidebar - horizontal scroll on mobile */}
+            <div className="md:space-y-3 flex md:flex-col gap-3 md:gap-0 overflow-x-auto md:overflow-visible pb-2 md:pb-0 -mx-3 px-3 md:mx-0 md:px-0 scrollbar-thin">
               {watchlists.map((wl) => (
                 <Card
                   key={wl.id}
                   className={cn(
-                    "cursor-pointer transition-all hover:shadow-md",
+                    "cursor-pointer transition-all hover:shadow-md flex-shrink-0 md:flex-shrink min-w-[200px] md:min-w-0",
                     selectedWatchlist?.id === wl.id && "ring-2 ring-primary"
                   )}
                   onClick={() => setSelectedWatchlist(wl)}
                 >
-                  <CardContent className="p-4">
+                  <CardContent className="p-3 md:p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div
