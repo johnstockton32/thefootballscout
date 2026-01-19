@@ -52,8 +52,8 @@ export function MobileBottomNav() {
   const isSettingsActive = location.pathname === '/settings' || location.pathname.startsWith('/settings');
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
-      <div className="flex items-center justify-around h-16 px-2">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border">
+      <div className="flex items-center justify-around h-16 px-1 safe-area-bottom">
         {displayItems.map((item) => {
           const isActive = location.pathname === item.href || 
             (item.href !== '/dashboard' && location.pathname.startsWith(item.href));

@@ -392,9 +392,9 @@ export default function Auth() {
         <Logo size="sm" />
       </header>
 
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-3 sm:px-4 pb-8">
-        <div className="w-full max-w-md animate-fade-in">
+      {/* Main content - scrollable on mobile */}
+      <main className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 pb-8 safe-area-bottom">
+        <div className="w-full max-w-md mx-auto animate-fade-in">
           <Card className="card-glass border-border/50">
             <CardHeader className="text-center pb-2 px-4 sm:px-6">
               <CardTitle className="text-xl sm:text-2xl font-bold">
@@ -540,41 +540,41 @@ export default function Auth() {
                 {mode === 'signUp' && (
                   <>
                     {/* Tier Selection */}
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <Label className="text-sm font-medium">Choose your plan</Label>
-                      <div className="grid gap-2">
+                      <div className="grid gap-1.5">
                         {tierOptions.map((option) => (
                           <button
                             key={option.tier}
                             type="button"
                             onClick={() => setSelectedTier(option.tier)}
                             className={cn(
-                              'flex items-center gap-3 p-3 rounded-lg border text-left transition-all',
+                              'flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all',
                               selectedTier === option.tier
                                 ? 'border-primary bg-primary/5 ring-1 ring-primary'
                                 : 'border-border hover:border-primary/50 hover:bg-muted/50'
                             )}
                           >
                             <div className={cn(
-                              'w-10 h-10 rounded-full flex items-center justify-center',
+                              'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
                               selectedTier === option.tier ? 'bg-primary text-primary-foreground' : 'bg-muted'
                             )}>
-                              <option.icon className="w-5 h-5" />
+                              <option.icon className="w-4 h-4" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{option.label}</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-medium text-sm">{option.label}</span>
                                 <span className="text-xs text-muted-foreground">{option.price}</span>
                                 {option.tier === 'pro' && (
-                                  <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium">
+                                  <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
                                     14-day trial
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-muted-foreground truncate">{option.description}</p>
+                              <p className="text-[11px] text-muted-foreground truncate">{option.description}</p>
                             </div>
                             {selectedTier === option.tier && (
-                              <Check className="w-5 h-5 text-primary shrink-0" />
+                              <Check className="w-4 h-4 text-primary shrink-0" />
                             )}
                           </button>
                         ))}

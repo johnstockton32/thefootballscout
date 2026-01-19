@@ -333,8 +333,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen pb-20 lg:pb-0">
-        <div className="p-4 md:p-6 lg:p-8">
+      <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen pb-24 lg:pb-0 safe-area-bottom">
+        <div className="p-3 sm:p-4 md:p-6 lg:p-8">
           {children}
         </div>
       </main>
