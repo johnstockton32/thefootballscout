@@ -24,6 +24,9 @@ verify_jwt = false
 [functions.health]
 verify_jwt = false
 
+[functions.purchase-licenses]
+verify_jwt = false
+
 [functions.resend-team-invitation]
 verify_jwt = false
 
@@ -34,4 +37,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.update-user-password]
+verify_jwt = false
+
+[functions.verify-license-purchase]
 verify_jwt = false

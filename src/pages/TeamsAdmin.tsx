@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -53,8 +54,9 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, Shield, UserCheck, ArrowLeft, MoreHorizontal, Pencil, KeyRound, Lock, Eye, EyeOff } from "lucide-react";
+import { Users, UserPlus, Mail, Building, Loader2, Crown, Trash2, Shield, UserCheck, ArrowLeft, MoreHorizontal, Pencil, KeyRound, Lock, Eye, EyeOff, Plus, CreditCard } from "lucide-react";
 import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 import type { Database } from "@/integrations/supabase/types";
 
 type TeamRole = Database["public"]["Enums"]["team_role"];
@@ -90,6 +92,7 @@ type EditUserForm = z.infer<typeof editUserSchema>;
 
 export default function TeamsAdmin() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
   const [isCreating, setIsCreating] = useState(false);
@@ -98,6 +101,7 @@ export default function TeamsAdmin() {
   const [editingUser, setEditingUser] = useState<{ id: string; email: string; full_name: string | null; organization: string | null; team_role: TeamRole | null } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [isPurchasingLicenses, setIsPurchasingLicenses] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
 
   const [showPassword, setShowPassword] = useState(false);
@@ -218,6 +222,81 @@ export default function TeamsAdmin() {
     },
     enabled: !!user?.id && (!!effectiveTeam?.id || !!isAdmin),
   });
+
+  // Handle license purchase success
+  useEffect(() => {
+    const licensesParam = searchParams.get("licenses");
+    const teamIdParam = searchParams.get("team_id");
+    
+    if (licensesParam === "success" && teamIdParam) {
+      // Verify and apply the license purchase
+      const verifyPurchase = async () => {
+        try {
+          const response = await supabase.functions.invoke("verify-license-purchase", {
+            body: { teamId: teamIdParam },
+          });
+          
+          if (response.data?.verified) {
+            toast.success(`Successfully added ${response.data.added} licenses to your team!`);
+            queryClient.invalidateQueries({ queryKey: ["team"] });
+            queryClient.invalidateQueries({ queryKey: ["user-team"] });
+          }
+        } catch (error) {
+          console.error("Error verifying license purchase:", error);
+        }
+        
+        // Clear the URL params
+        setSearchParams({});
+      };
+      
+      verifyPurchase();
+    } else if (licensesParam === "cancelled") {
+      toast.error("License purchase was cancelled");
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, queryClient]);
+
+  // Calculate member count for license display
+  const memberCount = (teamUsers?.length ?? 0) + 1; // +1 for the owner
+  const licenseCount = effectiveTeam?.license_count ?? 10;
+  const licenseUsagePercent = Math.min((memberCount / licenseCount) * 100, 100);
+
+  // Purchase licenses mutation
+  const purchaseLicensesMutation = useMutation({
+    mutationFn: async () => {
+      const response = await supabase.functions.invoke("purchase-licenses", {});
+      
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to start purchase");
+      }
+      
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+      
+      return response.data;
+    },
+    onSuccess: (data) => {
+      if (data?.url) {
+        // Open checkout in new tab
+        const newWindow = window.open(data.url, "_blank");
+        if (!newWindow) {
+          // Fallback to same window
+          window.location.href = data.url;
+        }
+      }
+      setIsPurchasingLicenses(false);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to start license purchase");
+      setIsPurchasingLicenses(false);
+    },
+  });
+
+  const handlePurchaseLicenses = () => {
+    setIsPurchasingLicenses(true);
+    purchaseLicensesMutation.mutate();
+  };
 
   // Create user mutation
   const createUserMutation = useMutation({
@@ -508,6 +587,74 @@ export default function TeamsAdmin() {
             Add Team Member
           </Button>
         </div>
+
+        {/* License Management Card - only show to team owners */}
+        {team && (
+          <Card className="border-primary/20">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Team Licenses
+                  </CardTitle>
+                  <CardDescription>
+                    Manage your team member licenses
+                  </CardDescription>
+                </div>
+                <Badge variant="outline" className="text-lg px-3 py-1">
+                  {memberCount} / {licenseCount}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">License usage</span>
+                  <span className={memberCount >= licenseCount ? "text-destructive font-medium" : "text-foreground"}>
+                    {memberCount} of {licenseCount} used
+                  </span>
+                </div>
+                <Progress 
+                  value={licenseUsagePercent} 
+                  className={memberCount >= licenseCount ? "[&>div]:bg-destructive" : ""}
+                />
+              </div>
+              
+              {memberCount >= licenseCount && (
+                <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
+                  You've reached your license limit. Purchase more licenses to add additional team members.
+                </div>
+              )}
+              
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between pt-2 border-t">
+                <div>
+                  <p className="font-medium">Need more licenses?</p>
+                  <p className="text-sm text-muted-foreground">
+                    Add 10 more licenses for £60 (£6 per license)
+                  </p>
+                </div>
+                <Button 
+                  onClick={handlePurchaseLicenses}
+                  disabled={isPurchasingLicenses || purchaseLicensesMutation.isPending}
+                  className="shrink-0"
+                >
+                  {(isPurchasingLicenses || purchaseLicensesMutation.isPending) ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Purchase 10 Licenses
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Team Logo Section - only show to team owners */}
         {team && (
