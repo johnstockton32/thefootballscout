@@ -28,6 +28,12 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
+    // Get origin with fallback for when invoked via supabase.functions.invoke
+    const origin = req.headers.get("origin") || 
+      req.headers.get("referer")?.replace(/\/$/, '') ||
+      "https://thefootballscout.lovable.app";
+    logStep("Origin determined", { origin });
+
     const { tier } = await req.json();
     logStep("Requested tier", { tier });
 
@@ -69,8 +75,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
-      cancel_url: `${req.headers.get("origin")}/pricing?subscription=cancelled`,
+      success_url: `${origin}/dashboard?subscription=success`,
+      cancel_url: `${origin}/pricing?subscription=cancelled`,
       metadata: {
         user_id: user.id,
         tier: tier,
