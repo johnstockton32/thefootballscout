@@ -913,12 +913,12 @@ export default function Settings() {
                           <AlertDialogDescription>
                             You will be downgraded to the Free plan. You'll have:
                             <ul className="list-disc list-inside mt-2 space-y-1">
-                              <li>Up to 5 player profiles</li>
-                              <li>Up to 10 reports per month</li>
+                              <li>Up to 10 player profiles</li>
+                              <li>Up to 5 reports per month</li>
                               <li>Basic analytics</li>
                             </ul>
-                            <p className="mt-2 text-amber-600 dark:text-amber-400">
-                              You'll lose access to unlimited players, reports, and PDF export.
+                            <p className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                              <strong>Important:</strong> You'll retain access to Pro features until the end of your current billing period. After that, you'll lose access to unlimited players, reports, AI insights, and PDF export.
                             </p>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
@@ -974,8 +974,8 @@ export default function Settings() {
                               <li>Unlimited reports</li>
                               <li>Advanced analytics and PDF export</li>
                             </ul>
-                            <p className="mt-2 text-amber-600 dark:text-amber-400">
-                              You'll lose access to team collaboration features.
+                            <p className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                              <strong>Important:</strong> You'll retain access to Team features until the end of your current billing period. After that, you'll lose access to team collaboration, white-label reports, and video clips.
                             </p>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
