@@ -20,9 +20,11 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useVoiceToText } from '@/hooks/useVoiceToText';
+import { useOfflineStatus } from '@/hooks/useOfflineStatus';
+import { useOfflineReports } from '@/hooks/useOfflineReports';
 import { VoiceInputButton } from '@/components/ui/voice-input-button';
 import { toast } from 'sonner';
-import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud, AlertTriangle, Crown, Lock, Users } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Zap, Brain, Target, Heart, Cloud, AlertTriangle, Crown, Lock, Users, WifiOff } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { handleError } from '@/lib/errorUtils';
 import { useDebouncedCallback } from 'use-debounce';
@@ -64,6 +66,8 @@ export default function NewReport() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { canCreateReport, usage, limits, tier, isLoading: subscriptionLoading } = useSubscription();
+  const { isOnline } = useOfflineStatus();
+  const { createReport } = useOfflineReports();
   
   const [players, setPlayers] = useState<Player[]>([]);
   const [selectedPlayerId, setSelectedPlayerId] = useState(searchParams.get('playerId') || '');
@@ -180,9 +184,9 @@ export default function NewReport() {
     ]
   ) : 0;
 
-  // Autosave draft
+  // Autosave draft (only when online)
   const saveDraft = useDebouncedCallback(async () => {
-    if (!user || !selectedPlayerId) return;
+    if (!user || !selectedPlayerId || !isOnline) return;
 
     setIsSaving(true);
     try {
@@ -239,7 +243,6 @@ export default function NewReport() {
 
     try {
       const reportData = {
-        scout_id: user.id,
         player_id: selectedPlayerId,
         match_date: formData.match_date,
         match_details: formData.match_details || null,
@@ -256,13 +259,24 @@ export default function NewReport() {
         is_private: formData.is_private,
       };
 
-      if (draftId) {
-        await supabase.from('scouting_reports').update(reportData).eq('id', draftId);
+      if (isOnline) {
+        // Online: use direct Supabase call for drafts or create new
+        if (draftId) {
+          await supabase.from('scouting_reports').update({ ...reportData, scout_id: user.id }).eq('id', draftId);
+        } else {
+          await supabase.from('scouting_reports').insert({ ...reportData, scout_id: user.id });
+        }
+        toast.success('Report submitted successfully!');
       } else {
-        await supabase.from('scouting_reports').insert(reportData);
+        // Offline: use offline reports hook which handles IndexedDB and sync queue
+        const result = await createReport(reportData);
+        if (result) {
+          toast.success('Report saved offline. Will sync when online.');
+        } else {
+          throw new Error('Failed to save report offline');
+        }
       }
-
-      toast.success('Report submitted successfully!');
+      
       navigate('/reports');
     } catch (error: unknown) {
       toast.error(handleError(error, 'Submit report'));
@@ -287,12 +301,20 @@ export default function NewReport() {
                 Record match observations and player ratings
               </p>
             </div>
-            {isSaving && (
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
-                <Cloud className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
-                Saving...
-              </div>
-            )}
+            <div className="flex items-center gap-3">
+              {!isOnline && (
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-amber-500 bg-amber-500/10 px-3 py-1.5 rounded-full">
+                  <WifiOff className="w-3 h-3 sm:w-4 sm:h-4" />
+                  Offline Mode
+                </div>
+              )}
+              {isSaving && isOnline && (
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                  <Cloud className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
+                  Saving...
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
