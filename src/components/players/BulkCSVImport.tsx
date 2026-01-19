@@ -7,11 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase, POSITION_LABELS, PlayerPosition } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
-import { Upload, FileSpreadsheet, Check, X, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { Upload, FileSpreadsheet, Check, X, AlertTriangle, Download, Loader2, Lock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ParsedPlayer {
@@ -269,6 +270,25 @@ export function BulkCSVImport({ onSuccess }: { onSuccess?: () => void }) {
   const importableCount = remainingSlots === Infinity 
     ? validCount 
     : Math.min(validCount, remainingSlots);
+
+  // Check if user has bulk import feature
+  if (!limits.hasBulkImportExport) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" disabled className="opacity-50 cursor-not-allowed">
+              <Lock className="w-4 h-4 mr-2" />
+              Import CSV
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Bulk CSV import requires Pro or Team plan</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

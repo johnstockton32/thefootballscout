@@ -406,11 +406,11 @@ export default function Analysis() {
     }
   };
 
-  if (!limits.hasAdvancedAnalytics) {
+  if (!limits.hasSmartDiscovery) {
     return (
       <SubscriptionGate
         requiredTier="pro"
-        feature="hasAdvancedAnalytics"
+        feature="hasSmartDiscovery"
         featureName="Smart Discovery"
         featureDescription="Search your player database using natural language. Upgrade to Pro or Team to access AI-powered player discovery."
       >

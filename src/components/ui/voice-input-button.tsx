@@ -1,7 +1,8 @@
-import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Mic, MicOff, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { useSubscription } from '@/hooks/useSubscription';
 
 interface VoiceInputButtonProps {
   isListening: boolean;
@@ -18,8 +19,34 @@ export function VoiceInputButton({
   className,
   size = 'icon',
 }: VoiceInputButtonProps) {
+  const { limits } = useSubscription();
+  
   if (!isSupported) {
     return null;
+  }
+
+  // Show locked state for free users
+  if (!limits.hasVoiceToText) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size={size}
+              disabled
+              className={cn('opacity-50 cursor-not-allowed', className)}
+            >
+              <Lock className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Voice input requires Pro or Team plan</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
   }
 
   return (
