@@ -97,7 +97,7 @@ export default function Install() {
   return (
     <div className="min-h-screen bg-background pitch-pattern">
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50 safe-area-top">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <button onClick={() => navigate('/')} className="cursor-pointer">
             <Logo size="sm" showText={false} className="sm:hidden" />

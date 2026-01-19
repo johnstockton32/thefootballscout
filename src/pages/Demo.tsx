@@ -364,7 +364,7 @@ export default function Demo() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border">
+      <header className="sticky top-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="sm" asChild className="gap-2">
