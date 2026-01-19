@@ -233,20 +233,22 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const doc = new jsPDF();
   const player = report.players as any;
   const pageWidth = 210;
-  const margin = 15;
+  const pageHeight = 297;
+  const margin = 12;
   const contentWidth = pageWidth - margin * 2;
   
-  // Colors (RGB) - Matching the app's design system
-  const primaryColor: [number, number, number] = [39, 174, 96]; // Emerald green (hsl 158 64% 45%)
+  // Dark theme colors (RGB) - Matching the reference image
+  const bgDark: [number, number, number] = [22, 33, 62]; // Dark navy background
+  const bgCard: [number, number, number] = [30, 41, 70]; // Slightly lighter card
+  const bgCardAlt: [number, number, number] = [37, 49, 82]; // Alternative card bg
+  const primaryColor: [number, number, number] = [16, 185, 129]; // Emerald/teal green
   const blueColor: [number, number, number] = [59, 130, 246]; // Blue
-  const amberColor: [number, number, number] = [245, 158, 11]; // Amber/Gold
-  const purpleColor: [number, number, number] = [147, 51, 234]; // Purple
-  const destructiveColor: [number, number, number] = [239, 68, 68]; // Red
-  const textDark: [number, number, number] = [30, 30, 30];
-  const textMuted: [number, number, number] = [107, 114, 128];
-  const bgCard: [number, number, number] = [249, 250, 251];
-  const bgMuted: [number, number, number] = [243, 244, 246];
+  const amberColor: [number, number, number] = [250, 204, 21]; // Yellow/Gold
+  const purpleColor: [number, number, number] = [192, 132, 252]; // Light purple/pink
+  const redColor: [number, number, number] = [239, 68, 68]; // Red
   const white: [number, number, number] = [255, 255, 255];
+  const textMuted: [number, number, number] = [156, 163, 175]; // Gray text
+  const textLight: [number, number, number] = [229, 231, 235]; // Light gray
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
@@ -254,215 +256,227 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const physValues = [report.physical_pace, report.physical_agility, report.physical_strength, report.physical_stamina, report.physical_balance].filter(v => v != null);
   const mentValues = [report.mental_composure, report.mental_concentration, report.mental_work_rate, report.mental_leadership, report.mental_aggression].filter(v => v != null);
 
-  const techAvg = techValues.length > 0 ? techValues.reduce((a, b) => a + b, 0) / techValues.length : 0;
-  const tactAvg = tactValues.length > 0 ? tactValues.reduce((a, b) => a + b, 0) / tactValues.length : 0;
-  const physAvg = physValues.length > 0 ? physValues.reduce((a, b) => a + b, 0) / physValues.length : 0;
-  const mentAvg = mentValues.length > 0 ? mentValues.reduce((a, b) => a + b, 0) / mentValues.length : 0;
+  const techAvg = techValues.length > 0 ? Math.round(techValues.reduce((a, b) => a + b, 0) / techValues.length) : 0;
+  const tactAvg = tactValues.length > 0 ? Math.round(tactValues.reduce((a, b) => a + b, 0) / tactValues.length) : 0;
+  const physAvg = physValues.length > 0 ? Math.round(physValues.reduce((a, b) => a + b, 0) / physValues.length) : 0;
+  const mentAvg = mentValues.length > 0 ? Math.round(mentValues.reduce((a, b) => a + b, 0) / mentValues.length) : 0;
 
   // Calculate overall score (0-100)
   const categoryCount = [techAvg, tactAvg, physAvg, mentAvg].filter(v => v > 0).length;
   const overallScore = categoryCount > 0 ? Math.round(((techAvg + tactAvg + physAvg + mentAvg) / categoryCount) * 5) : 0;
 
-  // ========== HEADER ==========
-  doc.setFillColor(...primaryColor);
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  // ========== FULL PAGE DARK BACKGROUND ==========
+  doc.setFillColor(...bgDark);
+  doc.rect(0, 0, pageWidth, pageHeight, 'F');
+
+  // ========== HEADER - Player Info ==========
+  let y = margin;
   
-  // Add team logo if available
+  // Player name
+  doc.setTextColor(...white);
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(player?.full_name || 'Unknown Player', margin, y + 6);
+  
+  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
+  const club = player?.current_club || 'No Club';
+  doc.setTextColor(...textMuted);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${position} • ${club}`, margin, y + 12);
+
+  // Add team logo if available (top right)
   if (teamLogoUrl) {
     const logoBase64 = await loadImageAsBase64(teamLogoUrl);
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', pageWidth - 42, 5, 28, 28);
+        doc.addImage(logoBase64, 'PNG', pageWidth - margin - 18, y, 16, 16);
       } catch (e) {
         console.warn('Could not add logo to PDF:', e);
       }
     }
   }
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
-  doc.setFont('helvetica', 'bold');
-  doc.text('SCOUTING REPORT', margin, 20);
-  
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`The Football Scout  •  ${format(new Date(), 'MMMM d, yyyy')}`, margin, 30);
 
-  // ========== PLAYER INFO SECTION ==========
-  let y = 50;
-  
-  // Player name and position
-  doc.setTextColor(...textDark);
-  doc.setFontSize(18);
-  doc.setFont('helvetica', 'bold');
-  doc.text(player?.full_name || 'Unknown Player', margin, y);
-  
-  // Overall rating badge on the right
-  if (report.overall_rating || overallScore > 0) {
-    const ratingValue = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
-    drawRoundedRect(doc, pageWidth - margin - 30, y - 10, 30, 30, 4, primaryColor);
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text(ratingValue.toString(), pageWidth - margin - 15, y + 4, { align: 'center' });
-    doc.setFontSize(6);
-    doc.text('RATING', pageWidth - margin - 15, y + 11, { align: 'center' });
-  }
-  
-  y += 6;
-  doc.setTextColor(...textMuted);
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
-  const club = player?.current_club || 'No Club';
-  doc.text(`${position}  •  ${club}`, margin, y);
-  y += 10;
+  y += 20;
 
-  // Player details row
-  const details = [
-    { label: 'Nationality', value: player?.nationality || 'N/A' },
-    { label: 'DOB', value: player?.date_of_birth || 'N/A' },
-    { label: 'Height', value: player?.height_cm ? `${player.height_cm}cm` : 'N/A' },
-    { label: 'Weight', value: player?.weight_kg ? `${player.weight_kg}kg` : 'N/A' },
-    { label: 'Foot', value: player?.preferred_foot || 'N/A' },
-  ];
-
-  doc.setFontSize(8);
-  const detailWidth = contentWidth / 5;
-  details.forEach((detail, i) => {
-    const x = margin + i * detailWidth;
-    doc.setTextColor(...textMuted);
-    doc.text(detail.label, x, y);
-    doc.setTextColor(...textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text(detail.value, x, y + 4);
-    doc.setFont('helvetica', 'normal');
-  });
-  y += 12;
-
-  // ========== MATCH DETAILS BOX ==========
-  drawRoundedRect(doc, margin, y, contentWidth, 20, 3, bgMuted);
-  y += 5;
+  // ========== OVERALL MATCH RATING SECTION ==========
+  const ratingCardHeight = 52;
+  drawRoundedRect(doc, margin, y, contentWidth, ratingCardHeight, 4, bgCard);
   
-  doc.setTextColor(...textDark);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Match Details', margin + 4, y);
-  y += 5;
-  
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(8);
-  doc.setTextColor(...textMuted);
-  const matchDate = format(new Date(report.match_date), 'MMM d, yyyy');
-  const opposition = report.opposition || 'Unknown';
-  const competitionLevel = COMPETITION_LEVEL_LABELS[report.competition_level as CompetitionLevel] || report.competition_level;
-  const minutesObserved = report.minutes_observed ? `${report.minutes_observed} mins` : '';
-  doc.text(`${matchDate}  •  vs ${opposition}  •  ${competitionLevel}${minutesObserved ? '  •  ' + minutesObserved : ''}`, margin + 4, y);
-  y += 14;
-
-  // ========== OVERALL PERFORMANCE SECTION ==========
-  // Draw a clean card-style box
-  drawRoundedRect(doc, margin, y, contentWidth, 32, 4, white);
-  doc.setDrawColor(229, 231, 235);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin, y, contentWidth, 32, 4, 4, 'S');
-  
-  // Overall score on the left with colored accent
-  doc.setFillColor(...primaryColor);
-  doc.rect(margin, y, 4, 32, 'F');
-  
+  // "Overall Match Rating" label
   doc.setTextColor(...textMuted);
   doc.setFontSize(8);
-  doc.text('Overall Match Rating', margin + 8, y + 7);
+  doc.text('Overall Match Rating', margin + 8, y + 10);
   
-  doc.setTextColor(...primaryColor);
-  doc.setFontSize(28);
+  // Large score
+  doc.setTextColor(...white);
+  doc.setFontSize(32);
   doc.setFont('helvetica', 'bold');
-  doc.text(overallScore.toString(), margin + 8, y + 22);
-  
+  doc.text(overallScore.toString(), margin + 8, y + 30);
   doc.setTextColor(...textMuted);
   doc.setFontSize(12);
   doc.setFont('helvetica', 'normal');
-  doc.text('/100', margin + 26, y + 22);
+  doc.text('/100', margin + 28, y + 30);
   
+  // Score label (Very Good, etc.)
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(8);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(getScoreLabel(overallScore), margin + 8, y + 28);
+  doc.text(getScoreLabel(overallScore), margin + 8, y + 38);
   
-  // Category breakdown bars on the right
-  const barStartX = margin + 75;
-  const barWidth = 85;
-  const barHeight = 3;
+  // Circular rating indicator (right side) - simplified as a circle arc
+  const circleX = pageWidth - margin - 25;
+  const circleY = y + 26;
+  const circleR = 16;
+  
+  // Background circle
+  doc.setDrawColor(...bgCardAlt);
+  doc.setLineWidth(3);
+  doc.circle(circleX, circleY, circleR, 'S');
+  
+  // Progress arc (simplified as colored circle)
+  doc.setDrawColor(...primaryColor);
+  doc.setLineWidth(3);
+  doc.circle(circleX, circleY, circleR, 'S');
+  
+  // Star icon placeholder (just text)
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(14);
+  doc.text('★', circleX - 3, circleY + 4);
+  
+  // Category progress bar at bottom of rating card
+  const barY = y + ratingCardHeight - 8;
+  const barTotalWidth = contentWidth - 16;
+  const barSegmentWidth = barTotalWidth / 4;
+  const barHeight = 4;
+  
   const categories = [
-    { name: 'Technical', avg: Math.round(techAvg), color: primaryColor },
-    { name: 'Tactical', avg: Math.round(tactAvg), color: blueColor },
-    { name: 'Physical', avg: Math.round(physAvg), color: amberColor },
-    { name: 'Mental', avg: Math.round(mentAvg), color: purpleColor },
+    { name: 'Technical', avg: techAvg, color: primaryColor },
+    { name: 'Tactical', avg: tactAvg, color: blueColor },
+    { name: 'Physical', avg: physAvg, color: amberColor },
+    { name: 'Mental', avg: mentAvg, color: purpleColor },
   ];
   
   categories.forEach((cat, i) => {
-    const catY = y + 6 + i * 6;
-    doc.setTextColor(...textMuted);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(cat.name, barStartX, catY + 2);
+    const segX = margin + 8 + i * barSegmentWidth;
+    const fillWidth = (cat.avg / 20) * (barSegmentWidth - 2);
     
-    drawProgressBar(doc, barStartX + 22, catY, barWidth - 35, barHeight, cat.avg, 20, bgMuted, cat.color);
+    // Background
+    doc.setFillColor(...bgCardAlt);
+    doc.rect(segX, barY, barSegmentWidth - 2, barHeight, 'F');
     
-    doc.setTextColor(...textDark);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`${cat.avg}/20`, barStartX + barWidth - 6, catY + 2);
+    // Fill
+    doc.setFillColor(...cat.color);
+    doc.rect(segX, barY, fillWidth, barHeight, 'F');
   });
   
-  y += 38;
+  // Category labels below bar
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  categories.forEach((cat, i) => {
+    const labelX = margin + 8 + i * barSegmentWidth + (barSegmentWidth - 2) / 2;
+    doc.setTextColor(...textMuted);
+    doc.text(cat.name, labelX, barY + 7, { align: 'center' });
+  });
+  
+  y += ratingCardHeight + 6;
 
-  // ========== CATEGORY AVERAGES GRID ==========
-  doc.setTextColor(...textDark);
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Category Breakdown', margin, y);
-  y += 6;
-
-  const boxWidth = (contentWidth - 9) / 4;
-  const boxHeight = 24;
+  // ========== CATEGORY CARDS ROW ==========
+  const cardWidth = (contentWidth - 9) / 4;
+  const cardHeight = 28;
   
   categories.forEach((cat, i) => {
-    const boxX = margin + i * (boxWidth + 3);
+    const cardX = margin + i * (cardWidth + 3);
+    drawRoundedRect(doc, cardX, y, cardWidth, cardHeight, 3, bgCard);
     
-    // Box background
-    drawRoundedRect(doc, boxX, y, boxWidth, boxHeight, 3, white);
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(boxX, y, boxWidth, boxHeight, 3, 3, 'S');
-    
-    // Category color bar on left
+    // Category icon/indicator
     doc.setFillColor(...cat.color);
-    doc.roundedRect(boxX + 3, y + 4, 2, 16, 1, 1, 'F');
+    doc.circle(cardX + 6, y + 8, 2, 'F');
     
-    doc.setTextColor(...textDark);
-    doc.setFontSize(7);
+    // Category name
+    doc.setTextColor(...cat.color);
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.text(cat.name, boxX + 8, y + 9);
+    doc.text(cat.name, cardX + 10, y + 9);
     
     // Score
-    doc.setFontSize(14);
-    doc.text(cat.avg.toString(), boxX + 8, y + 19);
+    doc.setTextColor(...white);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(cat.avg.toString(), cardX + 6, y + 22);
     doc.setTextColor(...textMuted);
-    doc.setFontSize(8);
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('/20', boxX + 18, y + 19);
+    doc.text('/20', cardX + 16, y + 22);
   });
   
-  y += boxHeight + 8;
+  y += cardHeight + 8;
 
-  // ========== DETAILED ATTRIBUTES ==========
-  doc.setTextColor(...textDark);
+  // ========== ATTRIBUTE OVERVIEW (Radar Chart - simplified as text) ==========
+  drawRoundedRect(doc, margin, y, contentWidth, 50, 4, bgCard);
+  
+  doc.setTextColor(...blueColor);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('📊 Attribute Overview', margin + 8, y + 10);
+  
+  // Draw a simplified radar representation with key attributes
+  const radarAttrs = [
+    { name: 'Passing', value: report.technical_passing || 0 },
+    { name: 'Dribbling', value: report.technical_dribbling || 0 },
+    { name: 'Shooting', value: report.technical_shooting || 0 },
+    { name: 'Positioning', value: report.tactical_positioning || 0 },
+    { name: 'Awareness', value: report.tactical_awareness || 0 },
+    { name: 'Pace', value: report.physical_pace || 0 },
+    { name: 'Stamina', value: report.physical_stamina || 0 },
+    { name: 'Composure', value: report.mental_composure || 0 },
+  ];
+  
+  const radarStartX = margin + 8;
+  const radarY = y + 18;
+  const colWidth = (contentWidth - 16) / 4;
+  
+  radarAttrs.forEach((attr, i) => {
+    const col = i % 4;
+    const row = Math.floor(i / 4);
+    const attrX = radarStartX + col * colWidth;
+    const attrY = radarY + row * 14;
+    
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(attr.name, attrX, attrY);
+    
+    doc.setTextColor(...primaryColor);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(attr.value.toString(), attrX + 28, attrY);
+  });
+  
+  y += 54;
+
+  // ========== DETAILED ATTRIBUTES SECTION ==========
+  drawRoundedRect(doc, margin, y, contentWidth, 85, 4, bgCard);
+  
+  doc.setTextColor(...white);
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('Detailed Attributes', margin, y);
-  y += 4;
-
+  doc.text('Detailed Attributes', margin + 8, y + 10);
+  
+  // Draw attribute bars in 2 columns
+  const attrBarWidth = 50;
+  const attrBarHeight = 3;
+  const leftColX = margin + 8;
+  const rightColX = margin + contentWidth / 2 + 4;
+  let attrY = y + 18;
+  
+  // Technical attributes (left column)
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('⚽ Technical', leftColX, attrY);
+  attrY += 5;
+  
   const technicalAttrs = [
     ['First Touch', report.technical_first_touch],
     ['Passing', report.technical_passing],
@@ -471,15 +485,65 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ['Crossing', report.technical_crossing],
     ['Heading', report.technical_heading],
   ];
-
+  
+  technicalAttrs.forEach(([name, value]) => {
+    doc.setTextColor(...textLight);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(name as string, leftColX, attrY + 2);
+    
+    // Progress bar
+    drawProgressBar(doc, leftColX + 25, attrY - 1, attrBarWidth, attrBarHeight, (value as number) || 0, 20, bgCardAlt, amberColor);
+    
+    // Value
+    doc.setTextColor(...white);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(((value as number) || 0).toString(), leftColX + attrBarWidth + 28, attrY + 2);
+    
+    attrY += 6;
+  });
+  
+  // Tactical attributes (right column, first half)
+  let rightAttrY = y + 18;
+  doc.setTextColor(...blueColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('📋 Tactical', rightColX, rightAttrY);
+  rightAttrY += 5;
+  
   const tacticalAttrs = [
     ['Positioning', report.tactical_positioning],
     ['Decision Making', report.tactical_decision_making],
     ['Awareness', report.tactical_awareness],
     ['Off-Ball Movement', report.tactical_off_ball_movement],
-    ['Defensive Contrib.', report.tactical_defensive_contribution],
+    ['Def. Contribution', report.tactical_defensive_contribution],
   ];
-
+  
+  tacticalAttrs.forEach(([name, value]) => {
+    doc.setTextColor(...textLight);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(name as string, rightColX, rightAttrY + 2);
+    
+    drawProgressBar(doc, rightColX + 30, rightAttrY - 1, attrBarWidth - 5, attrBarHeight, (value as number) || 0, 20, bgCardAlt, amberColor);
+    
+    doc.setTextColor(...white);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(((value as number) || 0).toString(), rightColX + attrBarWidth + 28, rightAttrY + 2);
+    
+    rightAttrY += 6;
+  });
+  
+  // Physical (left column, second half)
+  attrY += 4;
+  doc.setTextColor(...amberColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('⚡ Physical', leftColX, attrY);
+  attrY += 5;
+  
   const physicalAttrs = [
     ['Pace', report.physical_pace],
     ['Agility', report.physical_agility],
@@ -487,7 +551,31 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ['Stamina', report.physical_stamina],
     ['Balance', report.physical_balance],
   ];
-
+  
+  physicalAttrs.forEach(([name, value]) => {
+    doc.setTextColor(...textLight);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(name as string, leftColX, attrY + 2);
+    
+    drawProgressBar(doc, leftColX + 25, attrY - 1, attrBarWidth, attrBarHeight, (value as number) || 0, 20, bgCardAlt, amberColor);
+    
+    doc.setTextColor(...white);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(((value as number) || 0).toString(), leftColX + attrBarWidth + 28, attrY + 2);
+    
+    attrY += 6;
+  });
+  
+  // Mental (right column, second half)
+  rightAttrY += 4;
+  doc.setTextColor(...purpleColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('○ Mental', rightColX, rightAttrY);
+  rightAttrY += 5;
+  
   const mentalAttrs = [
     ['Composure', report.mental_composure],
     ['Concentration', report.mental_concentration],
@@ -495,159 +583,90 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     ['Leadership', report.mental_leadership],
     ['Aggression', report.mental_aggression],
   ];
-
-  autoTable(doc, {
-    startY: y,
-    head: [['Technical', '', 'Tactical', '']],
-    body: technicalAttrs.map((t, i) => [
-      t[0],
-      t[1]?.toString() || '-',
-      tacticalAttrs[i]?.[0] || '',
-      tacticalAttrs[i]?.[1]?.toString() || '-',
-    ]),
-    theme: 'plain',
-    headStyles: { 
-      fillColor: white, 
-      textColor: primaryColor,
-      fontStyle: 'bold',
-      fontSize: 9,
-    },
-    columnStyles: {
-      0: { cellWidth: 42 },
-      1: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
-    },
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8, cellPadding: 2 },
-    alternateRowStyles: { fillColor: bgCard },
-  });
-
-  const firstTableFinalY = (doc as any).lastAutoTable?.finalY || y + 50;
-
-  autoTable(doc, {
-    startY: firstTableFinalY + 2,
-    head: [['Physical', '', 'Mental', '']],
-    body: physicalAttrs.map((p, i) => [
-      p[0],
-      p[1]?.toString() || '-',
-      mentalAttrs[i]?.[0] || '',
-      mentalAttrs[i]?.[1]?.toString() || '-',
-    ]),
-    theme: 'plain',
-    headStyles: { 
-      fillColor: white, 
-      textColor: amberColor,
-      fontStyle: 'bold',
-      fontSize: 9,
-    },
-    columnStyles: {
-      0: { cellWidth: 42 },
-      1: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
-      2: { cellWidth: 42 },
-      3: { cellWidth: 12, halign: 'center', fontStyle: 'bold' },
-    },
-    margin: { left: margin, right: margin },
-    styles: { fontSize: 8, cellPadding: 2 },
-    alternateRowStyles: { fillColor: bgCard },
-  });
-
-  y = (doc as any).lastAutoTable?.finalY + 8 || firstTableFinalY + 55;
-
-  // ========== STRENGTHS & WEAKNESSES ==========
-  if (report.strengths || report.weaknesses) {
-    const halfWidth = (contentWidth - 6) / 2;
+  
+  mentalAttrs.forEach(([name, value]) => {
+    doc.setTextColor(...textLight);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'normal');
+    doc.text(name as string, rightColX, rightAttrY + 2);
     
-    if (report.strengths) {
-      // Strengths box - clean green border style
-      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 10);
-      const strengthBoxHeight = Math.max(22, 14 + strengthLines.length * 3.5);
-      
-      drawRoundedRect(doc, margin, y, halfWidth, strengthBoxHeight, 3, white);
-      doc.setFillColor(...primaryColor);
-      doc.rect(margin, y, 3, strengthBoxHeight, 'F');
-      doc.setDrawColor(229, 231, 235);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(margin, y, halfWidth, strengthBoxHeight, 3, 3, 'S');
-      
-      doc.setTextColor(...primaryColor);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Strengths', margin + 6, y + 7);
-      
-      doc.setTextColor(...textDark);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(strengthLines, margin + 6, y + 13);
-    }
+    drawProgressBar(doc, rightColX + 30, rightAttrY - 1, attrBarWidth - 5, attrBarHeight, (value as number) || 0, 20, bgCardAlt, amberColor);
+    
+    doc.setTextColor(...white);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(((value as number) || 0).toString(), rightColX + attrBarWidth + 28, rightAttrY + 2);
+    
+    rightAttrY += 6;
+  });
+  
+  y += 89;
 
-    if (report.weaknesses) {
-      // Weaknesses box - clean red border style
-      const weaknessLines = doc.splitTextToSize(report.weaknesses, halfWidth - 10);
-      const weaknessBoxHeight = Math.max(22, 14 + weaknessLines.length * 3.5);
-      const weaknessX = margin + halfWidth + 6;
-      
-      drawRoundedRect(doc, weaknessX, y, halfWidth, weaknessBoxHeight, 3, white);
-      doc.setFillColor(...destructiveColor);
-      doc.rect(weaknessX, y, 3, weaknessBoxHeight, 'F');
-      doc.setDrawColor(229, 231, 235);
-      doc.setLineWidth(0.3);
-      doc.roundedRect(weaknessX, y, halfWidth, weaknessBoxHeight, 3, 3, 'S');
-      
-      doc.setTextColor(...destructiveColor);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Areas to Improve', weaknessX + 6, y + 7);
-      
-      doc.setTextColor(...textDark);
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.text(weaknessLines, weaknessX + 6, y + 13);
-      
-      const maxBoxHeight = Math.max(
-        report.strengths ? Math.max(22, 14 + doc.splitTextToSize(report.strengths, halfWidth - 10).length * 3.5) : 0,
-        weaknessBoxHeight
-      );
-      y += maxBoxHeight + 6;
-    } else if (report.strengths) {
-      const strengthLines = doc.splitTextToSize(report.strengths, halfWidth - 10);
-      y += Math.max(22, 14 + strengthLines.length * 3.5) + 6;
-    }
-  }
+  // ========== STRENGTHS & AREAS TO IMPROVE ==========
+  const halfWidth = (contentWidth - 4) / 2;
+  const obsCardHeight = 28;
+  
+  // Strengths card (left)
+  drawRoundedRect(doc, margin, y, halfWidth, obsCardHeight, 3, bgCard);
+  doc.setFillColor(...primaryColor);
+  doc.rect(margin, y, 3, obsCardHeight, 'F');
+  
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('✓ Strengths', margin + 8, y + 8);
+  
+  doc.setTextColor(...textLight);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  const strengthText = report.strengths || 'No strengths noted.';
+  const strengthLines = doc.splitTextToSize(strengthText, halfWidth - 14);
+  doc.text(strengthLines.slice(0, 3), margin + 8, y + 14);
+  
+  // Areas to Improve card (right)
+  drawRoundedRect(doc, margin + halfWidth + 4, y, halfWidth, obsCardHeight, 3, bgCard);
+  doc.setFillColor(...redColor);
+  doc.rect(margin + halfWidth + 4, y, 3, obsCardHeight, 'F');
+  
+  doc.setTextColor(...redColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('✕ Areas to Improve', margin + halfWidth + 12, y + 8);
+  
+  doc.setTextColor(...textLight);
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'normal');
+  const weaknessText = report.weaknesses || 'No areas noted.';
+  const weaknessLines = doc.splitTextToSize(weaknessText, halfWidth - 14);
+  doc.text(weaknessLines.slice(0, 3), margin + halfWidth + 12, y + 14);
+  
+  y += obsCardHeight + 6;
 
   // ========== RECOMMENDATION ==========
-  if (report.recommendation) {
-    drawRoundedRect(doc, margin, y, contentWidth, 22, 3, bgMuted);
-    
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Scout Recommendation', margin + 4, y + 7);
-    
-    doc.setTextColor(...textDark);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    const recLines = doc.splitTextToSize(report.recommendation, contentWidth - 10);
-    doc.text(recLines, margin + 4, y + 13);
-    y += 26;
-  }
-
-  // ========== POTENTIAL RATING ==========
-  if (report.potential_rating) {
-    doc.setTextColor(...textMuted);
-    doc.setFontSize(8);
-    doc.text('Potential Rating: ', margin, y);
-    doc.setTextColor(...amberColor);
-    doc.setFont('helvetica', 'bold');
-    doc.text(report.potential_rating.toString(), margin + 26, y);
-  }
+  drawRoundedRect(doc, margin, y, contentWidth, 22, 3, bgCard);
+  doc.setFillColor(...primaryColor);
+  doc.rect(margin, y, 3, 22, 'F');
+  
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('⚙ Recommendation', margin + 8, y + 8);
+  
+  doc.setTextColor(...white);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  const recText = report.recommendation || 'No recommendation provided.';
+  const recLines = doc.splitTextToSize(recText, contentWidth - 16);
+  doc.text(recLines.slice(0, 2), margin + 8, y + 14);
+  
+  y += 26;
 
   // ========== FOOTER ==========
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setTextColor(...textMuted);
   doc.setFont('helvetica', 'normal');
-  doc.text('The Football Scout', margin, 287);
-  doc.text(`Report ID: ${report.id.substring(0, 8)}`, pageWidth - margin, 287, { align: 'right' });
+  doc.text('The Football Scout', margin, pageHeight - 8);
+  doc.text(`Report ID: ${report.id.substring(0, 8)}  •  ${format(new Date(report.match_date), 'MMMM d, yyyy')}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
 
   // Save
   const filename = `scouting_report_${player?.full_name?.replace(/\s+/g, '_') || 'unknown'}_${format(new Date(report.match_date), 'yyyy-MM-dd')}.pdf`;
