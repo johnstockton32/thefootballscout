@@ -9,6 +9,8 @@ import { AttributeBar } from '@/components/reports/AttributeBar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -20,6 +22,7 @@ import {
   COMPETITION_LEVEL_LABELS
 } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { handleError } from '@/lib/errorUtils';
@@ -43,6 +46,8 @@ import {
   Star,
   Trophy,
   Edit,
+  Lock,
+  Users,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -89,6 +94,8 @@ interface Report {
   strengths: string | null;
   weaknesses: string | null;
   recommendation: string | null;
+  is_private: boolean;
+  scout_id: string;
   players: {
     id: string;
     full_name: string;
@@ -101,10 +108,14 @@ export default function ReportDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tier } = useSubscription();
   const [report, setReport] = useState<Report | null>(null);
   const [teamLogoUrl, setTeamLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
+  const [isTogglingPrivacy, setIsTogglingPrivacy] = useState(false);
+
+  const isOwner = report?.scout_id === user?.id;
 
   useEffect(() => {
     if (id && user) {
@@ -167,6 +178,28 @@ export default function ReportDetail() {
       toast.error('Failed to load report');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleReportPrivacy = async () => {
+    if (!report || !isOwner) return;
+
+    setIsTogglingPrivacy(true);
+    try {
+      const { error } = await supabase
+        .from('scouting_reports')
+        .update({ is_private: !report.is_private })
+        .eq('id', report.id);
+
+      if (error) throw error;
+
+      setReport(prev => prev ? { ...prev, is_private: !prev.is_private } : null);
+      toast.success(report.is_private ? 'Report is now visible to your team' : 'Report is now private');
+    } catch (error) {
+      console.error('Error toggling privacy:', error);
+      toast.error('Failed to update report privacy');
+    } finally {
+      setIsTogglingPrivacy(false);
     }
   };
 
@@ -260,7 +293,15 @@ export default function ReportDetail() {
                 <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Report</h1>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Report</h1>
+                  {report.is_private && (
+                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30">
+                      <Lock className="w-3 h-3 mr-1" />
+                      Private
+                    </Badge>
+                  )}
+                </div>
                 <Link
                   to={`/players/${report.players?.id}`}
                   className="text-primary hover:underline hover:text-primary/80 flex items-center gap-1 sm:gap-2 mt-1 text-sm sm:text-base flex-wrap cursor-pointer transition-colors"
@@ -318,6 +359,37 @@ export default function ReportDetail() {
             </AlertDialog>
           </div>
         </div>
+
+        {/* Privacy Toggle - Only for Team tier owners */}
+        {tier === 'team' && isOwner && (
+          <Card className="card-glass border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  {report.is_private ? (
+                    <Lock className="w-5 h-5 text-amber-500" />
+                  ) : (
+                    <Users className="w-5 h-5 text-primary" />
+                  )}
+                  <div>
+                    <Label className="text-base font-medium">Report Privacy</Label>
+                    <p className="text-sm text-muted-foreground">
+                      {report.is_private 
+                        ? 'Only you can see this report' 
+                        : 'Your team members can view this report'}
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  checked={report.is_private}
+                  onCheckedChange={toggleReportPrivacy}
+                  disabled={isTogglingPrivacy}
+                  aria-label="Toggle report privacy"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Match Info */}

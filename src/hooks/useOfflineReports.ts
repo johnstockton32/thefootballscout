@@ -31,10 +31,10 @@ export function useOfflineReports() {
     setIsLoading(true);
     try {
       if (isOnline) {
+        // RLS policies handle visibility - fetch all reports user has access to
         const { data, error } = await supabase
           .from('scouting_reports')
           .select('*, players(id, full_name, position)')
-          .eq('scout_id', user.id)
           .order('match_date', { ascending: false });
 
         if (error) throw error;
@@ -116,6 +116,7 @@ export function useOfflineReports() {
       mental_leadership: reportData.mental_leadership ?? null,
       mental_work_rate: reportData.mental_work_rate ?? null,
       mental_aggression: reportData.mental_aggression ?? null,
+      is_private: reportData.is_private ?? false,
     } as ScoutingReport;
 
     try {

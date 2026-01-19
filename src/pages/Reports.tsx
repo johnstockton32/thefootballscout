@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { CompetitionLevel, COMPETITION_LEVEL_LABELS } from '@/lib/supabase';
 import { useOfflineReports, ReportWithPlayer } from '@/hooks/useOfflineReports';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff, User } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff, User, Lock } from 'lucide-react';
 
 const reportRowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -155,6 +155,12 @@ export default function Reports() {
                               {report.is_draft && (
                                 <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
                                   Draft
+                                </span>
+                              )}
+                              {report.is_private && (
+                                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 text-xs rounded-full flex items-center gap-1">
+                                  <Lock className="w-3 h-3" />
+                                  Private
                                 </span>
                               )}
                             </div>
