@@ -67,19 +67,34 @@ Deno.serve(async (req) => {
       .eq("owner_id", requestingUserId)
       .maybeSingle();
 
-    if (!isAdmin && !ownedTeam) {
+    // Check if user is a team admin (from profiles.team_role)
+    const { data: requesterProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("team_id, team_role")
+      .eq("id", requestingUserId)
+      .maybeSingle();
+
+    const isTeamAdmin = requesterProfile?.team_role === "team_admin";
+
+    // Get the effective team (either owned or member of)
+    let effectiveTeamId = ownedTeam?.id || null;
+    if (!effectiveTeamId && isTeamAdmin && requesterProfile?.team_id) {
+      effectiveTeamId = requesterProfile.team_id;
+    }
+
+    if (!isAdmin && !ownedTeam && !isTeamAdmin) {
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin or team owner access required" }),
+        JSON.stringify({ error: "Unauthorized: Admin, team owner, or team admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Check team member limit (max 10 members per team)
-    if (ownedTeam) {
+    if (effectiveTeamId) {
       const { count: memberCount, error: countError } = await supabaseAdmin
         .from("profiles")
         .select("*", { count: "exact", head: true })
-        .eq("team_id", ownedTeam.id);
+        .eq("team_id", effectiveTeamId);
 
       if (countError) {
         console.error("Error counting team members:", countError);
@@ -160,9 +175,9 @@ Deno.serve(async (req) => {
       team_role: role, // Use the role provided in the request
     };
 
-    // If requesting user is a team owner, add the new user to their team
-    if (ownedTeam) {
-      updateData.team_id = ownedTeam.id;
+    // If requesting user has a team (owner or team admin), add the new user to their team
+    if (effectiveTeamId) {
+      updateData.team_id = effectiveTeamId;
     }
 
     const { error: profileError } = await supabaseAdmin

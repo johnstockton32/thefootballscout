@@ -59,6 +59,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 type TeamRole = Database["public"]["Enums"]["team_role"];
 import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
+import { PlayerAssignment } from "@/components/teams/PlayerAssignment";
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 
 const createUserSchema = z.object({
@@ -839,6 +840,11 @@ export default function TeamsAdmin() {
             )}
           </CardContent>
         </Card>
+
+        {/* Player Assignment Section - only for team owners and team admins */}
+        {effectiveTeam && (
+          <PlayerAssignment teamId={effectiveTeam.id} />
+        )}
 
         {/* Edit User Dialog */}
         <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
