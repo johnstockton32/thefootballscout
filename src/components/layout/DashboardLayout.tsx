@@ -127,18 +127,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <ThemeToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
-            {/* Mobile Tier Badge */}
-            <Link
-              to="/settings?tab=plan"
-              className={cn(
-                'flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-medium transition-colors touch-target',
-                currentTier.className
-              )}
-            >
-              <TierIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              <span className="hidden xs:inline">{currentTier.label}</span>
-              {isInTrial && <span className="hidden sm:inline text-[9px] opacity-75">Trial</span>}
-            </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 sm:p-2.5 text-muted-foreground hover:text-foreground transition-colors touch-target"
