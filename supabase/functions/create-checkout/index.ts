@@ -58,9 +58,10 @@ serve(async (req) => {
     }
 
     const priceId = STRIPE_PRICES[tier as keyof typeof STRIPE_PRICES];
-    logStep("Creating checkout session", { priceId, tier });
+    const isPro = tier === "pro";
+    logStep("Creating checkout session", { priceId, tier, hasTrial: isPro });
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       client_reference_id: user.id,
@@ -77,7 +78,17 @@ serve(async (req) => {
         user_id: user.id,
         tier: tier,
       },
-    });
+    };
+
+    // Add 14-day free trial for Pro tier
+    if (isPro) {
+      sessionParams.subscription_data = {
+        trial_period_days: 14,
+      };
+      logStep("Added 14-day trial for Pro tier");
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
