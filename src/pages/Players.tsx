@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SkeletonList } from '@/components/ui/skeleton-card';
-import { supabase, PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
-import { Plus, Search, Users, Filter, ArrowLeft } from 'lucide-react';
+import { useOfflinePlayers } from '@/hooks/useOfflinePlayers';
+import { Plus, Search, Users, Filter, ArrowLeft, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const cardVariants = {
@@ -44,10 +44,9 @@ interface Player {
 
 export default function Players() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [players, setPlayers] = useState<Player[]>([]);
+  // Use offline-capable hook instead of direct Supabase queries
+  const { players, isLoading, isOnline, refetch } = useOfflinePlayers();
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
 
@@ -55,34 +54,7 @@ export default function Players() {
   useKeyboardShortcuts();
 
   useEffect(() => {
-    if (user) {
-      fetchPlayers();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    filterPlayers();
-  }, [players, searchQuery, positionFilter]);
-
-  const fetchPlayers = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('players')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPlayers(data || []);
-    } catch (error) {
-      console.error('Error fetching players:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const filterPlayers = () => {
-    let filtered = [...players];
+    let filtered = [...players] as Player[];
 
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -99,11 +71,19 @@ export default function Players() {
     }
 
     setFilteredPlayers(filtered);
-  };
+  }, [players, searchQuery, positionFilter]);
 
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        {/* Offline Indicator */}
+        {!isOnline && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-600 text-sm">
+            <WifiOff className="w-4 h-4 flex-shrink-0" />
+            <span>You're offline. Showing cached data.</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div>
@@ -117,7 +97,7 @@ export default function Players() {
             </p>
           </div>
           <div className="flex gap-2 w-full sm:w-auto">
-            <BulkCSVImport onSuccess={fetchPlayers} />
+            <BulkCSVImport onSuccess={refetch} />
             <Button variant="hero" asChild className="flex-1 sm:flex-none">
               <Link to="/players/new">
                 <Plus className="w-4 h-4 mr-1 sm:mr-2" />

@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { supabase, CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
+import { CompetitionLevel, COMPETITION_LEVEL_LABELS, PlayerPosition, POSITION_ABBREV } from '@/lib/supabase';
+import { useOfflineReports } from '@/hooks/useOfflineReports';
 import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3 } from 'lucide-react';
+import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Report {
@@ -20,11 +20,7 @@ interface Report {
   overall_rating: number | null;
   recommendation: string | null;
   is_draft: boolean;
-  players: {
-    id: string;
-    full_name: string;
-    position: PlayerPosition;
-  };
+  player_id: string;
 }
 
 const reportRowVariants = {
@@ -55,69 +51,37 @@ const getRecommendationColor = (rec: string | null) => {
 
 export default function Reports() {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const [reports, setReports] = useState<Report[]>([]);
+  // Use offline-capable hook instead of direct Supabase queries
+  const { reports, isLoading, isOnline } = useOfflineReports();
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    if (user) {
-      fetchReports();
-    }
-  }, [user]);
-
-  useEffect(() => {
-    filterReports();
-  }, [reports, searchQuery]);
-
-  const fetchReports = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('scouting_reports')
-        .select(`
-          id,
-          match_date,
-          opposition,
-          competition_level,
-          overall_rating,
-          recommendation,
-          is_draft,
-          players (
-            id,
-            full_name,
-            position
-          )
-        `)
-        .order('match_date', { ascending: false });
-
-      if (error) throw error;
-      setReports(data as unknown as Report[] || []);
-    } catch (error) {
-      console.error('Error fetching reports:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const filterReports = () => {
     if (!searchQuery) {
-      setFilteredReports(reports);
+      setFilteredReports(reports as unknown as Report[]);
       return;
     }
 
     const query = searchQuery.toLowerCase();
     const filtered = reports.filter(
       (r) =>
-        r.players?.full_name?.toLowerCase().includes(query) ||
-        r.opposition?.toLowerCase().includes(query)
-    );
+        r.opposition?.toLowerCase().includes(query) ||
+        r.recommendation?.toLowerCase().includes(query)
+    ) as unknown as Report[];
     setFilteredReports(filtered);
-  };
+  }, [reports, searchQuery]);
 
   return (
     <DashboardLayout>
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
+        {/* Offline Indicator */}
+        {!isOnline && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg text-amber-600 text-sm">
+            <WifiOff className="w-4 h-4 flex-shrink-0" />
+            <span>You're offline. Showing cached data.</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div>
@@ -182,19 +146,16 @@ export default function Reports() {
                     <CardContent className="p-4 md:p-5">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-4 min-w-0 flex-1">
-                          {/* Position Badge */}
+                          {/* Report Icon */}
                           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-bold text-primary">
-                              {report.players?.position ? POSITION_ABBREV[report.players.position] : '?'}
-                            </span>
+                            <FileText className="w-5 h-5 text-primary" />
                           </div>
 
                           {/* Report Details */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <FileText className="w-4 h-4 text-primary flex-shrink-0" />
                               <h3 className="font-bold truncate">
-                                {report.players?.full_name || 'Unknown Player'}
+                                Report #{report.id.slice(0, 8)}
                               </h3>
                               {report.is_draft && (
                                 <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
