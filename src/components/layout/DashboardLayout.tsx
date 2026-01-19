@@ -128,14 +128,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <NotificationToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
-            {/* Sign Out Button */}
-            <button
-              onClick={handleSignOut}
-              className="p-2 text-muted-foreground hover:text-destructive transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
             {/* Mobile Tier Badge */}
             <Link
               to="/settings?tab=plan"
@@ -190,30 +182,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <span className="font-medium">{item.label}</span>
             </Link>
           ))}
-          <div className="border-t border-border my-2" />
-          <button
-            onClick={handleSignOut}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full"
-          >
-            <LogOut className="w-5 h-5" />
-            <span className="font-medium">Sign Out</span>
-          </button>
         </div>
       </nav>
 
       {/* Desktop Sidebar */}
       <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex flex-col h-full">
-          {/* Logo & Sign Out Header */}
-          <div className="p-6 flex items-center justify-between">
+          {/* Logo Header */}
+          <div className="p-6">
             <Logo size="md" />
-            <button
-              onClick={handleSignOut}
-              className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-              title="Sign Out"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
           </div>
 
           {/* Tier Badge */}
