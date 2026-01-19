@@ -240,12 +240,12 @@ export default function Auth() {
         // Update GDPR consent after signup
         await updateGdprConsent(true);
         
-        // Apply selected tier - we need to wait for the session to be established
-        // Use a small delay to ensure profile exists from the trigger
+        // Wait for session to be established
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUser = sessionData.session?.user;
+        const accessToken = sessionData.session?.access_token;
         
         if (currentUser) {
           // Redeem promo code if valid
@@ -259,55 +259,51 @@ export default function Auth() {
             const result = redeemResult as { success: boolean; tier_upgrade?: string; error?: string } | null;
             if (result?.success && result.tier_upgrade) {
               promoAppliedTier = result.tier_upgrade;
+              toast.success(`Welcome! Your ${promoAppliedTier.charAt(0).toUpperCase() + promoAppliedTier.slice(1)} access has been activated!`);
+              navigate('/dashboard');
+              return;
             }
           }
 
-          // Apply selected tier (only if promo didn't already upgrade)
-          if (!promoAppliedTier) {
-            if (selectedTier === 'pro') {
-              await supabase.rpc('start_pro_trial', { _user_id: currentUser.id });
-            } else if (selectedTier === 'team') {
-              // First upgrade the subscription tier
-              await supabase.rpc('upgrade_subscription', { _user_id: currentUser.id, _tier: selectedTier });
+          // For paid tiers, redirect to Stripe checkout (payment required first)
+          if (!promoAppliedTier && (selectedTier === 'pro' || selectedTier === 'team')) {
+            try {
+              toast.success('Account created! Redirecting to payment...');
               
-              // Create the team with the user as owner
-              const { data: newTeam, error: teamError } = await supabase
-                .from('teams')
-                .insert({
-                  name: teamName.trim() || `${fullName}'s Team`,
-                  owner_id: currentUser.id,
-                })
-                .select()
-                .single();
-              
-              if (teamError) {
-                console.error('Error creating team:', teamError);
-                toast.error('Account created but team setup failed. Please contact support.');
-              } else if (newTeam) {
-                // Update the user's profile with the team_id and set them as team_admin
-                const { error: profileError } = await supabase
-                  .from('profiles')
-                  .update({ 
-                    team_id: newTeam.id,
-                    team_role: 'team_admin'
-                  })
-                  .eq('id', currentUser.id);
-                
-                if (profileError) {
-                  console.error('Error updating profile with team:', profileError);
-                }
+              // Create Stripe checkout session
+              const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
+                body: { tier: selectedTier, isAnnual: false },
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              });
+
+              if (checkoutError) {
+                console.error('Checkout error:', checkoutError);
+                toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+                navigate('/dashboard');
+                return;
               }
+
+              if (data?.url) {
+                // Redirect to Stripe checkout in same window
+                window.location.href = data.url;
+                return;
+              } else {
+                toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+                navigate('/dashboard');
+                return;
+              }
+            } catch (checkoutErr) {
+              console.error('Checkout error:', checkoutErr);
+              toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+              navigate('/dashboard');
+              return;
             }
           }
           
-          // Build success message
-          let successMessage = 'Welcome to The Football Scout!';
-          if (promoAppliedTier) {
-            successMessage += ` Your ${promoAppliedTier.charAt(0).toUpperCase() + promoAppliedTier.slice(1)} access has been activated!`;
-          } else if (selectedTier === 'pro') {
-            successMessage += ' Your 14-day Pro trial has started.';
-          }
-          toast.success(successMessage);
+          // Free tier - just go to dashboard
+          toast.success('Welcome to The Football Scout!');
         }
         navigate('/dashboard');
       } else {
