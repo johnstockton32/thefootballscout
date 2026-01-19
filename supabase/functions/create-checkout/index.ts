@@ -29,9 +29,25 @@ serve(async (req) => {
     logStep("Function started");
 
     // Get origin with fallback for when invoked via supabase.functions.invoke
-    const origin = req.headers.get("origin") || 
-      req.headers.get("referer")?.replace(/\/$/, '') ||
-      "https://thefootballscout.lovable.app";
+    let origin = req.headers.get("origin");
+    
+    if (!origin) {
+      const referer = req.headers.get("referer");
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          origin = refererUrl.origin;
+        } catch {
+          origin = null;
+        }
+      }
+    }
+    
+    // Final fallback to production URL
+    if (!origin) {
+      origin = "https://thefootballscout.lovable.app";
+    }
+    
     logStep("Origin determined", { origin });
 
     const { tier } = await req.json();
