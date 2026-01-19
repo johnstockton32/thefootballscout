@@ -44,7 +44,7 @@ interface SubscriptionData {
   cancelSubscription: () => Promise<boolean>;
   refreshSubscription: () => Promise<void>;
   openCustomerPortal: () => Promise<void>;
-  createCheckout: (tier: SubscriptionTier) => Promise<void>;
+  createCheckout: (tier: SubscriptionTier, isAnnual?: boolean) => Promise<void>;
   isSubscribedViaStripe: boolean;
 }
 
@@ -246,7 +246,7 @@ export function useSubscription(): SubscriptionData {
     }
   };
 
-  const createCheckout = async (checkoutTier: SubscriptionTier): Promise<void> => {
+  const createCheckout = async (checkoutTier: SubscriptionTier, isAnnual: boolean = false): Promise<void> => {
     if (!session?.access_token) {
       toast.error('Please sign in to subscribe');
       return;
@@ -259,7 +259,7 @@ export function useSubscription(): SubscriptionData {
 
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { tier: checkoutTier },
+        body: { tier: checkoutTier, isAnnual },
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
