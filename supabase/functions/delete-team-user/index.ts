@@ -147,6 +147,12 @@ Deno.serve(async (req) => {
     console.log("Deleting user:", userId);
 
     // Delete all user data first (in order to avoid FK constraints)
+    // Delete push subscriptions
+    await supabaseAdmin.from("push_subscriptions").delete().eq("user_id", userId);
+    
+    // Delete saved searches
+    await supabaseAdmin.from("saved_searches").delete().eq("user_id", userId);
+    
     // Delete video clips
     await supabaseAdmin.from("video_clips").delete().eq("user_id", userId);
     
