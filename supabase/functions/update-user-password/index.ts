@@ -83,9 +83,30 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Validate password strength requirements
+    const passwordErrors: string[] = [];
+    
     if (newPassword.length < 8) {
+      passwordErrors.push("at least 8 characters");
+    }
+    if (!/[a-z]/.test(newPassword)) {
+      passwordErrors.push("a lowercase letter");
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+      passwordErrors.push("an uppercase letter");
+    }
+    if (!/[0-9]/.test(newPassword)) {
+      passwordErrors.push("a number");
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(newPassword)) {
+      passwordErrors.push("a special character (!@#$%^&*...)");
+    }
+    
+    if (passwordErrors.length > 0) {
       return new Response(
-        JSON.stringify({ error: "Password must be at least 8 characters" }),
+        JSON.stringify({ 
+          error: `Password must contain ${passwordErrors.join(", ")}`
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
