@@ -213,9 +213,9 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if offline
-    if (!isOnline) {
-      toast.error('You are currently offline. Please check your internet connection and try again.');
+    // For signup and password reset, require online
+    if (!isOnline && mode !== 'signIn') {
+      toast.error('You need to be online to ' + (mode === 'signUp' ? 'create an account' : 'reset your password') + '.');
       return;
     }
     
@@ -352,9 +352,13 @@ export default function Auth() {
     <div className="min-h-screen bg-background pitch-pattern flex flex-col">
       {/* Offline Banner */}
       {!isOnline && (
-        <div className="bg-destructive/90 text-destructive-foreground px-4 py-3 flex items-center justify-center gap-2 text-sm font-medium">
+        <div className="bg-amber-500/90 text-amber-950 px-4 py-3 flex items-center justify-center gap-2 text-sm font-medium">
           <WifiOff className="w-4 h-4" />
-          <span>You're offline. Please connect to the internet to sign in.</span>
+          <span>
+            {mode === 'signIn' 
+              ? "You're offline. You can sign in with previously cached credentials."
+              : "You're offline. Please connect to the internet to continue."}
+          </span>
         </div>
       )}
       

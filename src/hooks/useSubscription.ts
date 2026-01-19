@@ -247,7 +247,11 @@ export function useSubscription(): SubscriptionData {
   };
 
   const createCheckout = async (checkoutTier: SubscriptionTier, isAnnual: boolean = false): Promise<void> => {
-    if (!session?.access_token) {
+    // Get fresh session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    
+    if (!accessToken) {
       toast.error('Please sign in to subscribe');
       return;
     }
@@ -258,24 +262,38 @@ export function useSubscription(): SubscriptionData {
     }
 
     try {
+      console.log('[Checkout] Creating checkout session', { tier: checkoutTier, isAnnual });
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { tier: checkoutTier, isAnnual },
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (error) throw error;
+      console.log('[Checkout] Response', { data, error });
+
+      if (error) {
+        console.error('[Checkout] Function error:', error);
+        throw new Error(error.message || 'Checkout failed');
+      }
+
+      if (data?.error) {
+        console.error('[Checkout] API error:', data.error);
+        throw new Error(data.error);
+      }
 
       if (data?.url) {
-        // Open checkout in new tab
-        window.open(data.url, '_blank');
+        console.log('[Checkout] Redirecting to:', data.url);
+        // Redirect in same window for better UX
+        window.location.href = data.url;
       } else {
         throw new Error('No checkout URL returned');
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
-      toast.error('Failed to start checkout. Please try again.');
+      console.error('[Checkout] Error:', error);
+      const message = error instanceof Error ? error.message : 'Failed to start checkout';
+      toast.error(message + '. Please try again.');
     }
   };
 
