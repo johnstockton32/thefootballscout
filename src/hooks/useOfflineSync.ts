@@ -144,7 +144,10 @@ export function useOfflineSync() {
     const handleOnline = () => {
       setIsOnline(true);
       toast.success('Back online! Syncing changes...');
-      syncPendingOperations();
+      // Delay sync slightly to ensure connection is stable
+      setTimeout(() => {
+        syncPendingOperations();
+      }, 1000);
     };
 
     const handleOffline = () => {
@@ -152,20 +155,40 @@ export function useOfflineSync() {
       toast.warning('You are offline. Changes will be saved locally.');
     };
 
+    // Use both online/offline events and periodic connectivity checks
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Initial sync check
-    updatePendingCount();
-    if (navigator.onLine) {
-      syncPendingOperations();
-    }
+    // Initial sync check with retry
+    const initialSync = async () => {
+      await updatePendingCount();
+      if (navigator.onLine) {
+        // Small delay for initial page load
+        setTimeout(() => {
+          syncPendingOperations();
+        }, 2000);
+      }
+    };
+    initialSync();
+
+    // Periodic connectivity check (handles edge cases where events don't fire)
+    const connectivityCheck = setInterval(() => {
+      const currentOnlineStatus = navigator.onLine;
+      if (currentOnlineStatus !== isOnline) {
+        if (currentOnlineStatus) {
+          handleOnline();
+        } else {
+          handleOffline();
+        }
+      }
+    }, 5000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
+      clearInterval(connectivityCheck);
     };
-  }, [syncPendingOperations, updatePendingCount]);
+  }, [syncPendingOperations, updatePendingCount, isOnline]);
 
   // Periodic sync when online
   useEffect(() => {

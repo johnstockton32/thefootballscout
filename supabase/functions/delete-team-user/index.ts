@@ -65,10 +65,19 @@ Deno.serve(async (req) => {
       .eq("owner_id", requestingUser.id)
       .maybeSingle();
 
-    if (!isAdmin && !ownedTeam) {
-      console.log("User is not an admin or team owner:", requestingUser.id);
+    // Check if user is a team admin (from profiles.team_role)
+    const { data: requesterProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("team_id, team_role")
+      .eq("id", requestingUser.id)
+      .maybeSingle();
+
+    const isTeamAdmin = requesterProfile?.team_role === "team_admin";
+
+    if (!isAdmin && !ownedTeam && !isTeamAdmin) {
+      console.log("User is not an admin, team owner, or team admin:", requestingUser.id);
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Admin or team owner access required" }),
+        JSON.stringify({ error: "Unauthorized: Admin, team owner, or team admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -106,9 +115,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // If requester is a team owner (not admin), verify they can only delete their team members
-    if (!isAdmin && ownedTeam) {
-      if (targetProfile.team_id !== ownedTeam.id) {
+    // If requester is a team owner or team admin (not system admin), verify they can only delete their team members
+    if (!isAdmin && (ownedTeam || isTeamAdmin)) {
+      const requesterTeamId = ownedTeam?.id || requesterProfile?.team_id;
+      if (targetProfile.team_id !== requesterTeamId) {
         return new Response(
           JSON.stringify({ error: "You can only remove members from your own team" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
