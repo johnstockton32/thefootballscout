@@ -42,6 +42,7 @@ import {
   X,
   Star,
   Trophy,
+  Edit,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -250,7 +251,7 @@ export default function ReportDetail() {
         {/* Header */}
         <div className="flex flex-col gap-4">
           <div>
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 sm:mb-4 -ml-2">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 sm:mb-4 -ml-2 cursor-pointer hover:bg-primary/10">
               <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="text-sm">Back</span>
             </Button>
@@ -262,7 +263,7 @@ export default function ReportDetail() {
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Report</h1>
                 <Link
                   to={`/players/${report.players?.id}`}
-                  className="text-primary hover:underline flex items-center gap-1 sm:gap-2 mt-1 text-sm sm:text-base flex-wrap"
+                  className="text-primary hover:underline hover:text-primary/80 flex items-center gap-1 sm:gap-2 mt-1 text-sm sm:text-base flex-wrap cursor-pointer transition-colors"
                 >
                   <User className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
                   <span className="truncate">{report.players?.full_name}</span>
@@ -275,14 +276,28 @@ export default function ReportDetail() {
           </div>
 
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={handleExportPDF} disabled={isExporting} className="flex-1 sm:flex-none text-sm">
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(`/reports/new?edit=${report.id}&player=${report.players?.id}`)} 
+              className="flex-1 sm:flex-none text-sm cursor-pointer"
+            >
+              <Edit className="w-4 h-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Edit</span>
+              <span className="xs:hidden">Edit</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleExportPDF} 
+              disabled={isExporting} 
+              className="flex-1 sm:flex-none text-sm cursor-pointer"
+            >
               <Download className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="hidden xs:inline">{isExporting ? 'Exporting...' : 'Export PDF'}</span>
               <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
             </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0">
+                <Button variant="outline" size="icon" className="shrink-0 cursor-pointer">
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </Button>
               </AlertDialogTrigger>
@@ -294,8 +309,8 @@ export default function ReportDetail() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                  <AlertDialogCancel className="w-full sm:w-auto">Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground w-full sm:w-auto">
+                  <AlertDialogCancel className="w-full sm:w-auto cursor-pointer">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground w-full sm:w-auto cursor-pointer">
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
