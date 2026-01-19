@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
@@ -20,6 +20,7 @@ import { OnboardingTour } from '@/components/onboarding/OnboardingTour';
 import { Users, FileText, Star, TrendingUp, Plus, ArrowRight, Calendar, Crown, Sparkles, Building2, Zap, ChevronRight } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -63,6 +64,7 @@ export default function Dashboard() {
   const { user, profile } = useAuth();
   const subscription = useSubscription();
   const tour = useOnboardingTour();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [players, setPlayers] = useState<Player[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
   const [stats, setStats] = useState({
@@ -75,6 +77,20 @@ export default function Dashboard() {
 
   // Keyboard shortcuts
   useKeyboardShortcuts();
+
+  // Handle subscription success redirect
+  useEffect(() => {
+    const subscriptionStatus = searchParams.get('subscription');
+    if (subscriptionStatus === 'success') {
+      // Refresh subscription data after successful checkout
+      subscription.refreshSubscription();
+      toast.success('Subscription activated!', {
+        description: 'Your plan has been upgraded successfully.',
+      });
+      // Remove the query param
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, subscription]);
 
   useEffect(() => {
     if (user) {
