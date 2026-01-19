@@ -62,11 +62,19 @@ import { TeamLogoUpload } from "@/components/teams/TeamLogoUpload";
 import { PlayerAssignment } from "@/components/teams/PlayerAssignment";
 import { PasswordStrengthIndicator } from "@/components/ui/password-strength-indicator";
 
+// Password validation helper
+const passwordValidation = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-z]/, "Password must contain a lowercase letter")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[0-9]/, "Password must contain a number")
+  .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, "Password must contain a special character");
+
 const createUserSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   organization: z.string().optional(),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: passwordValidation,
   role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
 });
 
@@ -74,7 +82,7 @@ const editUserSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
   organization: z.string().optional(),
   role: z.enum(["scout", "senior_scout", "team_admin"], { required_error: "Role is required" }),
-  newPassword: z.string().min(8, "Password must be at least 8 characters").optional().or(z.literal("")),
+  newPassword: passwordValidation.optional().or(z.literal("")),
 });
 
 type CreateUserForm = z.infer<typeof createUserSchema>;
