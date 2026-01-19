@@ -45,7 +45,7 @@ const baseNavItems = [
 // Feature-gated navigation items
 const featureNavItems = [
   { icon: Sparkles, label: 'Analysis', href: '/analysis', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
-  { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
+  { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'free' as const },
   { icon: List, label: 'Watchlists', href: '/watchlists', minTier: 'free' as const },
   { icon: Activity, label: 'Team Feed', href: '/team-feed', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
   { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
