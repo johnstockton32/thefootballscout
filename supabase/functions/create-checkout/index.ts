@@ -72,7 +72,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/settings?subscription=success`,
+      success_url: `${req.headers.get("origin")}/dashboard?subscription=success`,
       cancel_url: `${req.headers.get("origin")}/pricing?subscription=cancelled`,
       metadata: {
         user_id: user.id,
