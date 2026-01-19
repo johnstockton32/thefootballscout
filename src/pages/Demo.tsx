@@ -115,6 +115,7 @@ import {
   ThumbsUp,
   AlertCircle,
   ChevronRight,
+  Download,
 } from 'lucide-react';
 
 // Extended demo data with full attributes
@@ -378,6 +379,12 @@ export default function Demo() {
             <Badge variant="secondary" className="hidden sm:inline-flex">
               Demo Mode
             </Badge>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>
+              <Link to="/install">
+                <Download className="w-4 h-4 mr-1" />
+                Install
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/auth">Sign In</Link>
             </Button>

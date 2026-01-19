@@ -16,6 +16,11 @@ interface SubscriptionLimits {
   hasVideoClips: boolean;
   hasWhiteLabel: boolean;
   maxTeamMembers: number;
+  hasBulkImportExport: boolean;
+  hasVoiceToText: boolean;
+  hasSmartDiscovery: boolean;
+  hasPushNotifications: boolean;
+  hasCustomAttributeWeights: boolean;
 }
 
 interface SubscriptionData {
@@ -55,6 +60,11 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasVideoClips: false,
     hasWhiteLabel: false,
     maxTeamMembers: 1,
+    hasBulkImportExport: false,
+    hasVoiceToText: false,
+    hasSmartDiscovery: false,
+    hasPushNotifications: false,
+    hasCustomAttributeWeights: false,
   },
   pro: {
     maxPlayers: Infinity,
@@ -67,6 +77,11 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasVideoClips: false,
     hasWhiteLabel: false,
     maxTeamMembers: 1,
+    hasBulkImportExport: true,
+    hasVoiceToText: true,
+    hasSmartDiscovery: true,
+    hasPushNotifications: false,
+    hasCustomAttributeWeights: true,
   },
   team: {
     maxPlayers: Infinity,
@@ -79,6 +94,11 @@ const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
     hasVideoClips: true,
     hasWhiteLabel: true,
     maxTeamMembers: 10,
+    hasBulkImportExport: true,
+    hasVoiceToText: true,
+    hasSmartDiscovery: true,
+    hasPushNotifications: true,
+    hasCustomAttributeWeights: true,
   },
 };
 
