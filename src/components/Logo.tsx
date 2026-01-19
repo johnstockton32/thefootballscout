@@ -19,7 +19,7 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
     };
 
     return (
-      <div ref={ref} className={cn('flex items-center gap-3', className)}>
+      <div ref={ref} className={cn('flex items-center gap-3 mt-[3px]', className)}>
         <img 
           src={logoImage} 
           alt="The Football Scout" 
