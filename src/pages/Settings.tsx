@@ -456,36 +456,38 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-flex">
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Profile</span>
-            </TabsTrigger>
-            <TabsTrigger value="subscription" className="gap-2">
-              <Crown className="h-4 w-4" />
-              <span className="hidden sm:inline">Plan</span>
-            </TabsTrigger>
-            <TabsTrigger value="scouting" className="gap-2">
-              <Sliders className="h-4 w-4" />
-              <span className="hidden sm:inline">Scouting</span>
-            </TabsTrigger>
-            <TabsTrigger value="appearance" className="gap-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Appearance</span>
-            </TabsTrigger>
-            <TabsTrigger value="security" className="gap-2">
-              <Lock className="h-4 w-4" />
-              <span className="hidden sm:inline">Security</span>
-            </TabsTrigger>
-            <TabsTrigger value="privacy" className="gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="hidden sm:inline">Privacy</span>
-            </TabsTrigger>
-            <TabsTrigger value="account" className="gap-2">
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Account</span>
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            <TabsList className="inline-flex w-max lg:w-auto min-w-full lg:min-w-0">
+              <TabsTrigger value="profile" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <User className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Profile</span>
+              </TabsTrigger>
+              <TabsTrigger value="subscription" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Crown className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Plan</span>
+              </TabsTrigger>
+              <TabsTrigger value="scouting" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Sliders className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Scouting</span>
+              </TabsTrigger>
+              <TabsTrigger value="appearance" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Palette className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Theme</span>
+              </TabsTrigger>
+              <TabsTrigger value="security" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Lock className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Security</span>
+              </TabsTrigger>
+              <TabsTrigger value="privacy" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Shield className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Privacy</span>
+              </TabsTrigger>
+              <TabsTrigger value="account" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden xs:inline text-xs sm:text-sm">Account</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Profile Tab */}
           <TabsContent value="profile" className="space-y-6">

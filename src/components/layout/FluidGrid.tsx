@@ -20,11 +20,23 @@ const gapClasses = {
   lg: "gap-4 sm:gap-6 lg:gap-8",
 };
 
-const colClasses = {
+// Static class mappings for Tailwind JIT compatibility
+const mobileColClasses = {
   1: "grid-cols-1",
   2: "grid-cols-2",
-  3: "grid-cols-3",
-  4: "grid-cols-4",
+};
+
+const mdColClasses = {
+  1: "md:grid-cols-1",
+  2: "md:grid-cols-2",
+  3: "md:grid-cols-3",
+};
+
+const lgColClasses = {
+  1: "lg:grid-cols-1",
+  2: "lg:grid-cols-2",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-4",
 };
 
 export function FluidGrid({
@@ -39,9 +51,9 @@ export function FluidGrid({
     <div
       className={cn(
         "grid w-full",
-        colClasses[cols],
-        `md:${colClasses[mdCols]}`,
-        `lg:${colClasses[lgCols]}`,
+        mobileColClasses[cols],
+        mdColClasses[mdCols],
+        lgColClasses[lgCols],
         gapClasses[gap],
         className
       )}
