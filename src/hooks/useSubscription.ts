@@ -285,8 +285,17 @@ export function useSubscription(): SubscriptionData {
 
       if (data?.url) {
         console.log('[Checkout] Redirecting to:', data.url);
-        // Redirect in same window for better UX
-        window.location.href = data.url;
+        
+        // Open in new tab for more reliable behavior across browsers
+        const stripeWindow = window.open(data.url, '_blank');
+        
+        // Fallback: if popup was blocked, redirect in same window
+        if (!stripeWindow || stripeWindow.closed || typeof stripeWindow.closed === 'undefined') {
+          console.log('[Checkout] Popup blocked, redirecting in same window');
+          window.location.href = data.url;
+        } else {
+          toast.success('Stripe checkout opened in a new tab. Complete your payment there.');
+        }
       } else {
         throw new Error('No checkout URL returned');
       }
