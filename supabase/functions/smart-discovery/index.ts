@@ -114,85 +114,64 @@ serve(async (req) => {
       console.error("Error fetching reports:", reportsError);
     }
 
-    // Build player profiles with average stats
+    // Build COMPACT player profiles for faster AI processing
     const playerProfiles = players.map((player: PlayerData) => {
       const playerReports = reports?.filter((r) => r.player_id === player.id) || [];
       
-      const avgStats: Record<string, number | null> = {};
+      // Calculate averages more efficiently
+      const avgStats: Record<string, number> = {};
       if (playerReports.length > 0) {
         const statKeys = [
           "overall_rating", "potential_rating", "technical_dribbling", "technical_passing",
-          "technical_shooting", "technical_crossing", "technical_first_touch", "technical_heading",
-          "physical_pace", "physical_strength", "physical_stamina", "physical_agility", "physical_balance",
-          "tactical_positioning", "tactical_awareness", "tactical_decision_making",
-          "tactical_off_ball_movement", "tactical_defensive_contribution",
-          "mental_composure", "mental_concentration", "mental_leadership", "mental_work_rate", "mental_aggression"
+          "technical_shooting", "physical_pace", "physical_strength", 
+          "tactical_positioning", "tactical_awareness", "mental_composure", "mental_work_rate"
         ];
         
         statKeys.forEach((key) => {
           const values = playerReports
             .map((r) => r[key as keyof ReportData])
             .filter((v): v is number => typeof v === "number");
-          avgStats[key] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+          if (values.length > 0) {
+            avgStats[key] = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+          }
         });
       }
 
-      const latestReport = playerReports.sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      )[0];
+      const age = player.date_of_birth 
+        ? Math.floor((Date.now() - new Date(player.date_of_birth).getTime()) / 31557600000)
+        : null;
 
+      // Compact format - only essential data
       return {
         id: player.id,
-        name: player.full_name,
-        position: player.position,
-        club: player.current_club,
-        nationality: player.nationality,
-        dob: player.date_of_birth,
-        age: player.date_of_birth 
-          ? Math.floor((Date.now() - new Date(player.date_of_birth).getTime()) / 31557600000)
-          : null,
-        foot: player.preferred_foot,
-        height: player.height_cm,
-        weight: player.weight_kg,
-        photo: player.photo_url,
-        stats: avgStats,
-        strengths: latestReport?.strengths,
-        weaknesses: latestReport?.weaknesses,
-        reportCount: playerReports.length,
+        n: player.full_name,
+        p: player.position,
+        c: player.current_club || '',
+        nat: player.nationality || '',
+        a: age,
+        f: player.preferred_foot,
+        h: player.height_cm,
+        ...avgStats,
       };
     });
 
-    // Call AI to analyze query and match players
+    // Call AI with optimized prompt
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemPrompt = `You are a football scout assistant. Given a natural language search query and a database of players with their stats, find the best matching players.
+    const systemPrompt = `You are a football scout assistant. Match players from the database to the search query.
 
-IMPORTANT: You must respond with a JSON object using the exact tool format specified.
+IMPORTANT: Respond using the return_search_results tool with player_id, match_score (0-1), and match_reason.
 
-Available positions: goalkeeper, centre_back, full_back, defensive_midfielder, central_midfielder, attacking_midfielder, winger, striker
+Player data format: id, n=name, p=position (goalkeeper/centre_back/full_back/defensive_midfielder/central_midfielder/attacking_midfielder/winger/striker), c=club, nat=nationality, a=age, f=foot, h=height_cm, plus stat averages (1-20 scale): overall_rating, potential_rating, technical_dribbling/passing/shooting, physical_pace/strength, tactical_positioning/awareness, mental_composure/work_rate.
 
-Stats are rated 1-10. Consider:
-- Technical: dribbling, passing, shooting, crossing, first_touch, heading
-- Physical: pace, strength, stamina, agility, balance
-- Tactical: positioning, awareness, decision_making, off_ball_movement, defensive_contribution
-- Mental: composure, concentration, leadership, work_rate, aggression
+Interpret queries naturally: "fast"=high pace, "young"=under 23, "creative"=high passing+awareness, "strong in the air"=heading+height.`;
 
-Be smart about interpreting the query:
-- "fast" = high pace
-- "strong in the air" = good heading + height
-- "creative" = high passing + decision_making + off_ball_movement
-- "young" = under 23
-- age references like "under 25" or "between 20-25"`;
-
-    const userPrompt = `Search query: "${query}"
-
-Players in database:
-${JSON.stringify(playerProfiles, null, 2)}
-
-Find players that match the search criteria. Return up to 10 best matches.`;
+    const userPrompt = `Query: "${query}"
+Players: ${JSON.stringify(playerProfiles)}
+Return up to 10 matches.`;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",

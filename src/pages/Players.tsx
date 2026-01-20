@@ -3,16 +3,20 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PlayerCard } from '@/components/players/PlayerCard';
+import { SwipeablePlayerCard } from '@/components/players/SwipeablePlayerCard';
 import { BulkCSVImport } from '@/components/players/BulkCSVImport';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SkeletonList } from '@/components/ui/skeleton-card';
 import { PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOfflinePlayers } from '@/hooks/useOfflinePlayers';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Plus, Search, Users, Filter, ArrowLeft, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -44,11 +48,30 @@ interface Player {
 
 export default function Players() {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   // Use offline-capable hook instead of direct Supabase queries
   const { players, isLoading, isOnline, refetch } = useOfflinePlayers();
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+
+  // Delete player handler for swipe-to-delete
+  const handleDeletePlayer = async (playerId: string) => {
+    try {
+      const { error } = await supabase
+        .from('players')
+        .delete()
+        .eq('id', playerId);
+
+      if (error) throw error;
+      
+      toast.success('Player deleted');
+      refetch();
+    } catch (error) {
+      console.error('Error deleting player:', error);
+      toast.error('Failed to delete player');
+    }
+  };
 
   // Keyboard shortcuts
   useKeyboardShortcuts();
@@ -141,7 +164,7 @@ export default function Players() {
             <SkeletonList count={6} variant="player" />
           </div>
         ) : filteredPlayers.length > 0 ? (
-          <div className="grid-fluid-3 gap-3 sm:gap-4">
+          <div className={isMobile ? "flex flex-col gap-3" : "grid-fluid-3 gap-3 sm:gap-4"}>
             {filteredPlayers.map((player, index) => (
               <motion.div
                 key={player.id}
@@ -149,9 +172,16 @@ export default function Players() {
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
-                whileHover="hover"
+                whileHover={!isMobile ? "hover" : undefined}
               >
-                <PlayerCard player={player} />
+                {isMobile ? (
+                  <SwipeablePlayerCard 
+                    player={player} 
+                    onDelete={handleDeletePlayer}
+                  />
+                ) : (
+                  <PlayerCard player={player} />
+                )}
               </motion.div>
             ))}
           </div>
