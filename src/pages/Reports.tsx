@@ -2,14 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SwipeableReportCard } from '@/components/reports/SwipeableReportCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { CompetitionLevel, COMPETITION_LEVEL_LABELS } from '@/lib/supabase';
 import { useOfflineReports, ReportWithPlayer } from '@/hooks/useOfflineReports';
-import { format } from 'date-fns';
-import { Plus, Search, FileText, Calendar, ArrowLeft, ChevronRight, BarChart3, WifiOff, User, Lock } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { toast } from 'sonner';
+import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff } from 'lucide-react';
 
 const reportRowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -28,18 +27,10 @@ const reportRowVariants = {
   },
 };
 
-const getRecommendationColor = (rec: string | null) => {
-  switch (rec) {
-    case 'Sign': return 'bg-primary text-primary-foreground';
-    case 'Monitor': return 'bg-amber-500 text-white';
-    case 'Reject': return 'bg-destructive text-destructive-foreground';
-    default: return '';
-  }
-};
-
 export default function Reports() {
   const navigate = useNavigate();
-  const { reports, isLoading, isOnline } = useOfflineReports();
+  const isMobile = useIsMobile();
+  const { reports, isLoading, isOnline, deleteReport, refetch } = useOfflineReports();
   const [filteredReports, setFilteredReports] = useState<ReportWithPlayer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -58,6 +49,18 @@ export default function Reports() {
     );
     setFilteredReports(filtered);
   }, [reports, searchQuery]);
+
+  const handleDeleteReport = async (reportId: string) => {
+    try {
+      const success = await deleteReport(reportId);
+      if (success) {
+        toast.success('Report deleted');
+      }
+    } catch (error) {
+      console.error('Error deleting report:', error);
+      toast.error('Failed to delete report');
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -111,11 +114,18 @@ export default function Reports() {
           />
         </div>
 
+        {/* Mobile swipe hint */}
+        {isMobile && filteredReports.length > 0 && (
+          <p className="text-xs text-muted-foreground text-center">
+            Swipe left on a report to delete
+          </p>
+        )}
+
         {/* Reports List */}
         {isLoading ? (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-24 bg-muted rounded-xl animate-pulse" />
+              <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />
             ))}
           </div>
         ) : filteredReports.length > 0 ? (
@@ -127,76 +137,12 @@ export default function Reports() {
                 variants={reportRowVariants}
                 initial="hidden"
                 animate="visible"
-                whileHover="hover"
+                whileHover={!isMobile ? "hover" : undefined}
               >
-                <Link to={`/reports/${report.id}`}>
-                  <Card className="card-glass hover:border-primary/30 transition-all duration-300">
-                    <CardContent className="p-4 md:p-5">
-                      <div className="flex items-center justify-between gap-4">
-                        <div className="flex items-center gap-4 min-w-0 flex-1">
-                          {/* Report Icon */}
-                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                            <FileText className="w-5 h-5 text-primary" />
-                          </div>
-
-                          {/* Report Details */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold truncate flex items-center gap-2">
-                                {report.players?.full_name ? (
-                                  <>
-                                    <User className="w-4 h-4 text-primary flex-shrink-0" />
-                                    {report.players.full_name}
-                                  </>
-                                ) : (
-                                  `Report #${report.id.slice(0, 8)}`
-                                )}
-                              </h3>
-                              {report.is_draft && (
-                                <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs rounded-full">
-                                  Draft
-                                </span>
-                              )}
-                              {report.is_private && (
-                                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 text-xs rounded-full flex items-center gap-1">
-                                  <Lock className="w-3 h-3" />
-                                  Private
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {format(new Date(report.match_date), 'MMM d, yyyy')}
-                              </span>
-                              {report.opposition && (
-                                <span>vs {report.opposition}</span>
-                              )}
-                              <span className="text-xs px-2 py-0.5 bg-muted rounded-full">
-                                {COMPETITION_LEVEL_LABELS[report.competition_level]}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Rating & Recommendation */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {report.recommendation && !report.is_draft && (
-                            <Badge className={getRecommendationColor(report.recommendation)}>
-                              {report.recommendation}
-                            </Badge>
-                          )}
-                          {report.overall_rating && !report.is_draft && (
-                            <div className="rating-badge-lg">
-                              {Math.round(report.overall_rating)}
-                            </div>
-                          )}
-                          <ChevronRight className="w-4 h-4 text-muted-foreground hidden md:block" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <SwipeableReportCard 
+                  report={report} 
+                  onDelete={handleDeleteReport}
+                />
               </motion.div>
             ))}
           </div>
