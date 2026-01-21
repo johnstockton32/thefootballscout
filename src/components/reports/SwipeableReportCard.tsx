@@ -5,7 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CompetitionLevel, COMPETITION_LEVEL_LABELS } from '@/lib/supabase';
 import { format } from 'date-fns';
-import { FileText, Calendar, Trash2, Lock, User } from 'lucide-react';
+import { FileText, Calendar, Trash2, Lock, User, Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
@@ -37,7 +37,7 @@ interface ReportCardProps {
   onDelete?: (reportId: string) => void;
 }
 
-const SWIPE_THRESHOLD = 100;
+const SWIPE_THRESHOLD = 80;
 
 const getRecommendationColor = (rec: string | null) => {
   switch (rec) {
@@ -55,13 +55,28 @@ export function SwipeableReportCard({ report, onDelete }: ReportCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const x = useMotionValue(0);
-  const deleteOpacity = useTransform(x, [-SWIPE_THRESHOLD, -50, 0], [1, 0.5, 0]);
-  const deleteScale = useTransform(x, [-SWIPE_THRESHOLD, -50, 0], [1, 0.8, 0.5]);
-  const cardOpacity = useTransform(x, [-SWIPE_THRESHOLD * 1.5, -SWIPE_THRESHOLD, 0], [0.5, 0.9, 1]);
+  
+  // Left swipe (delete) transforms
+  const deleteOpacity = useTransform(x, [-SWIPE_THRESHOLD, -40, 0], [1, 0.5, 0]);
+  const deleteScale = useTransform(x, [-SWIPE_THRESHOLD, -40, 0], [1, 0.8, 0.5]);
+  
+  // Right swipe (edit) transforms
+  const editOpacity = useTransform(x, [0, 40, SWIPE_THRESHOLD], [0, 0.5, 1]);
+  const editScale = useTransform(x, [0, 40, SWIPE_THRESHOLD], [0.5, 0.8, 1]);
+  
+  const cardOpacity = useTransform(
+    x, 
+    [-SWIPE_THRESHOLD * 1.5, -SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD, SWIPE_THRESHOLD * 1.5], 
+    [0.5, 0.9, 1, 0.9, 0.5]
+  );
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -SWIPE_THRESHOLD) {
+      // Swipe left - delete
       setShowDeleteDialog(true);
+    } else if (info.offset.x > SWIPE_THRESHOLD) {
+      // Swipe right - edit
+      navigate(`/reports/${report.id}/edit`);
     }
   };
 
@@ -140,11 +155,22 @@ export function SwipeableReportCard({ report, onDelete }: ReportCardProps) {
     );
   }
 
-  // Mobile: optimized swipeable card
+  // Mobile: optimized swipeable card with edit and delete
   return (
     <>
       <div className="relative overflow-hidden rounded-xl">
-        {/* Delete action background */}
+        {/* Edit action background (right swipe) */}
+        <motion.div
+          className="absolute inset-0 bg-primary flex items-center justify-start pl-6 rounded-xl"
+          style={{ opacity: editOpacity }}
+        >
+          <motion.div style={{ scale: editScale }} className="flex flex-col items-center gap-1">
+            <Pencil className="w-6 h-6 text-primary-foreground" />
+            <span className="text-xs text-primary-foreground font-medium">Edit</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Delete action background (left swipe) */}
         <motion.div
           className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-xl"
           style={{ opacity: deleteOpacity }}
@@ -158,7 +184,7 @@ export function SwipeableReportCard({ report, onDelete }: ReportCardProps) {
         {/* Swipeable card */}
         <motion.div
           drag="x"
-          dragConstraints={{ left: -SWIPE_THRESHOLD * 1.2, right: 0 }}
+          dragConstraints={{ left: -SWIPE_THRESHOLD * 1.2, right: SWIPE_THRESHOLD * 1.2 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
           style={{ x, opacity: cardOpacity }}

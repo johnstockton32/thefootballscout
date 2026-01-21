@@ -1,12 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { SwipeableReportCard } from '@/components/reports/SwipeableReportCard';
+import { PullToRefreshIndicator } from '@/components/layout/PullToRefreshIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOfflineReports, ReportWithPlayer } from '@/hooks/useOfflineReports';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { toast } from 'sonner';
 import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff } from 'lucide-react';
 
@@ -33,6 +35,16 @@ export default function Reports() {
   const { reports, isLoading, isOnline, deleteReport, refetch } = useOfflineReports();
   const [filteredReports, setFilteredReports] = useState<ReportWithPlayer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+    toast.success('Reports refreshed');
+  }, [refetch]);
+
+  const { isRefreshing, pullDistance, shouldTrigger } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   useEffect(() => {
     if (!searchQuery) {
@@ -64,6 +76,13 @@ export default function Reports() {
 
   return (
     <DashboardLayout>
+      {/* Pull to refresh indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        shouldTrigger={shouldTrigger}
+      />
+      
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Offline Indicator */}
         {!isOnline && (

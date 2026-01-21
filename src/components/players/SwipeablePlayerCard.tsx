@@ -4,7 +4,7 @@ import { motion, useMotionValue, useTransform, PanInfo } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { POSITION_ABBREV, POSITION_LABELS, calculateAge, PlayerPosition } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
-import { Calendar, MapPin, User, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, User, Trash2, Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   AlertDialog,
@@ -32,7 +32,7 @@ interface SwipeablePlayerCardProps {
   onDelete?: (playerId: string) => void;
 }
 
-const SWIPE_THRESHOLD = 100;
+const SWIPE_THRESHOLD = 80;
 
 export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, onDelete }: SwipeablePlayerCardProps) {
   const isMobile = useIsMobile();
@@ -42,13 +42,28 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
   const [isDeleting, setIsDeleting] = useState(false);
   
   const x = useMotionValue(0);
-  const deleteOpacity = useTransform(x, [-SWIPE_THRESHOLD, -50, 0], [1, 0.5, 0]);
-  const deleteScale = useTransform(x, [-SWIPE_THRESHOLD, -50, 0], [1, 0.8, 0.5]);
-  const cardOpacity = useTransform(x, [-SWIPE_THRESHOLD * 1.5, -SWIPE_THRESHOLD, 0], [0.5, 0.9, 1]);
+  
+  // Left swipe (delete) transforms
+  const deleteOpacity = useTransform(x, [-SWIPE_THRESHOLD, -40, 0], [1, 0.5, 0]);
+  const deleteScale = useTransform(x, [-SWIPE_THRESHOLD, -40, 0], [1, 0.8, 0.5]);
+  
+  // Right swipe (edit) transforms
+  const editOpacity = useTransform(x, [0, 40, SWIPE_THRESHOLD], [0, 0.5, 1]);
+  const editScale = useTransform(x, [0, 40, SWIPE_THRESHOLD], [0.5, 0.8, 1]);
+  
+  const cardOpacity = useTransform(
+    x, 
+    [-SWIPE_THRESHOLD * 1.5, -SWIPE_THRESHOLD, 0, SWIPE_THRESHOLD, SWIPE_THRESHOLD * 1.5], 
+    [0.5, 0.9, 1, 0.9, 0.5]
+  );
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
     if (info.offset.x < -SWIPE_THRESHOLD) {
+      // Swipe left - delete
       setShowDeleteDialog(true);
+    } else if (info.offset.x > SWIPE_THRESHOLD) {
+      // Swipe right - edit
+      navigate(`/players/${player.id}/edit`);
     }
   };
 
@@ -135,11 +150,22 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
     );
   }
 
-  // Mobile: swipeable card
+  // Mobile: swipeable card with edit and delete
   return (
     <>
       <div className="relative overflow-hidden rounded-xl">
-        {/* Delete action background */}
+        {/* Edit action background (right swipe) */}
+        <motion.div 
+          className="absolute inset-0 bg-primary flex items-center justify-start pl-6 rounded-xl"
+          style={{ opacity: editOpacity }}
+        >
+          <motion.div style={{ scale: editScale }} className="flex flex-col items-center gap-1">
+            <Pencil className="w-6 h-6 text-primary-foreground" />
+            <span className="text-xs text-primary-foreground font-medium">Edit</span>
+          </motion.div>
+        </motion.div>
+
+        {/* Delete action background (left swipe) */}
         <motion.div 
           className="absolute inset-0 bg-destructive flex items-center justify-end pr-6 rounded-xl"
           style={{ opacity: deleteOpacity }}
@@ -153,7 +179,7 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
         {/* Swipeable card */}
         <motion.div
           drag="x"
-          dragConstraints={{ left: -SWIPE_THRESHOLD * 1.2, right: 0 }}
+          dragConstraints={{ left: -SWIPE_THRESHOLD * 1.2, right: SWIPE_THRESHOLD * 1.2 }}
           dragElastic={0.1}
           onDragEnd={handleDragEnd}
           style={{ x, opacity: cardOpacity }}
