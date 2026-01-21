@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
@@ -19,14 +19,11 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  Menu,
-  X,
   ChevronRight,
   Plus,
   Shield,
   Crown,
   Sparkles,
-  Building2,
   List,
   Activity,
 } from 'lucide-react';
@@ -70,7 +67,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { tier, limits, isInTrial, trialDaysRemaining } = useSubscription();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Check if user is a team owner (has team_role of team_admin)
   const isTeamOwner = profile?.team_role === 'team_admin';
@@ -118,90 +114,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Offline Banner */}
       <OfflineBanner />
       
-      {/* Mobile Header */}
+      {/* Mobile Header - Simplified (no hamburger menu) */}
       <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
         <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
           <Logo size="sm" />
-          <div className="flex items-center gap-0.5 sm:gap-1">
+          <div className="flex items-center gap-1 sm:gap-2">
             {/* Theme Toggle */}
             <ThemeToggle />
             {/* Sync Status */}
             <SyncStatusIndicator />
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 sm:p-2.5 text-muted-foreground hover:text-foreground transition-colors touch-target"
-              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
-            </button>
           </div>
         </div>
       </header>
-
-      {/* Mobile Navigation Overlay */}
-      {mobileMenuOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Mobile Navigation Menu */}
-      <nav
-        className={cn(
-          'lg:hidden fixed top-14 sm:top-16 left-0 right-0 z-50 bg-card border-b border-border transition-transform duration-300 max-h-[calc(100vh-3.5rem)] sm:max-h-[calc(100vh-4rem)] overflow-y-auto safe-area-inset',
-          mobileMenuOpen ? 'translate-y-0' : '-translate-y-full'
-        )}
-      >
-        <div className="p-3 sm:p-4 space-y-1 sm:space-y-2">
-          {allNavItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              onClick={() => setMobileMenuOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors touch-target',
-                location.pathname === item.href
-                  ? 'bg-primary/10 text-primary'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80'
-              )}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              <span className="font-medium text-sm sm:text-base">{item.label}</span>
-            </Link>
-          ))}
-          
-          {/* Divider */}
-          <div className="h-px bg-border my-2" />
-          
-          {/* Settings Link */}
-          <Link
-            to="/settings"
-            onClick={() => setMobileMenuOpen(false)}
-            className={cn(
-              'flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors touch-target',
-              location.pathname === '/settings'
-                ? 'bg-primary/10 text-primary'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground active:bg-muted/80'
-            )}
-          >
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium text-sm sm:text-base">Settings</span>
-          </Link>
-          
-          {/* Sign Out Button */}
-          <button
-            onClick={() => {
-              setMobileMenuOpen(false);
-              handleSignOut();
-            }}
-            className="flex items-center gap-3 px-3 sm:px-4 py-3 rounded-lg transition-colors w-full text-left text-destructive hover:bg-destructive/10 active:bg-destructive/20 touch-target"
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            <span className="font-medium text-sm sm:text-base">Sign Out</span>
-          </button>
-        </div>
-      </nav>
 
       {/* Desktop Sidebar */}
       <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">

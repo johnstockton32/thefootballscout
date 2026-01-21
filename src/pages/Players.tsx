@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { PlayerCard } from '@/components/players/PlayerCard';
 import { SwipeablePlayerCard } from '@/components/players/SwipeablePlayerCard';
 import { BulkCSVImport } from '@/components/players/BulkCSVImport';
+import { PullToRefreshIndicator } from '@/components/layout/PullToRefreshIndicator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -14,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOfflinePlayers } from '@/hooks/useOfflinePlayers';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { Plus, Search, Users, Filter, ArrowLeft, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -54,6 +56,16 @@ export default function Players() {
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+
+  // Pull to refresh
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+    toast.success('Players refreshed');
+  }, [refetch]);
+
+  const { isRefreshing, pullDistance, shouldTrigger } = usePullToRefresh({
+    onRefresh: handleRefresh,
+  });
 
   // Delete player handler for swipe-to-delete
   const handleDeletePlayer = async (playerId: string) => {
@@ -98,6 +110,13 @@ export default function Players() {
 
   return (
     <DashboardLayout>
+      {/* Pull to refresh indicator */}
+      <PullToRefreshIndicator
+        pullDistance={pullDistance}
+        isRefreshing={isRefreshing}
+        shouldTrigger={shouldTrigger}
+      />
+      
       <div className="space-y-4 sm:space-y-6 animate-fade-in">
         {/* Offline Indicator */}
         {!isOnline && (
