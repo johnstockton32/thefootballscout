@@ -180,7 +180,7 @@ Return up to 10 matches.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -213,7 +213,7 @@ Return up to 10 matches.`;
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "return_search_results" } },
+        tool_choice: "auto",
       }),
     });
 
@@ -236,13 +236,26 @@ Return up to 10 matches.`;
     }
 
     const aiData = await aiResponse.json();
+    console.log("AI response received:", JSON.stringify(aiData).slice(0, 500));
+    
     const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
     
-    if (!toolCall?.function?.arguments) {
-      throw new Error("Invalid AI response");
+    let searchResults;
+    if (toolCall?.function?.arguments) {
+      try {
+        searchResults = JSON.parse(toolCall.function.arguments);
+      } catch (parseError) {
+        console.error("Failed to parse tool arguments:", parseError);
+        throw new Error("Failed to parse AI response");
+      }
+    } else {
+      // Fallback: try to extract from content if tool call failed
+      const content = aiData.choices?.[0]?.message?.content;
+      console.log("No tool call found, content:", content?.slice(0, 200));
+      
+      // Return empty results if AI couldn't process
+      searchResults = { matches: [], summary: "No matching players found for your query." };
     }
-
-    const searchResults = JSON.parse(toolCall.function.arguments);
     
     // Map results to player data
     const matchedPlayers = searchResults.matches
