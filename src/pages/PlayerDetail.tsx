@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { PlayerTrendChart } from '@/components/charts/PlayerTrendChart';
@@ -94,11 +94,12 @@ interface Report {
 export default function PlayerDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [player, setPlayer] = useState<Player | null>(null);
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
   const [isSaving, setIsSaving] = useState(false);
   const [editData, setEditData] = useState({
     full_name: '',
