@@ -75,8 +75,8 @@ export function SwipeableReportCard({ report, onDelete }: ReportCardProps) {
       // Swipe left - delete
       setShowDeleteDialog(true);
     } else if (info.offset.x > SWIPE_THRESHOLD) {
-      // Swipe right - edit
-      navigate(`/reports/${report.id}/edit`);
+      // Swipe right - edit (navigate to edit page)
+      navigate(`/reports/new?edit=${report.id}&player=${report.players?.id}`);
     }
   };
 

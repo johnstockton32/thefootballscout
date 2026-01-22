@@ -62,8 +62,8 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
       // Swipe left - delete
       setShowDeleteDialog(true);
     } else if (info.offset.x > SWIPE_THRESHOLD) {
-      // Swipe right - edit
-      navigate(`/players/${player.id}/edit`);
+      // Swipe right - edit (navigate to detail page with edit mode)
+      navigate(`/players/${player.id}?edit=true`);
     }
   };
 
