@@ -114,18 +114,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       {/* Offline Banner */}
       <OfflineBanner />
       
-      {/* Mobile Header - Simplified (no hamburger menu) */}
-      <header className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-b border-border safe-area-top">
-        <div className="flex items-center justify-between px-3 sm:px-4 h-14 sm:h-16">
-          <Logo size="sm" />
-          <div className="flex items-center gap-1 sm:gap-2">
-            {/* Theme Toggle */}
-            <ThemeToggle />
-            {/* Sync Status */}
-            <SyncStatusIndicator />
-          </div>
-        </div>
-      </header>
+      {/* Mobile Header - Hidden (moved to bottom nav) */}
 
       {/* Desktop Sidebar */}
       <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
@@ -245,7 +234,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="lg:pl-64 pt-14 sm:pt-16 lg:pt-0 min-h-screen pb-20 sm:pb-24 lg:pb-0 safe-area-bottom">
+      <main className="lg:pl-64 lg:pt-0 min-h-screen pb-20 sm:pb-24 lg:pb-0 safe-area-bottom safe-area-top">
         <div className="responsive-padding py-3 sm:py-4 md:py-6 lg:py-8">
           <div className="content-container-lg">
             {children}

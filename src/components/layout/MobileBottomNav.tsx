@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { SyncStatusIndicator } from '@/components/SyncStatusIndicator';
 import {
   LayoutDashboard,
   Users,
@@ -19,6 +21,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
@@ -97,56 +100,63 @@ export function MobileBottomNav() {
           );
         })}
         
-        {/* More Menu */}
-        {secondaryNavItems.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target active:scale-95',
-                  isMoreActive
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground active:text-foreground'
+        {/* More Menu - includes theme toggle and sync status */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              className={cn(
+                'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target active:scale-95',
+                isMoreActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-foreground active:text-foreground'
+              )}
+            >
+              <div className="relative">
+                <MoreHorizontal className={cn(
+                  'w-5 h-5 sm:w-6 sm:h-6 transition-transform',
+                  isMoreActive && 'scale-110'
+                )} />
+                {isMoreActive && (
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
                 )}
-              >
-                <div className="relative">
-                  <MoreHorizontal className={cn(
-                    'w-5 h-5 sm:w-6 sm:h-6 transition-transform',
-                    isMoreActive && 'scale-110'
-                  )} />
-                  {isMoreActive && (
-                    <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
-                  )}
-                </div>
-                <span className={cn(
-                  'text-[10px] sm:text-xs font-medium',
-                  isMoreActive && 'font-semibold'
-                )}>
-                  More
-                </span>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" side="top" className="w-48 mb-2">
-              {secondaryNavItems.map((item) => {
-                const isActive = location.pathname === item.href || location.pathname.startsWith(item.href);
-                return (
-                  <DropdownMenuItem key={item.href} asChild>
-                    <Link
-                      to={item.href}
-                      className={cn(
-                        'flex items-center gap-3 w-full',
-                        isActive && 'text-primary'
-                      )}
-                    >
-                      <item.icon className="w-4 h-4" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </DropdownMenuItem>
-                );
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+              </div>
+              <span className={cn(
+                'text-[10px] sm:text-xs font-medium',
+                isMoreActive && 'font-semibold'
+              )}>
+                More
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="center" side="top" className="w-52 mb-2">
+            {/* Quick controls */}
+            <div className="flex items-center justify-between px-2 py-1.5">
+              <span className="text-xs text-muted-foreground">Controls</span>
+              <div className="flex items-center gap-1">
+                <SyncStatusIndicator />
+                <ThemeToggle />
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            {secondaryNavItems.map((item) => {
+              const isActive = location.pathname === item.href || location.pathname.startsWith(item.href);
+              return (
+                <DropdownMenuItem key={item.href} asChild>
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      'flex items-center gap-3 w-full',
+                      isActive && 'text-primary'
+                    )}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
         
         {/* Profile/Settings with Avatar */}
         <Link
