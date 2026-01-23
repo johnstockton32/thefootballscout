@@ -229,6 +229,66 @@
   button, a, [role="button"] {
     touch-action: manipulation;
   }
+
+  /* iOS-specific optimizations for App Store compliance */
+  /* Disable text selection on UI elements for native feel */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* iOS-style momentum scrolling */
+  .scroll-ios {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* iOS rubber-band effect prevention for fixed layouts */
+  .fixed-ios {
+    position: fixed;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* iOS status bar spacing - uses safe area by default */
+  .status-bar-space {
+    padding-top: max(20px, env(safe-area-inset-top, 20px));
+  }
+
+  /* iOS home indicator spacing */
+  .home-indicator-space {
+    padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+  }
+
+  /* iOS-style active state feedback */
+  .ios-active:active {
+    opacity: 0.7;
+    transform: scale(0.97);
+    transition: all 0.1s ease-out;
+  }
+
+  /* iOS-style navigation bar height */
+  .nav-bar-ios {
+    height: calc(44px + env(safe-area-inset-top, 0));
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  /* iOS tab bar height */
+  .tab-bar-ios {
+    height: calc(49px + env(safe-area-inset-bottom, 0));
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Prevent iOS zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+
+  @media screen and (max-width: 768px) {
+    input, textarea, select {
+      font-size: 16px !important;
+    }
+  }
 }
 
 @layer components {

@@ -64,7 +64,7 @@ export function MobileBottomNav() {
   );
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border fixed-ios no-select tab-bar-ios">
       <div className="flex items-stretch justify-around h-16 px-1">
         {primaryNavItems.map((item) => {
           const isActive = location.pathname === item.href || 
@@ -75,7 +75,7 @@ export function MobileBottomNav() {
               key={item.href}
               to={item.href}
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target active:scale-95',
+                'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target ios-active',
                 isActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground active:text-foreground'
@@ -105,7 +105,7 @@ export function MobileBottomNav() {
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target active:scale-95',
+                'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target ios-active',
                 isMoreActive
                   ? 'text-primary'
                   : 'text-muted-foreground hover:text-foreground active:text-foreground'
@@ -162,7 +162,7 @@ export function MobileBottomNav() {
         <Link
           to="/settings"
           className={cn(
-            'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target active:scale-95',
+            'flex flex-col items-center justify-center gap-0.5 flex-1 min-w-0 py-2 px-1 rounded-lg transition-all touch-target ios-active',
             isSettingsActive
               ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground active:text-foreground'
