@@ -69,11 +69,17 @@ export default function NewReport() {
   const { isOnline } = useOfflineStatus();
   const { createReport } = useOfflineReports();
   
+  // Edit mode - get edit and player params
+  const editReportId = searchParams.get('edit');
+  const playerIdFromUrl = searchParams.get('player') || searchParams.get('playerId') || '';
+  const isEditMode = !!editReportId;
+  
   const [players, setPlayers] = useState<Player[]>([]);
-  const [selectedPlayerId, setSelectedPlayerId] = useState(searchParams.get('playerId') || '');
+  const [selectedPlayerId, setSelectedPlayerId] = useState(playerIdFromUrl);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [draftId, setDraftId] = useState<string | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(editReportId);
+  const [isLoadingReport, setIsLoadingReport] = useState(isEditMode);
   const [activeVoiceField, setActiveVoiceField] = useState<VoiceField>(null);
 
   const [formData, setFormData] = useState({
@@ -149,6 +155,70 @@ export default function NewReport() {
     }
   };
 
+  // Load existing report for edit mode
+  useEffect(() => {
+    const fetchReportForEdit = async () => {
+      if (!editReportId || !user) return;
+      
+      setIsLoadingReport(true);
+      try {
+        const { data, error } = await supabase
+          .from('scouting_reports')
+          .select('*')
+          .eq('id', editReportId)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setSelectedPlayerId(data.player_id);
+          setFormData({
+            match_date: data.match_date,
+            match_details: data.match_details || '',
+            opposition: data.opposition || '',
+            competition_level: data.competition_level as CompetitionLevel,
+            minutes_observed: data.minutes_observed?.toString() || '',
+            strengths: data.strengths || '',
+            weaknesses: data.weaknesses || '',
+            recommendation: data.recommendation || '',
+            potential_rating: data.potential_rating || 50,
+            is_private: data.is_private || false,
+          });
+          setAttributes({
+            technical_first_touch: data.technical_first_touch || 10,
+            technical_passing: data.technical_passing || 10,
+            technical_crossing: data.technical_crossing || 10,
+            technical_dribbling: data.technical_dribbling || 10,
+            technical_shooting: data.technical_shooting || 10,
+            technical_heading: data.technical_heading || 10,
+            tactical_positioning: data.tactical_positioning || 10,
+            tactical_decision_making: data.tactical_decision_making || 10,
+            tactical_awareness: data.tactical_awareness || 10,
+            tactical_off_ball_movement: data.tactical_off_ball_movement || 10,
+            tactical_defensive_contribution: data.tactical_defensive_contribution || 10,
+            physical_pace: data.physical_pace || 10,
+            physical_stamina: data.physical_stamina || 10,
+            physical_strength: data.physical_strength || 10,
+            physical_agility: data.physical_agility || 10,
+            physical_balance: data.physical_balance || 10,
+            mental_composure: data.mental_composure || 10,
+            mental_concentration: data.mental_concentration || 10,
+            mental_leadership: data.mental_leadership || 10,
+            mental_work_rate: data.mental_work_rate || 10,
+            mental_aggression: data.mental_aggression || 10,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching report for edit:', error);
+        toast.error('Failed to load report');
+        navigate('/reports');
+      } finally {
+        setIsLoadingReport(false);
+      }
+    };
+
+    fetchReportForEdit();
+  }, [editReportId, user, navigate]);
+
   // Calculate overall rating
   const selectedPlayer = players.find(p => p.id === selectedPlayerId);
   const overallRating = selectedPlayer ? calculateOverallRating(
@@ -222,10 +292,11 @@ export default function NewReport() {
   }, 2000);
 
   useEffect(() => {
-    if (selectedPlayerId && formData.match_date) {
+    // Don't autosave in edit mode - only for new reports
+    if (selectedPlayerId && formData.match_date && !isEditMode) {
       saveDraft();
     }
-  }, [selectedPlayerId, formData, attributes]);
+  }, [selectedPlayerId, formData, attributes, isEditMode]);
 
   const handleAttributeChange = (key: keyof typeof attributes, value: number) => {
     setAttributes(prev => ({ ...prev, [key]: value }));
@@ -260,13 +331,15 @@ export default function NewReport() {
       };
 
       if (isOnline) {
-        // Online: use direct Supabase call for drafts or create new
-        if (draftId) {
-          await supabase.from('scouting_reports').update({ ...reportData, scout_id: user.id }).eq('id', draftId);
+        // Online: use direct Supabase call for edits/drafts or create new
+        if (draftId || isEditMode) {
+          const updateId = isEditMode ? editReportId : draftId;
+          await supabase.from('scouting_reports').update({ ...reportData, scout_id: user.id }).eq('id', updateId);
+          toast.success(isEditMode ? 'Report updated successfully!' : 'Report submitted successfully!');
         } else {
           await supabase.from('scouting_reports').insert({ ...reportData, scout_id: user.id });
+          toast.success('Report submitted successfully!');
         }
-        toast.success('Report submitted successfully!');
       } else {
         // Offline: use offline reports hook which handles IndexedDB and sync queue
         const result = await createReport(reportData);
@@ -285,6 +358,19 @@ export default function NewReport() {
     }
   };
 
+  if (isLoadingReport) {
+    return (
+      <DashboardLayout>
+        <div className="w-full max-w-4xl mx-auto animate-pulse px-0 sm:px-2">
+          <div className="h-8 w-32 bg-muted rounded mb-4" />
+          <div className="h-10 w-64 bg-muted rounded mb-2" />
+          <div className="h-6 w-48 bg-muted rounded mb-6" />
+          <div className="h-64 bg-muted rounded-xl" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <div className="w-full max-w-4xl mx-auto animate-fade-in px-0 sm:px-2">
@@ -296,9 +382,11 @@ export default function NewReport() {
           </Button>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">New Scouting Report</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+                {isEditMode ? 'Edit Scouting Report' : 'New Scouting Report'}
+              </h1>
               <p className="text-muted-foreground text-sm sm:text-base mt-1">
-                Record match observations and player ratings
+                {isEditMode ? 'Update match observations and player ratings' : 'Record match observations and player ratings'}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -308,7 +396,7 @@ export default function NewReport() {
                   Offline Mode
                 </div>
               )}
-              {isSaving && isOnline && (
+              {isSaving && isOnline && !isEditMode && (
                 <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                   <Cloud className="w-3 h-3 sm:w-4 sm:h-4 animate-pulse" />
                   Saving...

@@ -231,8 +231,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className="lg:pl-64 lg:pt-0 min-h-screen pb-20 sm:pb-24 lg:pb-0 safe-area-bottom safe-area-top">
+      {/* Main Content - iOS optimized padding */}
+      <main className="lg:pl-64 lg:pt-0 min-h-screen pb-24 sm:pb-28 lg:pb-0 safe-area-bottom safe-area-top scroll-ios">
         <div className="responsive-padding py-3 sm:py-4 md:py-6 lg:py-8">
           <div className="content-container-lg">
             {children}
