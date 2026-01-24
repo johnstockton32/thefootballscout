@@ -234,7 +234,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const player = report.players as any;
   const pageWidth = 210;
   const pageHeight = 297;
-  const margin = 15;
+  const margin = 12;
   const contentWidth = pageWidth - margin * 2;
   
   // App color scheme (converted from HSL to RGB)
@@ -307,119 +307,103 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   y += 24;
 
   // ========== MATCH DETAILS CARD ==========
-  const matchCardHeight = 28;
-  drawRoundedRect(doc, margin, y, contentWidth, matchCardHeight, 4, bgCard);
+  const matchCardHeight = 22;
+  drawRoundedRect(doc, margin, y, contentWidth, matchCardHeight, 3, bgCard);
   
   // Match info row
-  const matchDate = format(new Date(report.match_date), 'MMMM d, yyyy');
+  const matchDate = format(new Date(report.match_date), 'MMM d, yyyy');
   const opposition = report.opposition || 'Unknown Opposition';
   const competitionLevel = COMPETITION_LEVEL_LABELS[report.competition_level as CompetitionLevel] || report.competition_level;
   const minutesObserved = report.minutes_observed;
-  const matchDetails = report.match_details;
   
   // Left side - Match info
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
-  doc.text('MATCH DETAILS', margin + 10, y + 8);
+  doc.text('MATCH', margin + 8, y + 7);
   
   doc.setTextColor(...white);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${matchDate} vs ${opposition}`, margin + 10, y + 17);
+  doc.text(`${matchDate} vs ${opposition}`, margin + 8, y + 14);
   
   doc.setTextColor(...textMuted);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   const matchContext = [competitionLevel];
-  if (minutesObserved) matchContext.push(`${minutesObserved} mins observed`);
-  doc.text(matchContext.join(' • '), margin + 10, y + 24);
-  
-  // Right side - Match context (if available)
-  if (matchDetails) {
-    const detailsX = margin + contentWidth / 2 + 5;
-    doc.setTextColor(...primaryColor);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('MATCH CONTEXT', detailsX, y + 8);
-    
-    doc.setTextColor(...textLight);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    const contextLines = doc.splitTextToSize(matchDetails, contentWidth / 2 - 15);
-    doc.text(contextLines.slice(0, 2).join('\n'), detailsX, y + 16);
-  }
+  if (minutesObserved) matchContext.push(`${minutesObserved} mins`);
+  doc.text(matchContext.join(' • '), margin + 8, y + 20);
 
-  y += matchCardHeight + 6;
+  y += matchCardHeight + 4;
 
   // ========== OVERALL RATING CARD ==========
-  const ratingCardHeight = 40;
-  drawRoundedRect(doc, margin, y, contentWidth, ratingCardHeight, 6, bgCard);
+  const ratingCardHeight = 32;
+  drawRoundedRect(doc, margin, y, contentWidth, ratingCardHeight, 4, bgCard);
   
   // Left side - rating info
   doc.setTextColor(...textMuted);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
-  doc.text('OVERALL RATING', margin + 10, y + 10);
+  doc.text('OVERALL RATING', margin + 8, y + 8);
   
   // Large score number
   doc.setTextColor(...white);
-  doc.setFontSize(32);
+  doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text(overallScore.toString(), margin + 10, y + 30);
+  doc.text(overallScore.toString(), margin + 8, y + 24);
   
   doc.setTextColor(...textMuted);
-  doc.setFontSize(12);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('/100', margin + 34, y + 30);
+  doc.text('/100', margin + 28, y + 24);
   
   // Score label
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text(getScoreLabel(overallScore), margin + 52, y + 30);
+  doc.text(getScoreLabel(overallScore), margin + 48, y + 24);
 
   // Potential rating (if available)
   if (report.potential_rating) {
-    const potX = margin + 95;
+    const potX = margin + 90;
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(7);
+    doc.text('POTENTIAL', potX, y + 8);
+    doc.setTextColor(...accentColor);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(report.potential_rating.toString(), potX, y + 22);
     doc.setTextColor(...textMuted);
     doc.setFontSize(8);
-    doc.text('POTENTIAL', potX, y + 10);
-    doc.setTextColor(...accentColor);
-    doc.setFontSize(18);
-    doc.setFont('helvetica', 'bold');
-    doc.text(report.potential_rating.toString(), potX, y + 26);
-    doc.setTextColor(...textMuted);
-    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text('/100', potX + 18, y + 26);
+    doc.text('/100', potX + 15, y + 22);
   }
 
   // Right side - circular rating indicator
-  const circleX = pageWidth - margin - 25;
-  const circleY = y + 20;
-  const circleR = 12;
+  const circleX = pageWidth - margin - 20;
+  const circleY = y + 16;
+  const circleR = 10;
   
   // Background circle
   doc.setDrawColor(...bgMuted);
-  doc.setLineWidth(3);
+  doc.setLineWidth(2);
   doc.circle(circleX, circleY, circleR, 'S');
   
   // Progress arc
   doc.setDrawColor(...primaryColor);
-  doc.setLineWidth(3);
+  doc.setLineWidth(2);
   doc.circle(circleX, circleY, circleR, 'S');
   
   // Score in circle
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text(overallScore.toString(), circleX, circleY + 4, { align: 'center' });
+  doc.text(overallScore.toString(), circleX, circleY + 3, { align: 'center' });
 
-  y += ratingCardHeight + 6;
+  y += ratingCardHeight + 4;
 
   // ========== CATEGORY CARDS ROW ==========
   const cardWidth = (contentWidth - 9) / 4;
-  const cardHeight = 28;
+  const cardHeight = 24;
   
   const categories = [
     { name: 'Technical', avg: techAvg, color: primaryColor },
@@ -430,80 +414,80 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   
   categories.forEach((cat, i) => {
     const cardX = margin + i * (cardWidth + 3);
-    drawRoundedRect(doc, cardX, y, cardWidth, cardHeight, 4, bgCard);
+    drawRoundedRect(doc, cardX, y, cardWidth, cardHeight, 3, bgCard);
     
     // Color indicator bar at top
     doc.setFillColor(...cat.color);
-    doc.roundedRect(cardX + 3, y + 3, cardWidth - 6, 2, 1, 1, 'F');
+    doc.roundedRect(cardX + 3, y + 2, cardWidth - 6, 2, 1, 1, 'F');
     
     // Category name
     doc.setTextColor(...cat.color);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'bold');
-    doc.text(cat.name, cardX + cardWidth / 2, y + 12, { align: 'center' });
+    doc.text(cat.name, cardX + cardWidth / 2, y + 10, { align: 'center' });
     
     // Score
     doc.setTextColor(...white);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(cat.avg.toString(), cardX + cardWidth / 2 - 4, y + 22);
+    doc.text(cat.avg.toString(), cardX + cardWidth / 2 - 3, y + 19);
     doc.setTextColor(...textMuted);
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'normal');
-    doc.text('/20', cardX + cardWidth / 2 + 6, y + 22);
+    doc.text('/20', cardX + cardWidth / 2 + 6, y + 19);
   });
   
-  y += cardHeight + 6;
+  y += cardHeight + 4;
 
   // ========== DETAILED ATTRIBUTES SECTION ==========
-  const attrSectionHeight = 105;
-  drawRoundedRect(doc, margin, y, contentWidth, attrSectionHeight, 6, bgCard);
+  const attrSectionHeight = 90;
+  drawRoundedRect(doc, margin, y, contentWidth, attrSectionHeight, 4, bgCard);
   
   doc.setTextColor(...white);
-  doc.setFontSize(11);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('Detailed Attributes', margin + 10, y + 11);
+  doc.text('Detailed Attributes', margin + 8, y + 10);
   
   // Attribute layout - 2 columns
-  const colWidth = (contentWidth - 20) / 2;
-  const leftColX = margin + 10;
-  const rightColX = margin + 10 + colWidth + 5;
-  const attrBarWidth = 42;
-  const attrBarHeight = 3;
-  let leftY = y + 20;
-  let rightY = y + 20;
-  const attrRowHeight = 7;
+  const colWidth = (contentWidth - 16) / 2;
+  const leftColX = margin + 8;
+  const rightColX = margin + 8 + colWidth + 4;
+  const attrBarWidth = 38;
+  const attrBarHeight = 2.5;
+  let leftY = y + 17;
+  let rightY = y + 17;
+  const attrRowHeight = 6;
 
   // Helper to draw attribute row
   const drawAttributeRow = (x: number, attrY: number, name: string, value: number | null, color: [number, number, number]) => {
     const val = value || 0;
     doc.setTextColor(...textLight);
-    doc.setFontSize(6);
+    doc.setFontSize(5.5);
     doc.setFont('helvetica', 'normal');
     doc.text(name, x, attrY);
     
     // Progress bar
-    const barX = x + 32;
+    const barX = x + 28;
     doc.setFillColor(...bgMuted);
-    doc.roundedRect(barX, attrY - 2.5, attrBarWidth, attrBarHeight, 1.5, 1.5, 'F');
+    doc.roundedRect(barX, attrY - 2, attrBarWidth, attrBarHeight, 1, 1, 'F');
     if (val > 0) {
       doc.setFillColor(...color);
-      doc.roundedRect(barX, attrY - 2.5, (val / 20) * attrBarWidth, attrBarHeight, 1.5, 1.5, 'F');
+      doc.roundedRect(barX, attrY - 2, (val / 20) * attrBarWidth, attrBarHeight, 1, 1, 'F');
     }
     
     // Value
     doc.setTextColor(...white);
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont('helvetica', 'bold');
-    doc.text(val.toString(), barX + attrBarWidth + 3, attrY);
+    doc.text(val.toString(), barX + attrBarWidth + 2, attrY);
   };
 
   // TECHNICAL (left column)
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.text('Technical', leftColX, leftY);
-  leftY += 6;
+  leftY += 5;
   
   const technicalAttrs: [string, number | null][] = [
     ['First Touch', report.technical_first_touch],
@@ -520,12 +504,12 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   });
 
   // PHYSICAL (left column, continued)
-  leftY += 2;
+  leftY += 1;
   doc.setTextColor(...accentColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.text('Physical', leftColX, leftY);
-  leftY += 6;
+  leftY += 5;
   
   const physicalAttrs: [string, number | null][] = [
     ['Pace', report.physical_pace],
@@ -542,16 +526,16 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // TACTICAL (right column)
   doc.setTextColor(...blueColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.text('Tactical', rightColX, rightY);
-  rightY += 6;
+  rightY += 5;
   
   const tacticalAttrs: [string, number | null][] = [
     ['Positioning', report.tactical_positioning],
-    ['Decision Making', report.tactical_decision_making],
+    ['Decision', report.tactical_decision_making],
     ['Awareness', report.tactical_awareness],
-    ['Off-Ball Move', report.tactical_off_ball_movement],
+    ['Off-Ball', report.tactical_off_ball_movement],
     ['Def. Contrib.', report.tactical_defensive_contribution],
   ];
   
@@ -561,16 +545,16 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   });
 
   // MENTAL (right column, continued)
-  rightY += 2;
+  rightY += 1;
   doc.setTextColor(...purpleColor);
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.text('Mental', rightColX, rightY);
-  rightY += 6;
+  rightY += 5;
   
   const mentalAttrs: [string, number | null][] = [
     ['Composure', report.mental_composure],
-    ['Concentration', report.mental_concentration],
+    ['Focus', report.mental_concentration],
     ['Work Rate', report.mental_work_rate],
     ['Leadership', report.mental_leadership],
     ['Aggression', report.mental_aggression],
@@ -581,61 +565,61 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     rightY += attrRowHeight;
   });
   
-  y += attrSectionHeight + 5;
+  y += attrSectionHeight + 4;
 
   // ========== STRENGTHS & AREAS TO IMPROVE ==========
-  const halfWidth = (contentWidth - 6) / 2;
-  const observationCardHeight = 32;
+  const halfWidth = (contentWidth - 4) / 2;
+  const observationCardHeight = 28;
   
   // Strengths card (left)
-  drawRoundedRect(doc, margin, y, halfWidth, observationCardHeight, 4, bgCard);
+  drawRoundedRect(doc, margin, y, halfWidth, observationCardHeight, 3, bgCard);
   doc.setFillColor(...primaryColor);
-  doc.roundedRect(margin, y, 3, observationCardHeight, 4, 0, 'F');
-  doc.rect(margin + 1.5, y, 1.5, observationCardHeight, 'F');
+  doc.roundedRect(margin, y, 2.5, observationCardHeight, 3, 0, 'F');
+  doc.rect(margin + 1.5, y, 1, observationCardHeight, 'F');
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
-  doc.text('Strengths', margin + 8, y + 8);
+  doc.text('STRENGTHS', margin + 6, y + 7);
   
   doc.setTextColor(...textLight);
-  doc.setFontSize(6);
+  doc.setFontSize(5.5);
   doc.setFont('helvetica', 'normal');
   const strengthText = report.strengths || 'No strengths noted.';
-  const strengthLines = doc.splitTextToSize(strengthText, halfWidth - 14);
-  doc.text(strengthLines.slice(0, 4).join('\n'), margin + 8, y + 15);
+  const strengthLines = doc.splitTextToSize(strengthText, halfWidth - 10);
+  doc.text(strengthLines.slice(0, 5).join('\n'), margin + 6, y + 13);
   
   // Areas to Improve card (right)
-  drawRoundedRect(doc, margin + halfWidth + 6, y, halfWidth, observationCardHeight, 4, bgCard);
+  drawRoundedRect(doc, margin + halfWidth + 4, y, halfWidth, observationCardHeight, 3, bgCard);
   doc.setFillColor(...destructiveColor);
-  doc.roundedRect(margin + halfWidth + 6, y, 3, observationCardHeight, 4, 0, 'F');
-  doc.rect(margin + halfWidth + 7.5, y, 1.5, observationCardHeight, 'F');
+  doc.roundedRect(margin + halfWidth + 4, y, 2.5, observationCardHeight, 3, 0, 'F');
+  doc.rect(margin + halfWidth + 5.5, y, 1, observationCardHeight, 'F');
   
   doc.setTextColor(...destructiveColor);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
-  doc.text('Areas to Improve', margin + halfWidth + 14, y + 8);
+  doc.text('AREAS TO IMPROVE', margin + halfWidth + 10, y + 7);
   
   doc.setTextColor(...textLight);
-  doc.setFontSize(6);
+  doc.setFontSize(5.5);
   doc.setFont('helvetica', 'normal');
   const weaknessText = report.weaknesses || 'No areas noted.';
-  const weaknessLines = doc.splitTextToSize(weaknessText, halfWidth - 14);
-  doc.text(weaknessLines.slice(0, 4).join('\n'), margin + halfWidth + 14, y + 15);
+  const weaknessLines = doc.splitTextToSize(weaknessText, halfWidth - 10);
+  doc.text(weaknessLines.slice(0, 5).join('\n'), margin + halfWidth + 10, y + 13);
   
-  y += observationCardHeight + 5;
+  y += observationCardHeight + 4;
 
   // ========== RECOMMENDATION ==========
-  const recCardHeight = 22;
-  drawRoundedRect(doc, margin, y, contentWidth, recCardHeight, 4, bgCard);
+  const recCardHeight = 18;
+  drawRoundedRect(doc, margin, y, contentWidth, recCardHeight, 3, bgCard);
   doc.setFillColor(...primaryLight);
-  doc.roundedRect(margin, y, 3, recCardHeight, 4, 0, 'F');
-  doc.rect(margin + 1.5, y, 1.5, recCardHeight, 'F');
+  doc.roundedRect(margin, y, 2.5, recCardHeight, 3, 0, 'F');
+  doc.rect(margin + 1.5, y, 1, recCardHeight, 'F');
   
   doc.setTextColor(...primaryColor);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'bold');
-  doc.text('Recommendation', margin + 8, y + 8);
+  doc.text('RECOMMENDATION', margin + 6, y + 7);
   
   // Recommendation badge
   const recBadge = report.recommendation || 'No recommendation';
@@ -645,24 +629,22 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   else if (recBadge.toLowerCase().includes('reject') || recBadge.toLowerCase().includes('pass')) badgeColor = destructiveColor;
   
   doc.setTextColor(...badgeColor);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text(recBadge, margin + 8, y + 17);
-  
-  y += recCardHeight + 6;
+  doc.text(recBadge, margin + 6, y + 14);
 
   // ========== FOOTER ==========
   doc.setTextColor(...textMuted);
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('The Football Scout', margin, pageHeight - 10);
+  doc.text('The Football Scout', margin, pageHeight - 8);
   
-  const reportInfo = `Report ID: ${report.id.substring(0, 8)} • Generated ${format(new Date(), 'MMM d, yyyy')}`;
-  doc.text(reportInfo, pageWidth - margin, pageHeight - 10, { align: 'right' });
+  const reportInfo = `Report: ${report.id.substring(0, 8)} • ${format(new Date(), 'MMM d, yyyy')}`;
+  doc.text(reportInfo, pageWidth - margin, pageHeight - 8, { align: 'right' });
   
   // Accent line at bottom
   doc.setFillColor(...primaryColor);
-  doc.rect(margin, pageHeight - 6, contentWidth, 1, 'F');
+  doc.rect(margin, pageHeight - 5, contentWidth, 0.8, 'F');
 
   // Save
   const filename = `scouting_report_${player?.full_name?.replace(/\s+/g, '_') || 'unknown'}_${format(new Date(report.match_date), 'yyyy-MM-dd')}.pdf`;
