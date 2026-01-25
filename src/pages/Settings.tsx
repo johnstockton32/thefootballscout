@@ -536,66 +536,55 @@ export default function Settings() {
                         )}
                       </div>
                       {!showEmailForm ? (
-                        <>
-                          <Input value={user?.email || ''} disabled className="bg-muted" />
-                        </>
+                        <Input value={user?.email || ''} disabled className="bg-muted" />
                       ) : (
-                        <Form {...emailForm}>
-                          <div className="space-y-3">
-                            <FormField
-                              control={emailForm.control}
-                              name="email"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormControl>
-                                    <div className="relative">
-                                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                      <Input
-                                        type="email"
-                                        placeholder="Enter new email address"
-                                        className="pl-10"
-                                        {...field}
-                                      />
-                                    </div>
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              type="email"
+                              placeholder="Enter new email address"
+                              className="pl-10"
+                              value={emailForm.watch('email')}
+                              onChange={(e) => emailForm.setValue('email', e.target.value)}
                             />
-                            <div className="flex gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={emailForm.handleSubmit(onEmailSubmit)}
-                                disabled={isChangingEmail}
-                              >
-                                {isChangingEmail ? (
-                                  <>
-                                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                    Sending...
-                                  </>
-                                ) : (
-                                  'Update Email'
-                                )}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setShowEmailForm(false);
-                                  emailForm.reset({ email: user?.email || '' });
-                                }}
-                                disabled={isChangingEmail}
-                              >
-                                Cancel
-                              </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              A verification email will be sent to your new email address.
-                            </p>
                           </div>
-                        </Form>
+                          {emailForm.formState.errors.email && (
+                            <p className="text-sm text-destructive">{emailForm.formState.errors.email.message}</p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={emailForm.handleSubmit(onEmailSubmit)}
+                              disabled={isChangingEmail}
+                            >
+                              {isChangingEmail ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Sending...
+                                </>
+                              ) : (
+                                'Update Email'
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowEmailForm(false);
+                                emailForm.reset({ email: user?.email || '' });
+                              }}
+                              disabled={isChangingEmail}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            A verification email will be sent to your new email address.
+                          </p>
+                        </div>
                       )}
                     </div>
                     

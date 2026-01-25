@@ -91,15 +91,22 @@ class OfflineStorage {
   }
 
   async getPendingOperations(): Promise<OfflineOperation[]> {
-    const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['syncQueue'], 'readonly');
-      const store = transaction.objectStore('syncQueue');
-      const index = store.index('synced');
-      const request = index.getAll(IDBKeyRange.only(false));
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
+    try {
+      const db = await this.getDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['syncQueue'], 'readonly');
+        const store = transaction.objectStore('syncQueue');
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const results = request.result || [];
+          resolve(results.filter((op: OfflineOperation) => op.synced === false));
+        };
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      console.warn('getPendingOperations failed:', error);
+      return [];
+    }
   }
 
   async markOperationSynced(id: string): Promise<void> {
@@ -125,24 +132,27 @@ class OfflineStorage {
   }
 
   async clearSyncedOperations(): Promise<void> {
-    const db = await this.getDB();
-    return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['syncQueue'], 'readwrite');
-      const store = transaction.objectStore('syncQueue');
-      const index = store.index('synced');
-      const request = index.openCursor(IDBKeyRange.only(true));
-      
-      request.onsuccess = (event) => {
-        const cursor = (event.target as IDBRequest<IDBCursorWithValue>).result;
-        if (cursor) {
-          cursor.delete();
-          cursor.continue();
-        } else {
+    try {
+      const db = await this.getDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(['syncQueue'], 'readwrite');
+        const store = transaction.objectStore('syncQueue');
+        const request = store.getAll();
+        
+        request.onsuccess = () => {
+          const results = request.result || [];
+          results.forEach((op: OfflineOperation) => {
+            if (op.synced === true) {
+              store.delete(op.id);
+            }
+          });
           resolve();
-        }
-      };
-      request.onerror = () => reject(request.error);
-    });
+        };
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      console.warn('clearSyncedOperations failed:', error);
+    }
   }
 
   // Cache Operations
