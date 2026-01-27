@@ -137,6 +137,41 @@ export type Database = {
         }
         Relationships: []
       }
+      license_purchases: {
+        Row: {
+          id: string
+          licenses_added: number
+          processed_at: string
+          processed_by: string
+          stripe_session_id: string
+          team_id: string
+        }
+        Insert: {
+          id?: string
+          licenses_added: number
+          processed_at?: string
+          processed_by: string
+          stripe_session_id: string
+          team_id: string
+        }
+        Update: {
+          id?: string
+          licenses_added?: number
+          processed_at?: string
+          processed_by?: string
+          stripe_session_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_purchases_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           created_at: string
@@ -791,6 +826,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_team_licenses: {
+        Args: {
+          p_licenses_to_add: number
+          p_processed_by: string
+          p_stripe_session_id: string
+          p_team_id: string
+        }
+        Returns: Json
+      }
       can_create_player: { Args: { _user_id: string }; Returns: boolean }
       can_create_report: { Args: { _user_id: string }; Returns: boolean }
       can_manage_team_role: {
