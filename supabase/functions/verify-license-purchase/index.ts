@@ -134,30 +134,44 @@ Deno.serve(async (req) => {
     }
 
     const licensesToAdd = parseInt(validSession.metadata!.licenses_to_add, 10) || LICENSES_PER_PACK;
-    const newLicenseCount = team.license_count + licensesToAdd;
 
-    // Update team license count
-    const { error: updateError } = await supabaseAdmin
-      .from("teams")
-      .update({ license_count: newLicenseCount })
-      .eq("id", teamId);
+    // Use atomic RPC function to add licenses with idempotency check
+    // This prevents double redemption by tracking processed sessions
+    const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('add_team_licenses', {
+      p_team_id: teamId,
+      p_licenses_to_add: licensesToAdd,
+      p_stripe_session_id: validSession.id,
+      p_processed_by: requestingUserId
+    });
 
-    if (updateError) {
-      console.error("Error updating license count:", updateError);
+    if (rpcError) {
+      console.error("Error calling add_team_licenses RPC:", rpcError);
       return new Response(
-        JSON.stringify({ error: "Failed to update license count" }),
+        JSON.stringify({ error: "Failed to process license purchase" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`Updated team ${teamId} licenses: ${team.license_count} -> ${newLicenseCount}`);
+    // Check if the RPC returned an error (already processed)
+    if (!rpcResult.success) {
+      console.log("License purchase already processed:", rpcResult.error);
+      return new Response(
+        JSON.stringify({ 
+          verified: false, 
+          message: rpcResult.error || "This purchase has already been processed" 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`Updated team ${teamId} licenses: ${rpcResult.previous_count} -> ${rpcResult.new_count}`);
 
     return new Response(
       JSON.stringify({ 
         verified: true, 
-        previousCount: team.license_count,
-        newCount: newLicenseCount,
-        added: licensesToAdd
+        previousCount: rpcResult.previous_count,
+        newCount: rpcResult.new_count,
+        added: rpcResult.added
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
