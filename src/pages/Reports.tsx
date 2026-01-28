@@ -9,8 +9,10 @@ import { Input } from '@/components/ui/input';
 import { useOfflineReports, ReportWithPlayer } from '@/hooks/useOfflineReports';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
+import { FloatingActionButton } from '@/components/ui/floating-action-button';
+import { SwipeHint, useSwipeHint } from '@/components/ui/swipe-hint';
 import { toast } from 'sonner';
-import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff } from 'lucide-react';
+import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff, UserPlus } from 'lucide-react';
 
 const reportRowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -35,6 +37,24 @@ export default function Reports() {
   const { reports, isLoading, isOnline, deleteReport, refetch } = useOfflineReports();
   const [filteredReports, setFilteredReports] = useState<ReportWithPlayer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Swipe hint for first-time mobile users
+  const { showHint: showSwipeHint, dismissHint } = useSwipeHint('reports');
+
+  // Floating action button actions
+  const fabActions = [
+    {
+      icon: <FileText className="w-4 h-4" />,
+      label: 'New Report',
+      onClick: () => navigate('/reports/new'),
+      variant: 'primary' as const,
+    },
+    {
+      icon: <UserPlus className="w-4 h-4" />,
+      label: 'Add Player',
+      onClick: () => navigate('/players/new'),
+    },
+  ];
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -133,11 +153,9 @@ export default function Reports() {
           />
         </div>
 
-        {/* Mobile swipe hint */}
+        {/* Mobile swipe hint - improved */}
         {isMobile && filteredReports.length > 0 && (
-          <p className="text-xs text-muted-foreground text-center">
-            Swipe left on a report to delete
-          </p>
+          <SwipeHint show={showSwipeHint} direction="left" />
         )}
 
         {/* Reports List */}
@@ -148,7 +166,7 @@ export default function Reports() {
             ))}
           </div>
         ) : filteredReports.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-3" onTouchStart={dismissHint}>
             {filteredReports.map((report, index) => (
               <motion.div
                 key={report.id}
@@ -186,6 +204,9 @@ export default function Reports() {
             </Button>
           </div>
         )}
+
+        {/* Mobile Floating Action Button */}
+        <FloatingActionButton actions={fabActions} />
       </div>
     </DashboardLayout>
   );

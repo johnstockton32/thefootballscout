@@ -10,13 +10,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SkeletonList } from '@/components/ui/skeleton-card';
+import { FloatingActionButton } from '@/components/ui/floating-action-button';
+import { SwipeHint, useSwipeHint } from '@/components/ui/swipe-hint';
 import { PlayerPosition, POSITION_LABELS } from '@/lib/supabase';
 import { supabase } from '@/integrations/supabase/client';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOfflinePlayers } from '@/hooks/useOfflinePlayers';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { Plus, Search, Users, Filter, ArrowLeft, WifiOff } from 'lucide-react';
+import { Plus, Search, Users, Filter, ArrowLeft, WifiOff, FileText, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -56,6 +58,24 @@ export default function Players() {
   const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  
+  // Swipe hint for first-time mobile users
+  const { showHint: showSwipeHint, dismissHint } = useSwipeHint('players');
+
+  // Floating action button actions
+  const fabActions = [
+    {
+      icon: <UserPlus className="w-4 h-4" />,
+      label: 'Add Player',
+      onClick: () => navigate('/players/new'),
+      variant: 'primary' as const,
+    },
+    {
+      icon: <FileText className="w-4 h-4" />,
+      label: 'New Report',
+      onClick: () => navigate('/reports/new'),
+    },
+  ];
 
   // Pull to refresh
   const handleRefresh = useCallback(async () => {
@@ -183,27 +203,36 @@ export default function Players() {
             <SkeletonList count={6} variant="player" />
           </div>
         ) : filteredPlayers.length > 0 ? (
-          <div className={isMobile ? "flex flex-col gap-3" : "grid-fluid-3 gap-3 sm:gap-4"}>
-            {filteredPlayers.map((player, index) => (
-              <motion.div
-                key={player.id}
-                custom={index}
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                whileHover={!isMobile ? "hover" : undefined}
-              >
-                {isMobile ? (
-                  <SwipeablePlayerCard 
-                    player={player} 
-                    onDelete={handleDeletePlayer}
-                  />
-                ) : (
-                  <PlayerCard player={player} />
-                )}
-              </motion.div>
-            ))}
-          </div>
+          <>
+            {/* Mobile swipe hint */}
+            {isMobile && filteredPlayers.length > 0 && (
+              <SwipeHint show={showSwipeHint} direction="both" />
+            )}
+            <div 
+              className={isMobile ? "flex flex-col gap-3" : "grid-fluid-3 gap-3 sm:gap-4"}
+              onTouchStart={dismissHint}
+            >
+              {filteredPlayers.map((player, index) => (
+                <motion.div
+                  key={player.id}
+                  custom={index}
+                  variants={cardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  whileHover={!isMobile ? "hover" : undefined}
+                >
+                  {isMobile ? (
+                    <SwipeablePlayerCard 
+                      player={player} 
+                      onDelete={handleDeletePlayer}
+                    />
+                  ) : (
+                    <PlayerCard player={player} />
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          </>
         ) : players.length > 0 ? (
           <div className="text-center py-16">
             <Search className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
@@ -227,6 +256,9 @@ export default function Players() {
             </Button>
           </div>
         )}
+
+        {/* Mobile Floating Action Button */}
+        <FloatingActionButton actions={fabActions} />
       </div>
     </DashboardLayout>
   );

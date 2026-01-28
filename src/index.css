@@ -267,6 +267,37 @@
     transition: all 0.1s ease-out;
   }
 
+  /* Enhanced touch feedback for cards */
+  .touch-card {
+    @apply transition-all duration-150;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .touch-card:active {
+    @apply scale-[0.98] opacity-90;
+    transition-duration: 0.05s;
+  }
+
+  /* Swipeable card indicator stripes */
+  .swipe-indicator-left {
+    @apply absolute inset-y-0 left-0 w-1 rounded-l-lg;
+    background: linear-gradient(180deg, hsl(var(--destructive) / 0.5), hsl(var(--destructive)));
+  }
+
+  .swipe-indicator-right {
+    @apply absolute inset-y-0 right-0 w-1 rounded-r-lg;
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.5), hsl(var(--primary)));
+  }
+
+  /* Sticky header for mobile forms */
+  .sticky-header-mobile {
+    @apply sticky top-0 z-30 bg-background/95 backdrop-blur-sm;
+    @apply border-b border-border/50;
+    @apply -mx-3 px-3 sm:-mx-4 sm:px-4;
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
+    padding-bottom: 0.75rem;
+  }
+
   /* iOS-style navigation bar height */
   .nav-bar-ios {
     height: calc(44px + env(safe-area-inset-top, 0));
@@ -277,6 +308,41 @@
   .tab-bar-ios {
     height: calc(49px + env(safe-area-inset-bottom, 0));
     padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Mobile form optimizations */
+  @media (max-width: 640px) {
+    .form-section-mobile {
+      @apply -mx-3 px-3 py-4 border-b border-border/30;
+    }
+    
+    .form-section-mobile:last-child {
+      @apply border-b-0;
+    }
+  }
+
+  /* Scroll snap for horizontal carousels */
+  .scroll-snap-x {
+    @apply flex overflow-x-auto gap-3;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .scroll-snap-x > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+
+  /* Hide scrollbar for touch devices */
+  @media (hover: none) {
+    .scroll-snap-x {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    .scroll-snap-x::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   /* Prevent iOS zoom on input focus */
