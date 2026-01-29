@@ -31,6 +31,8 @@ const TeamFeed = lazy(() => import('@/pages/TeamFeed'));
 const TeamAnalytics = lazy(() => import('@/pages/TeamAnalytics'));
 const Analysis = lazy(() => import('@/pages/Analysis'));
 const Install = lazy(() => import('@/pages/Install'));
+const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function PageLoader() {
@@ -53,6 +55,8 @@ export function AnimatedRoutes() {
           <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
           <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
           <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+          <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+          <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
           <Route path="/gdpr-consent" element={<PageTransition><GdprConsent /></PageTransition>} />
           
           {/* Protected Routes */}

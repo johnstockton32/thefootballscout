@@ -1326,7 +1326,8 @@ export default function Demo() {
           <Logo size="sm" />
           <p className="text-sm text-muted-foreground">© 2026 The Football Scout. All rights reserved.</p>
           <div className="flex gap-4">
-            <Link to="/gdpr-consent" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link to="/privacy-policy" className="text-sm text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link to="/terms-of-service" className="text-sm text-muted-foreground hover:text-foreground">Terms of Service</Link>
           </div>
         </div>
       </footer>
