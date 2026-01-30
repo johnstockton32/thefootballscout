@@ -2,26 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
-export type SubscriptionTier = 'free' | 'pro' | 'team';
-
-interface SubscriptionLimits {
-  maxPlayers: number;
-  maxReportsPerMonth: number;
-  maxComparisonPlayers: number;
-  hasAdvancedAnalytics: boolean;
-  hasPdfExport: boolean;
-  hasTeamFeatures: boolean;
-  hasAIInsights: boolean;
-  hasVideoClips: boolean;
-  hasWhiteLabel: boolean;
-  maxTeamMembers: number;
-  hasBulkImportExport: boolean;
-  hasVoiceToText: boolean;
-  hasSmartDiscovery: boolean;
-  hasPushNotifications: boolean;
-  hasCustomAttributeWeights: boolean;
-}
+import { 
+  TIER_LIMITS, 
+  type SubscriptionTier, 
+  type SubscriptionLimits 
+} from '@/constants/subscription';
 
 interface SubscriptionData {
   tier: SubscriptionTier;
@@ -48,59 +33,8 @@ interface SubscriptionData {
   isSubscribedViaStripe: boolean;
 }
 
-const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
-  free: {
-    maxPlayers: 10,
-    maxReportsPerMonth: 5,
-    maxComparisonPlayers: 2,
-    hasAdvancedAnalytics: false,
-    hasPdfExport: false,
-    hasTeamFeatures: false,
-    hasAIInsights: false,
-    hasVideoClips: false,
-    hasWhiteLabel: false,
-    maxTeamMembers: 1,
-    hasBulkImportExport: false,
-    hasVoiceToText: false,
-    hasSmartDiscovery: false,
-    hasPushNotifications: false,
-    hasCustomAttributeWeights: false,
-  },
-  pro: {
-    maxPlayers: Infinity,
-    maxReportsPerMonth: Infinity,
-    maxComparisonPlayers: 5,
-    hasAdvancedAnalytics: true,
-    hasPdfExport: true,
-    hasTeamFeatures: false,
-    hasAIInsights: true,
-    hasVideoClips: false,
-    hasWhiteLabel: false,
-    maxTeamMembers: 1,
-    hasBulkImportExport: true,
-    hasVoiceToText: true,
-    hasSmartDiscovery: true,
-    hasPushNotifications: false,
-    hasCustomAttributeWeights: true,
-  },
-  team: {
-    maxPlayers: Infinity,
-    maxReportsPerMonth: Infinity,
-    maxComparisonPlayers: 10,
-    hasAdvancedAnalytics: true,
-    hasPdfExport: true,
-    hasTeamFeatures: true,
-    hasAIInsights: true,
-    hasVideoClips: true,
-    hasWhiteLabel: true,
-    maxTeamMembers: 10,
-    hasBulkImportExport: true,
-    hasVoiceToText: true,
-    hasSmartDiscovery: true,
-    hasPushNotifications: true,
-    hasCustomAttributeWeights: true,
-  },
-};
+// Re-export for backward compatibility
+export type { SubscriptionTier } from '@/constants/subscription';
 
 export function useSubscription(): SubscriptionData {
   const { user, session } = useAuth();
@@ -151,7 +85,6 @@ export function useSubscription(): SubscriptionData {
 
     setIsLoading(true);
     try {
-      // Fetch user's subscription tier from profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier, trial_ends_at, subscription_started_at')
@@ -174,13 +107,11 @@ export function useSubscription(): SubscriptionData {
         setSubscriptionStartedAt(null);
       }
 
-      // Check if user can start a trial (free plan and no previous trial)
       setCanStartTrial(
         profile?.subscription_tier === 'free' && 
         profile?.trial_ends_at === null
       );
 
-      // Fetch player count
       const { count: players } = await supabase
         .from('players')
         .select('*', { count: 'exact', head: true })
@@ -188,7 +119,6 @@ export function useSubscription(): SubscriptionData {
 
       setPlayerCount(players ?? 0);
 
-      // Fetch monthly report count
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
@@ -201,7 +131,6 @@ export function useSubscription(): SubscriptionData {
 
       setMonthlyReportCount(reports ?? 0);
 
-      // Check Stripe subscription status
       await checkStripeSubscription();
     } catch (error) {
       console.error('Error fetching subscription data:', error);
@@ -214,7 +143,6 @@ export function useSubscription(): SubscriptionData {
     fetchSubscriptionData();
   }, [fetchSubscriptionData]);
 
-  // Periodically refresh subscription status (every 60 seconds)
   useEffect(() => {
     if (!user) return;
 
@@ -247,7 +175,6 @@ export function useSubscription(): SubscriptionData {
   };
 
   const createCheckout = async (checkoutTier: SubscriptionTier, isAnnual: boolean = false): Promise<void> => {
-    // Get fresh session
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
     
@@ -286,10 +213,8 @@ export function useSubscription(): SubscriptionData {
       if (data?.url) {
         console.log('[Checkout] Redirecting to:', data.url);
         
-        // Open in new tab for more reliable behavior across browsers
         const stripeWindow = window.open(data.url, '_blank');
         
-        // Fallback: if popup was blocked, redirect in same window
         if (!stripeWindow || stripeWindow.closed || typeof stripeWindow.closed === 'undefined') {
           console.log('[Checkout] Popup blocked, redirecting in same window');
           window.location.href = data.url;
@@ -322,7 +247,6 @@ export function useSubscription(): SubscriptionData {
       if (error) throw error;
 
       if (data?.url) {
-        // Open portal in new tab
         window.open(data.url, '_blank');
       } else {
         throw new Error('No portal URL returned');
@@ -336,13 +260,11 @@ export function useSubscription(): SubscriptionData {
   const upgradePlan = async (newTier: SubscriptionTier): Promise<boolean> => {
     if (!user) return false;
     
-    // For Stripe subscribers, redirect to customer portal
     if (isSubscribedViaStripe) {
       await openCustomerPortal();
       return true;
     }
     
-    // For non-Stripe users (trials, etc.), create new checkout
     if (newTier !== 'free') {
       await createCheckout(newTier);
       return true;
@@ -370,7 +292,6 @@ export function useSubscription(): SubscriptionData {
   const cancelSubscription = async (): Promise<boolean> => {
     if (!user) return false;
     
-    // For Stripe subscribers, redirect to customer portal
     if (isSubscribedViaStripe) {
       await openCustomerPortal();
       return true;
@@ -399,7 +320,6 @@ export function useSubscription(): SubscriptionData {
   const canCreatePlayer = tier !== 'free' || playerCount < limits.maxPlayers;
   const canCreateReport = tier !== 'free' || monthlyReportCount < limits.maxReportsPerMonth;
   
-  // Calculate trial days remaining
   const trialDaysRemaining = isInTrial && trialEndsAt 
     ? Math.max(0, Math.ceil((trialEndsAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
     : 0;
