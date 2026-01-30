@@ -18,12 +18,14 @@ const tierHierarchy: Record<SubscriptionTier, number> = {
   free: 0,
   pro: 1,
   team: 2,
+  agency: 3,
 };
 
 const tierLabels: Record<SubscriptionTier, string> = {
   free: 'Free',
   pro: 'Pro',
   team: 'Team',
+  agency: 'Agency',
 };
 
 export function SubscriptionGate({
