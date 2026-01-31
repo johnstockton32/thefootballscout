@@ -13,8 +13,6 @@ import {
   Sparkles,
   List,
   BarChart3,
-  Activity,
-  Crown,
   MoreHorizontal,
 } from 'lucide-react';
 import {
@@ -28,7 +26,7 @@ import {
 export function MobileBottomNav() {
   const location = useLocation();
   const { isAdmin, profile } = useAuth();
-  const { limits, tier } = useSubscription();
+  const { limits } = useSubscription();
 
   const getInitials = (name: string | null | undefined, email: string | null | undefined) => {
     if (name) {
@@ -36,9 +34,6 @@ export function MobileBottomNav() {
     }
     return email?.charAt(0).toUpperCase() || 'U';
   };
-
-  // Check if user is a team owner
-  const isTeamOwner = profile?.team_role === 'team_admin';
 
   // Primary nav items (always shown in bottom bar)
   const primaryNavItems = [
@@ -52,9 +47,6 @@ export function MobileBottomNav() {
     { icon: BarChart3, label: 'Compare', href: '/players/compare', show: true },
     { icon: List, label: 'Watchlists', href: '/watchlists', show: true },
     { icon: Sparkles, label: 'Analysis', href: '/analysis', show: limits.hasAdvancedAnalytics },
-    { icon: Activity, label: 'Team Feed', href: '/team-feed', show: limits.hasTeamFeatures },
-    { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics', show: limits.hasTeamFeatures },
-    { icon: Crown, label: 'Team Admin', href: '/teams-admin', show: isTeamOwner && limits.hasTeamFeatures },
     { icon: Shield, label: 'Admin', href: '/admin', show: isAdmin },
   ].filter(item => item.show);
 

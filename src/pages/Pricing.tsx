@@ -5,10 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, ArrowRight, Zap, Users, Building2, Loader2, Download } from 'lucide-react';
+import { Check, ArrowRight, Zap, Crown, Loader2, Download } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
+
 const plans = [
   {
     name: 'Free',
@@ -36,7 +37,7 @@ const plans = [
     monthlyPrice: '10',
     annualPrice: '8',
     period: 'month',
-    icon: Users,
+    icon: Crown,
     features: [
       'Unlimited player profiles',
       'Unlimited scouting reports',
@@ -54,28 +55,6 @@ const plans = [
     cta: 'Start Pro Trial',
     variant: 'hero' as const,
     popular: true,
-  },
-  {
-    name: 'Team',
-    description: 'For scouting organizations',
-    monthlyPrice: '99',
-    annualPrice: '79',
-    period: 'month',
-    icon: Building2,
-    features: [
-      'Everything in Pro, plus:',
-      'Up to 10 team members',
-      'Shared player database',
-      'Team analytics dashboard',
-      'Team activity feed',
-      'Push notifications',
-      'Video clip attachments',
-      'White-label reports',
-      'Priority 24/7 support',
-    ],
-    cta: 'Subscribe to Team',
-    variant: 'glass' as const,
-    popular: false,
   },
 ];
 
@@ -95,7 +74,7 @@ export default function Pricing() {
   }, [searchParams]);
 
   const handlePlanAction = async (planName: string) => {
-    const tierName = planName.toLowerCase();
+    const tierName = planName.toLowerCase() as 'free' | 'pro';
     
     // Free plan - just redirect to signup
     if (tierName === 'free') {
@@ -118,7 +97,7 @@ export default function Pricing() {
     // Start checkout process
     setIsCheckingOut(tierName);
     try {
-      await subscription.createCheckout(tierName as 'pro' | 'team', isAnnual);
+      await subscription.createCheckout(tierName, isAnnual);
     } finally {
       setIsCheckingOut(null);
     }
@@ -144,15 +123,7 @@ export default function Pricing() {
       if (subscription.tier === 'free') {
         return `Subscribe to ${planName}`;
       }
-      // Upgrade or downgrade
-      const tierOrder = { free: 0, pro: 1, team: 2 };
-      const currentOrder = tierOrder[subscription.tier as keyof typeof tierOrder] || 0;
-      const targetOrder = tierOrder[tierName as keyof typeof tierOrder] || 0;
-      
-      if (targetOrder > currentOrder) {
-        return `Upgrade to ${planName}`;
-      }
-      return `Downgrade to ${planName}`;
+      return `Upgrade to ${planName}`;
     }
 
     return (
@@ -162,6 +133,7 @@ export default function Pricing() {
       </>
     );
   };
+
   return (
     <div className="min-h-screen bg-background pitch-pattern">
       {/* Header */}
@@ -221,8 +193,8 @@ export default function Pricing() {
 
       {/* Pricing Cards */}
       <section className="pb-20 px-4">
-        <div className="container mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="container mx-auto max-w-5xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {plans.map((plan) => {
               const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
               const period = plan.period === 'forever' ? 'forever' : isAnnual ? 'month (billed annually)' : 'month';
@@ -231,7 +203,7 @@ export default function Pricing() {
                 <Card 
                   key={plan.name} 
                   className={`relative card-glass border-border/50 hover:border-primary/30 transition-all duration-300 ${
-                    plan.popular ? 'ring-2 ring-primary scale-105 md:scale-110' : ''
+                    plan.popular ? 'ring-2 ring-primary scale-105' : ''
                   }`}
                 >
                   {plan.popular && (
@@ -254,26 +226,26 @@ export default function Pricing() {
                       <span className="text-muted-foreground">/{period}</span>
                     </div>
                   
-                  <ul className="space-y-3">
-                    {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3">
-                        <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3">
+                          <Check className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                          <span className="text-sm text-muted-foreground">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
 
-                  <Button 
-                    variant={plan.variant} 
-                    className="w-full" 
-                    size="lg"
-                    onClick={() => handlePlanAction(plan.name)}
-                    disabled={isCheckingOut !== null || (user && subscription.tier === plan.name.toLowerCase())}
-                  >
-                    {getButtonText(plan.name, plan.cta)}
-                  </Button>
-                </CardContent>
-              </Card>
+                    <Button 
+                      variant={plan.variant} 
+                      className="w-full" 
+                      size="lg"
+                      onClick={() => handlePlanAction(plan.name)}
+                      disabled={isCheckingOut !== null || (user && subscription.tier === plan.name.toLowerCase())}
+                    >
+                      {getButtonText(plan.name, plan.cta)}
+                    </Button>
+                  </CardContent>
+                </Card>
               );
             })}
           </div>
@@ -301,7 +273,7 @@ export default function Pricing() {
             <div className="card-glass p-6 rounded-xl">
               <h3 className="font-semibold mb-2">What payment methods do you accept?</h3>
               <p className="text-sm text-muted-foreground">
-                We accept all major credit cards, PayPal, and bank transfers for Team plans.
+                We accept all major credit cards and PayPal.
               </p>
             </div>
             <div className="card-glass p-6 rounded-xl">

@@ -429,7 +429,6 @@ export default function Settings() {
     switch (tier) {
       case 'free': return <Zap className="h-5 w-5" />;
       case 'pro': return <Crown className="h-5 w-5" />;
-      case 'team': return <Building2 className="h-5 w-5" />;
       default: return <Zap className="h-5 w-5" />;
     }
   };
@@ -438,7 +437,6 @@ export default function Settings() {
     switch (tier) {
       case 'free': return 'bg-muted text-muted-foreground';
       case 'pro': return 'bg-primary text-primary-foreground';
-      case 'team': return 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white';
       default: return 'bg-muted text-muted-foreground';
     }
   };
@@ -781,18 +779,6 @@ export default function Settings() {
                         AI-powered insights
                       </li>
                     )}
-                    {subscription.limits.hasVideoClips && (
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        Video clip attachments
-                      </li>
-                    )}
-                    {subscription.limits.hasTeamFeatures && (
-                      <li className="flex items-center gap-2 text-sm">
-                        <Check className="h-4 w-4 text-primary" />
-                        Team collaboration ({subscription.limits.maxTeamMembers === Infinity ? 'Unlimited' : `Up to ${subscription.limits.maxTeamMembers}`} members)
-                      </li>
-                    )}
                   </ul>
                 </div>
               </CardContent>
@@ -829,26 +815,6 @@ export default function Settings() {
                     </Button>
                   </div>
 
-                  {/* Upgrade to Team */}
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-purple-500" />
-                        <h4 className="font-semibold">Team Plan</h4>
-                        <span className="text-lg font-bold">£99/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Everything in Pro plus team collaboration
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('team')}
-                      disabled={isUpgrading}
-                    >
-                      {isUpgrading ? 'Upgrading...' : 'Upgrade to Team'}
-                    </Button>
-                  </div>
-
                 </CardContent>
               </Card>
             )}
@@ -861,24 +827,6 @@ export default function Settings() {
                   <CardDescription>Upgrade or modify your subscription</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg border">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-5 w-5 text-purple-500" />
-                        <h4 className="font-semibold">Upgrade to Team</h4>
-                        <span className="text-lg font-bold">£99/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Add team collaboration features
-                      </p>
-                    </div>
-                    <Button 
-                      onClick={() => handleUpgrade('team')}
-                      disabled={isUpgrading}
-                    >
-                      {isUpgrading ? 'Upgrading...' : 'Upgrade'}
-                    </Button>
-                  </div>
 
                   
                   <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
@@ -929,64 +877,6 @@ export default function Settings() {
               </Card>
             )}
 
-            {/* Team Plan Management */}
-            {subscription.tier === 'team' && (
-              <Card className="card-glass">
-                <CardHeader>
-                  <CardTitle>Plan Management</CardTitle>
-                  <CardDescription>Modify your subscription</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-
-                  <div className="flex items-center justify-between p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Crown className="h-5 w-5 text-primary" />
-                        <h4 className="font-semibold">Downgrade to Pro</h4>
-                        <span className="text-lg font-bold">£10/month</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Keep unlimited players & reports, lose team features
-                      </p>
-                    </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline">
-                          Downgrade
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Downgrade to Pro?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            You will be downgraded to the Pro plan. You'll keep:
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                              <li>Unlimited player profiles</li>
-                              <li>Unlimited reports</li>
-                              <li>Advanced analytics and PDF export</li>
-                            </ul>
-                            <p className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-                              <strong>Important:</strong> You'll retain access to Team features until the end of your current billing period. After that, you'll lose access to team collaboration, white-label reports, and video clips.
-                            </p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Keep Team Plan</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleUpgrade('pro')}
-                            disabled={isUpgrading}
-                          >
-                            {isUpgrading ? 'Processing...' : 'Downgrade to Pro'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-
             {/* Cancel Subscription */}
             {(subscription.tier !== 'free') && (
               <Card className="card-glass border-destructive/20">
@@ -1012,7 +902,6 @@ export default function Settings() {
                             <li>Unlimited player profiles (limited to 10)</li>
                             <li>Unlimited reports (limited to 5/month)</li>
                             <li>Advanced analytics and PDF export</li>
-                            {subscription.tier === 'team' && <li>Team collaboration features</li>}
                           </ul>
                         </AlertDialogDescription>
                       </AlertDialogHeader>

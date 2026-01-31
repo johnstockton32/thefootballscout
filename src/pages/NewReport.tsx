@@ -685,36 +685,6 @@ export default function NewReport() {
             </CardContent>
           </Card>
 
-          {/* Privacy Settings - Only for Team tier */}
-          {tier === 'team' && (
-            <Card className="card-glass border-primary/20">
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    {formData.is_private ? (
-                      <Lock className="w-5 h-5 text-amber-500" />
-                    ) : (
-                      <Users className="w-5 h-5 text-primary" />
-                    )}
-                    <div>
-                      <Label className="text-base font-medium">Report Privacy</Label>
-                      <p className="text-sm text-muted-foreground">
-                        {formData.is_private 
-                          ? 'Only you can see this report' 
-                          : 'Your team members can view this report'}
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={formData.is_private}
-                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, is_private: checked }))}
-                    aria-label="Toggle report privacy"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
           {/* Submit */}
           <div className="flex gap-3">
             <Button type="button" variant="outline" onClick={() => navigate(-1)} className="flex-1">

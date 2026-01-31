@@ -22,13 +22,10 @@ const AdminDashboard = lazy(() => import('@/pages/AdminDashboard'));
 const AdminPromoCodes = lazy(() => import('@/pages/AdminPromoCodes'));
 const AdminUsers = lazy(() => import('@/pages/AdminUsers'));
 const AdminData = lazy(() => import('@/pages/AdminData'));
-const TeamsAdmin = lazy(() => import('@/pages/TeamsAdmin'));
 const GdprConsent = lazy(() => import('@/pages/GdprConsent'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const Watchlists = lazy(() => import('@/pages/Watchlists'));
-const TeamFeed = lazy(() => import('@/pages/TeamFeed'));
-const TeamAnalytics = lazy(() => import('@/pages/TeamAnalytics'));
 const Analysis = lazy(() => import('@/pages/Analysis'));
 const Install = lazy(() => import('@/pages/Install'));
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
@@ -71,15 +68,11 @@ export function AnimatedRoutes() {
           <Route path="/reports/:id" element={<ProtectedRoute><PageTransition><ReportDetail /></PageTransition></ProtectedRoute>} />
           <Route path="/watchlists" element={<ProtectedRoute><PageTransition><Watchlists /></PageTransition></ProtectedRoute>} />
           <Route path="/analysis" element={<ProtectedRoute><PageTransition><Analysis /></PageTransition></ProtectedRoute>} />
-          <Route path="/team-feed" element={<ProtectedRoute><PageTransition><TeamFeed /></PageTransition></ProtectedRoute>} />
-          <Route path="/team-analytics" element={<ProtectedRoute><PageTransition><TeamAnalytics /></PageTransition></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute requireAdmin><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>} />
-          <Route path="/admin/teams" element={<ProtectedRoute requireAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
           <Route path="/admin/users" element={<ProtectedRoute requireAdmin><PageTransition><AdminUsers /></PageTransition></ProtectedRoute>} />
           <Route path="/admin/data" element={<ProtectedRoute requireAdmin><PageTransition><AdminData /></PageTransition></ProtectedRoute>} />
           <Route path="/admin/promo-codes" element={<ProtectedRoute requireAdmin><PageTransition><AdminPromoCodes /></PageTransition></ProtectedRoute>} />
-          <Route path="/teams-admin" element={<ProtectedRoute requireTeamOwnerOrAdmin><PageTransition><TeamsAdmin /></PageTransition></ProtectedRoute>} />
           
           {/* Catch-all */}
           <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
