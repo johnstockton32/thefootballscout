@@ -17,15 +17,11 @@ interface SubscriptionGateProps {
 const tierHierarchy: Record<SubscriptionTier, number> = {
   free: 0,
   pro: 1,
-  team: 2,
-  agency: 3,
 };
 
 const tierLabels: Record<SubscriptionTier, string> = {
   free: 'Free',
   pro: 'Pro',
-  team: 'Team',
-  agency: 'Agency',
 };
 
 export function SubscriptionGate({
@@ -82,7 +78,7 @@ export function SubscriptionGate({
               <span className="text-muted-foreground">→</span>
               <div className="flex items-center gap-1 px-3 py-1.5 bg-primary/10 rounded-full text-sm text-primary">
                 <Crown className="w-3.5 h-3.5" />
-                <span className="font-medium">{tierLabels[requiredTier]}+</span>
+                <span className="font-medium">{tierLabels[requiredTier]}</span>
               </div>
             </div>
 

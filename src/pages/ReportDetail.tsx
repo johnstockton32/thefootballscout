@@ -360,37 +360,6 @@ export default function ReportDetail() {
           </div>
         </div>
 
-        {/* Privacy Toggle - Only for Team tier owners */}
-        {tier === 'team' && isOwner && (
-          <Card className="card-glass border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  {report.is_private ? (
-                    <Lock className="w-5 h-5 text-amber-500" />
-                  ) : (
-                    <Users className="w-5 h-5 text-primary" />
-                  )}
-                  <div>
-                    <Label className="text-base font-medium">Report Privacy</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {report.is_private 
-                        ? 'Only you can see this report' 
-                        : 'Your team members can view this report'}
-                    </p>
-                  </div>
-                </div>
-                <Switch
-                  checked={report.is_private}
-                  onCheckedChange={toggleReportPrivacy}
-                  disabled={isTogglingPrivacy}
-                  aria-label="Toggle report privacy"
-                />
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Match Info */}
           <div className="lg:col-span-1 space-y-4 sm:space-y-6">

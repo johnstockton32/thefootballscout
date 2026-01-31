@@ -25,7 +25,6 @@ import {
   Crown,
   Sparkles,
   List,
-  Activity,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -44,12 +43,6 @@ const featureNavItems = [
   { icon: Sparkles, label: 'Analysis', href: '/analysis', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
   { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'free' as const },
   { icon: List, label: 'Watchlists', href: '/watchlists', minTier: 'free' as const },
-  { icon: Activity, label: 'Team Feed', href: '/team-feed', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
-  { icon: BarChart3, label: 'Team Analytics', href: '/team-analytics', minTier: 'team' as const, feature: 'hasTeamFeatures' as const },
-];
-
-const teamOwnerNavItems = [
-  { icon: Crown, label: 'Team Admin', href: '/teams-admin', minTier: 'team' as const },
 ];
 
 const adminNavItems = [
@@ -59,7 +52,6 @@ const adminNavItems = [
 const tierConfig = {
   free: { label: 'Free', icon: Sparkles, className: 'bg-muted text-muted-foreground' },
   pro: { label: 'Pro', icon: Crown, className: 'bg-primary/20 text-primary' },
-  team: { label: 'Team', icon: Users, className: 'bg-accent text-accent-foreground' },
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -67,9 +59,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const { tier, limits, isInTrial, trialDaysRemaining } = useSubscription();
   const location = useLocation();
   const navigate = useNavigate();
-
-  // Check if user is a team owner (has team_role of team_admin)
-  const isTeamOwner = profile?.team_role === 'team_admin';
 
   const handleSignOut = async () => {
     await signOut();
@@ -87,7 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   // Define tier hierarchy for comparison
-  const tierHierarchy = { free: 0, pro: 1, team: 2 };
+  const tierHierarchy = { free: 0, pro: 1 };
   const currentTierLevel = tierHierarchy[tier] || 0;
 
   // Build navigation items based on user's subscription tier and role
@@ -103,8 +92,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       
       return true;
     }),
-    // Add team owner items if applicable
-    ...(isTeamOwner && limits.hasTeamFeatures ? teamOwnerNavItems : []),
     // Add admin items if applicable
     ...(isAdmin ? adminNavItems : []),
   ];
