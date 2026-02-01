@@ -137,41 +137,6 @@ export type Database = {
         }
         Relationships: []
       }
-      license_purchases: {
-        Row: {
-          id: string
-          licenses_added: number
-          processed_at: string
-          processed_by: string
-          stripe_session_id: string
-          team_id: string
-        }
-        Insert: {
-          id?: string
-          licenses_added: number
-          processed_at?: string
-          processed_by: string
-          stripe_session_id: string
-          team_id: string
-        }
-        Update: {
-          id?: string
-          licenses_added?: number
-          processed_at?: string
-          processed_by?: string
-          stripe_session_id?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "license_purchases_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       players: {
         Row: {
           created_at: string
@@ -245,7 +210,6 @@ export type Database = {
           subscription_started_at: string | null
           subscription_tier: Database["public"]["Enums"]["subscription_tier"]
           team_id: string | null
-          team_role: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at: string | null
           updated_at: string
         }
@@ -261,7 +225,6 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
-          team_role?: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at?: string | null
           updated_at?: string
         }
@@ -277,19 +240,10 @@ export type Database = {
           subscription_started_at?: string | null
           subscription_tier?: Database["public"]["Enums"]["subscription_tier"]
           team_id?: string | null
-          team_role?: Database["public"]["Enums"]["team_role"] | null
           trial_ends_at?: string | null
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       promo_code_redemptions: {
         Row: {
@@ -601,83 +555,6 @@ export type Database = {
         }
         Relationships: []
       }
-      team_activity: {
-        Row: {
-          activity_type: string
-          created_at: string
-          description: string | null
-          entity_id: string | null
-          entity_name: string | null
-          entity_type: string
-          id: string
-          metadata: Json | null
-          team_id: string | null
-          user_id: string
-        }
-        Insert: {
-          activity_type: string
-          created_at?: string
-          description?: string | null
-          entity_id?: string | null
-          entity_name?: string | null
-          entity_type: string
-          id?: string
-          metadata?: Json | null
-          team_id?: string | null
-          user_id: string
-        }
-        Update: {
-          activity_type?: string
-          created_at?: string
-          description?: string | null
-          entity_id?: string | null
-          entity_name?: string | null
-          entity_type?: string
-          id?: string
-          metadata?: Json | null
-          team_id?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_activity_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      teams: {
-        Row: {
-          created_at: string
-          id: string
-          license_count: number
-          logo_url: string | null
-          name: string
-          owner_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          license_count?: number
-          logo_url?: string | null
-          name: string
-          owner_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          license_count?: number
-          logo_url?: string | null
-          name?: string
-          owner_id?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -826,21 +703,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_team_licenses: {
-        Args: {
-          p_licenses_to_add: number
-          p_processed_by: string
-          p_stripe_session_id: string
-          p_team_id: string
-        }
-        Returns: Json
-      }
       can_create_player: { Args: { _user_id: string }; Returns: boolean }
       can_create_report: { Args: { _user_id: string }; Returns: boolean }
-      can_manage_team_role: {
-        Args: { _member_id: string; _owner_id: string }
-        Returns: boolean
-      }
       cancel_subscription: { Args: { _user_id: string }; Returns: boolean }
       get_comparison_limit: { Args: { _user_id: string }; Returns: number }
       get_monthly_report_count: { Args: { _user_id: string }; Returns: number }
@@ -859,19 +723,6 @@ export type Database = {
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_in_trial: { Args: { _user_id: string }; Returns: boolean }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_team_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_team_admin_of_profile: {
-        Args: { _admin_id: string; _profile_team_id: string }
-        Returns: boolean
-      }
-      is_team_member: {
-        Args: { _team_id: string; _user_id: string }
-        Returns: boolean
-      }
-      is_team_owner_of_profile: {
-        Args: { _owner_id: string; _profile_team_id: string }
-        Returns: boolean
-      }
       redeem_promo_code:
         | { Args: { _code: string; _user_id: string }; Returns: Json }
         | { Args: { _code: string; _user_id: string }; Returns: Json }
@@ -903,7 +754,6 @@ export type Database = {
         | "winger"
         | "striker"
       subscription_tier: "free" | "pro" | "team" | "agency"
-      team_role: "scout" | "senior_scout" | "team_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1050,7 +900,6 @@ export const Constants = {
         "striker",
       ],
       subscription_tier: ["free", "pro", "team", "agency"],
-      team_role: ["scout", "senior_scout", "team_admin"],
     },
   },
 } as const
