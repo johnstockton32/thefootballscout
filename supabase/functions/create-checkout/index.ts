@@ -3,20 +3,16 @@ import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Stripe product/price mapping - Monthly and Annual
+// Stripe product/price mapping - Monthly and Annual (Pro tier only)
 const STRIPE_PRICES = {
   pro_monthly: "price_1SrEv2A04SaxzpjBDWUcr1r9", // £10/month
   pro_annual: "price_1SrGE1A04SaxzpjBO7ecPFzD", // £96/year (£8/month)
-  team_monthly: "price_1SrEvGA04SaxzpjBmrSMu7Nj", // £99/month
-  team_annual: "price_1SrGEJA04SaxzpjBD7xTzrrm", // £948/year (£79/month)
 };
 
 // Map tier keys to base tier names for profile updates
 const TIER_TO_BASE: Record<string, string> = {
   pro_monthly: "pro",
   pro_annual: "pro",
-  team_monthly: "team",
-  team_annual: "team",
 };
 
 const logStep = (step: string, details?: any) => {

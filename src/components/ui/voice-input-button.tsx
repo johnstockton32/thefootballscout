@@ -42,7 +42,7 @@ export function VoiceInputButton({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Voice input requires Pro or Team plan</p>
+            <p>Voice input requires Pro plan</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

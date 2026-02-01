@@ -7,8 +7,6 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 const PRODUCT_TO_TIER: Record<string, string> = {
   "prod_Tosg17axMRBxhO": "pro",     // Pro Monthly
   "prod_Tou2sHCFkvlj2D": "pro",     // Pro Annual
-  "prod_TosgIYUQYqmIWk": "team",    // Team Monthly
-  "prod_Tou2uJNSTQ3yeF": "team",    // Team Annual
 };
 
 const logStep = (step: string, details?: any) => {
