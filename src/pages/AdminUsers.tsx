@@ -85,9 +85,7 @@ export default function AdminUsers() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!isSuperAdmin && profile?.team_id) {
-        profilesQuery = profilesQuery.eq('team_id', profile.team_id);
-      } else if (!isSuperAdmin) {
+      if (!isSuperAdmin) {
         setUsers([]);
         setFilteredUsers([]);
         setIsLoading(false);
@@ -154,7 +152,7 @@ export default function AdminUsers() {
         .update({
           full_name: editFullName,
           organization: editOrganization,
-          subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team',
+          subscription_tier: editSubscriptionTier as 'free' | 'pro',
         })
         .eq('id', editingUser.id);
 
@@ -194,7 +192,7 @@ export default function AdminUsers() {
       // Update local state
       setUsers(prev => prev.map(u => 
         u.id === editingUser.id 
-          ? { ...u, full_name: editFullName, organization: editOrganization, subscription_tier: editSubscriptionTier as 'free' | 'pro' | 'team', role: editRole }
+          ? { ...u, full_name: editFullName, organization: editOrganization, subscription_tier: editSubscriptionTier as 'free' | 'pro', role: editRole }
           : u
       ));
 
@@ -258,10 +256,10 @@ export default function AdminUsers() {
             <div className="min-w-0">
               <h1 className="text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2">
                 <Users className="w-6 h-6 md:w-7 md:h-7 text-primary shrink-0" />
-                <span className="truncate">{isSuperAdmin ? 'User Management' : 'Team Users'}</span>
+                <span className="truncate">{isSuperAdmin ? 'User Management' : 'Users'}</span>
               </h1>
               <p className="text-sm text-muted-foreground mt-1 truncate">
-                {isSuperAdmin ? 'Manage all platform users' : 'Manage your team members'}
+                {isSuperAdmin ? 'Manage all platform users' : 'View user information'}
               </p>
             </div>
           </div>
@@ -289,7 +287,6 @@ export default function AdminUsers() {
                     <SelectItem value="all">All Tiers</SelectItem>
                     <SelectItem value="free">Free</SelectItem>
                     <SelectItem value="pro">Pro</SelectItem>
-                    <SelectItem value="team">Team</SelectItem>
                   </SelectContent>
                 </Select>
                 <Select value={roleFilter} onValueChange={setRoleFilter}>

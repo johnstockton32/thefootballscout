@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Users, FileText, UserCheck, ShieldCheck, TrendingUp, Download, Crown, Tag, Database } from 'lucide-react';
+import { Users, FileText, UserCheck, ShieldCheck, TrendingUp, Download, Tag, Database } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { exportPlayersCSV, exportReportsCSV } from '@/lib/export';
 import { handleError } from '@/lib/errorUtils';
@@ -55,15 +55,13 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      // Fetch users with their roles - scoped to team for non-super admins
+      // Fetch users with their roles - super admins see all, regular admins see only their own data
       let profilesQuery = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!isSuperAdmin && profile?.team_id) {
-        profilesQuery = profilesQuery.eq('team_id', profile.team_id);
-      } else if (!isSuperAdmin) {
+      if (!isSuperAdmin) {
         profilesQuery = profilesQuery.eq('id', profile?.id || '');
       }
 
@@ -88,22 +86,11 @@ export default function AdminDashboard() {
 
       setUsers(usersWithRoles);
 
-      // Fetch stats - scoped to team for non-super admins
+      // Fetch stats - super admins see all, regular admins see only their own data
       let playersCountQuery = supabase.from('players').select('*', { count: 'exact', head: true });
       let reportsCountQuery = supabase.from('scouting_reports').select('*', { count: 'exact', head: true });
 
-      if (!isSuperAdmin && profile?.team_id) {
-        const { data: teamProfiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('team_id', profile.team_id);
-        
-        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
-        if (teamScoutIds.length > 0) {
-          playersCountQuery = playersCountQuery.in('scout_id', teamScoutIds);
-          reportsCountQuery = reportsCountQuery.in('scout_id', teamScoutIds);
-        }
-      } else if (!isSuperAdmin) {
+      if (!isSuperAdmin) {
         playersCountQuery = playersCountQuery.eq('scout_id', profile?.id || '');
         reportsCountQuery = reportsCountQuery.eq('scout_id', profile?.id || '');
       }
@@ -120,17 +107,7 @@ export default function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', startOfMonth.toISOString());
 
-      if (!isSuperAdmin && profile?.team_id) {
-        const { data: teamProfiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('team_id', profile.team_id);
-        
-        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
-        if (teamScoutIds.length > 0) {
-          monthlyReportsQuery = monthlyReportsQuery.in('scout_id', teamScoutIds);
-        }
-      } else if (!isSuperAdmin) {
+      if (!isSuperAdmin) {
         monthlyReportsQuery = monthlyReportsQuery.eq('scout_id', profile?.id || '');
       }
 
@@ -225,25 +202,25 @@ export default function AdminDashboard() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">
-              {isSuperAdmin ? 'Platform Admin Dashboard' : 'Team Admin Dashboard'}
+              {isSuperAdmin ? 'Platform Admin Dashboard' : 'Admin Dashboard'}
             </h1>
             <p className="text-muted-foreground mt-1">
               {isSuperAdmin 
                 ? 'Full platform control - manage users, data, and promo codes' 
-                : 'Manage your team members and view team analytics'}
+                : 'View your analytics and data'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="default" asChild>
               <Link to="/admin/users">
                 <Users className="w-4 h-4 mr-2" />
-                {isSuperAdmin ? 'All Users' : 'Team Members'}
+                {isSuperAdmin ? 'All Users' : 'Users'}
               </Link>
             </Button>
             <Button variant="default" asChild>
               <Link to="/admin/data">
                 <Database className="w-4 h-4 mr-2" />
-                {isSuperAdmin ? 'All Data' : 'Team Data'}
+                {isSuperAdmin ? 'All Data' : 'Data'}
               </Link>
             </Button>
             {isSuperAdmin && (
@@ -252,12 +229,6 @@ export default function AdminDashboard() {
                   <Link to="/admin/promo-codes">
                     <Tag className="w-4 h-4 mr-2" />
                     Promo Codes
-                  </Link>
-                </Button>
-                <Button variant="default" asChild>
-                  <Link to="/admin/teams">
-                    <Crown className="w-4 h-4 mr-2" />
-                    Teams
                   </Link>
                 </Button>
                 <Button variant="outline" onClick={handleExportPlayers}>
@@ -282,7 +253,7 @@ export default function AdminDashboard() {
                   <Users className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Users' : 'Team Members'}</p>
+                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Users' : 'Users'}</p>
                   <p className="text-2xl font-bold">{stats.totalUsers}</p>
                 </div>
               </div>
@@ -296,7 +267,7 @@ export default function AdminDashboard() {
                   <UserCheck className="w-6 h-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Players' : 'Team Players'}</p>
+                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Players' : 'Players'}</p>
                   <p className="text-2xl font-bold">{stats.totalPlayers}</p>
                 </div>
               </div>
@@ -310,7 +281,7 @@ export default function AdminDashboard() {
                   <FileText className="w-6 h-6 text-secondary-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Reports' : 'Team Reports'}</p>
+                  <p className="text-sm text-muted-foreground">{isSuperAdmin ? 'Total Reports' : 'Reports'}</p>
                   <p className="text-2xl font-bold">{stats.totalReports}</p>
                 </div>
               </div>
@@ -332,13 +303,12 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-
         {/* Users Table */}
         <Card className="card-glass">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Users className="w-5 h-5" />
-              {isSuperAdmin ? 'User Management' : 'Team Members'}
+              {isSuperAdmin ? 'User Management' : 'Users'}
             </CardTitle>
           </CardHeader>
           <CardContent>
