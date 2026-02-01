@@ -11,17 +11,15 @@ export interface Profile {
   gdpr_consent: boolean;
   gdpr_consent_date: string | null;
   photo_url: string | null;
-  team_id: string | null;
-  team_role: 'scout' | 'senior_scout' | 'team_admin' | null;
-  subscription_tier: 'free' | 'pro' | 'team' | 'agency';
+  subscription_tier: 'free' | 'pro';
+  trial_ends_at: string | null;
+  subscription_started_at: string | null;
 }
 
 export interface ProfileUpdate {
   full_name?: string | null;
   organization?: string | null;
   photo_url?: string | null;
-  team_id?: string | null;
-  team_role?: 'scout' | 'senior_scout' | 'team_admin' | null;
 }
 
 export type AppRole = 'scout' | 'admin';

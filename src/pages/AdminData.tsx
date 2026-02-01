@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { Users, ShieldCheck, Trash2, ArrowLeft, Search, FileText, Crown, Eye, MoreHorizontal } from 'lucide-react';
+import { Users, ShieldCheck, Trash2, ArrowLeft, Search, FileText, Eye, MoreHorizontal } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
@@ -38,21 +38,10 @@ interface Report {
   created_at: string;
 }
 
-interface Team {
-  id: string;
-  name: string;
-  owner_id: string;
-  owner_name?: string;
-  owner_email?: string;
-  member_count: number;
-  created_at: string;
-}
-
 export default function AdminData() {
-  const { isAdmin, isSuperAdmin, profile } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const [players, setPlayers] = useState<Player[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('players');
@@ -71,30 +60,10 @@ export default function AdminData() {
 
       const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-      let playersQuery = supabase
+      const playersQuery = supabase
         .from('players')
         .select('*')
         .order('created_at', { ascending: false });
-
-      if (!isSuperAdmin && profile?.team_id) {
-        const { data: teamProfiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('team_id', profile.team_id);
-        
-        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
-        if (teamScoutIds.length > 0) {
-          playersQuery = playersQuery.in('scout_id', teamScoutIds);
-        } else {
-          setPlayers([]);
-          setReports([]);
-          setTeams([]);
-          setIsLoading(false);
-          return;
-        }
-      } else if (!isSuperAdmin) {
-        playersQuery = playersQuery.eq('scout_id', profile?.id || '');
-      }
 
       const { data: playersData, error: playersError } = await playersQuery;
 
@@ -110,24 +79,10 @@ export default function AdminData() {
       });
       setPlayers(enrichedPlayers);
 
-      let reportsQuery = supabase
+      const reportsQuery = supabase
         .from('scouting_reports')
         .select('*, players(full_name)')
         .order('created_at', { ascending: false });
-
-      if (!isSuperAdmin && profile?.team_id) {
-        const { data: teamProfiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('team_id', profile.team_id);
-        
-        const teamScoutIds = teamProfiles?.map(p => p.id) || [];
-        if (teamScoutIds.length > 0) {
-          reportsQuery = reportsQuery.in('scout_id', teamScoutIds);
-        }
-      } else if (!isSuperAdmin) {
-        reportsQuery = reportsQuery.eq('scout_id', profile?.id || '');
-      }
 
       const { data: reportsData, error: reportsError } = await reportsQuery;
 
@@ -148,41 +103,6 @@ export default function AdminData() {
         };
       });
       setReports(enrichedReports);
-
-      let teamsData: any[] = [];
-      if (isSuperAdmin) {
-        const { data, error: teamsError } = await supabase
-          .from('teams')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (teamsError) throw teamsError;
-        teamsData = data || [];
-      } else if (profile?.team_id) {
-        const { data, error: teamsError } = await supabase
-          .from('teams')
-          .select('*')
-          .eq('id', profile.team_id);
-        
-        if (teamsError) throw teamsError;
-        teamsData = data || [];
-      }
-
-      const { data: teamMembers } = await supabase
-        .from('profiles')
-        .select('team_id');
-
-      const enrichedTeams: Team[] = (teamsData || []).map(team => {
-        const owner = profileMap.get(team.owner_id);
-        const memberCount = teamMembers?.filter(m => m.team_id === team.id).length || 0;
-        return {
-          ...team,
-          owner_name: owner?.full_name,
-          owner_email: owner?.email,
-          member_count: memberCount,
-        };
-      });
-      setTeams(enrichedTeams);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -220,24 +140,6 @@ export default function AdminData() {
     }
   };
 
-  const deleteTeam = async (id: string) => {
-    try {
-      await supabase
-        .from('profiles')
-        .update({ team_id: null, team_role: null })
-        .eq('team_id', id);
-      
-      const { error } = await supabase.from('teams').delete().eq('id', id);
-      if (error) throw error;
-
-      setTeams(prev => prev.filter(t => t.id !== id));
-      toast.success('Team deleted');
-    } catch (error) {
-      console.error('Error deleting team:', error);
-      toast.error('Failed to delete team');
-    }
-  };
-
   const filteredPlayers = players.filter(p =>
     p.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     p.current_club?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -247,11 +149,6 @@ export default function AdminData() {
   const filteredReports = reports.filter(r =>
     r.player_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     r.scout_name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredTeams = teams.filter(t =>
-    t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    t.owner_name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!isAdmin) {
@@ -279,10 +176,10 @@ export default function AdminData() {
           <div className="min-w-0">
             <h1 className="text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2">
               <FileText className="w-6 h-6 md:w-7 md:h-7 text-primary shrink-0" />
-              <span className="truncate">{isSuperAdmin ? 'Data Management' : 'Team Data'}</span>
+              <span className="truncate">Data Management</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-1 truncate">
-              {isSuperAdmin ? 'Manage players, reports, and teams' : 'Manage your team\'s data'}
+              Manage players and reports
             </p>
           </div>
         </div>
@@ -304,7 +201,7 @@ export default function AdminData() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="players" className="gap-1 md:gap-2 text-xs md:text-sm">
               <Users className="w-3 h-3 md:w-4 md:h-4" />
               <span className="hidden sm:inline">Players</span> ({players.length})
@@ -312,10 +209,6 @@ export default function AdminData() {
             <TabsTrigger value="reports" className="gap-1 md:gap-2 text-xs md:text-sm">
               <FileText className="w-3 h-3 md:w-4 md:h-4" />
               <span className="hidden sm:inline">Reports</span> ({reports.length})
-            </TabsTrigger>
-            <TabsTrigger value="teams" className="gap-1 md:gap-2 text-xs md:text-sm">
-              <Crown className="w-3 h-3 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Teams</span> ({teams.length})
             </TabsTrigger>
           </TabsList>
 
@@ -469,7 +362,7 @@ export default function AdminData() {
                                 <AlertDialogHeader>
                                   <AlertDialogTitle>Delete Report</AlertDialogTitle>
                                   <AlertDialogDescription>
-                                    Are you sure you want to delete this scouting report for {report.player_name}?
+                                    Are you sure you want to delete this scouting report?
                                   </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
@@ -489,71 +382,6 @@ export default function AdminData() {
                         Showing first 50 of {filteredReports.length} reports. Use search to filter.
                       </p>
                     )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Teams Tab */}
-          <TabsContent value="teams">
-            <Card className="card-glass">
-              <CardContent className="pt-4 md:pt-6">
-                {isLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />
-                    ))}
-                  </div>
-                ) : filteredTeams.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Crown className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No teams found.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredTeams.map((team) => (
-                      <div key={team.id} className="flex items-center justify-between p-3 md:p-4 bg-muted/30 rounded-lg border border-border/50">
-                        <div className="flex-1 min-w-0 pr-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-medium truncate">{team.name}</p>
-                            <Badge variant="secondary" className="text-xs">
-                              {team.member_count} members
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            Owner: {team.owner_name || 'Unknown'}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Created {format(new Date(team.created_at), 'MMM d, yyyy')}
-                          </p>
-                        </div>
-                        
-                        {isSuperAdmin && (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive shrink-0">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Team</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete {team.name}? All {team.member_count} members will be removed from the team.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteTeam(team.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                  Delete Team
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                      </div>
-                    ))}
                   </div>
                 )}
               </CardContent>

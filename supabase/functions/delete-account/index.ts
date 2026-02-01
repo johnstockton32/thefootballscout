@@ -51,7 +51,6 @@ Deno.serve(async (req) => {
       { table: 'watchlist_players', column: 'watchlist_id', subquery: true },
       { table: 'watchlists', column: 'user_id' },
       { table: 'push_subscriptions', column: 'user_id' },
-      { table: 'team_activity', column: 'user_id' },
       { table: 'report_templates', column: 'user_id' },
       { table: 'custom_attribute_weights', column: 'user_id' },
       { table: 'branding_settings', column: 'user_id' },
@@ -89,34 +88,6 @@ Deno.serve(async (req) => {
         console.log(`Warning: Could not delete from ${step.table}: ${error.message}`);
       } else {
         console.log(`Deleted from ${step.table}`);
-      }
-    }
-
-    // Check if user owns a team and handle team deletion
-    const { data: ownedTeams } = await supabaseAdmin
-      .from('teams')
-      .select('id')
-      .eq('owner_id', userId);
-
-    if (ownedTeams && ownedTeams.length > 0) {
-      for (const team of ownedTeams) {
-        // Remove team members first
-        await supabaseAdmin
-          .from('profiles')
-          .update({ team_id: null, team_role: null })
-          .eq('team_id', team.id);
-        
-        // Delete team activity
-        await supabaseAdmin
-          .from('team_activity')
-          .delete()
-          .eq('team_id', team.id);
-        
-        // Delete the team
-        await supabaseAdmin
-          .from('teams')
-          .delete()
-          .eq('id', team.id);
       }
     }
 
