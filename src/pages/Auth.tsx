@@ -20,7 +20,6 @@ const authSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
   fullName: z.string().optional(),
   organization: z.string().optional(),
-  teamName: z.string().optional(),
   promoCode: z.string().max(50, 'Promo code is too long').optional(),
 });
 
@@ -29,7 +28,7 @@ const resetSchema = z.object({
 });
 
 type AuthMode = 'signIn' | 'signUp' | 'resetPassword';
-type SubscriptionTier = 'free' | 'pro' | 'team';
+type SubscriptionTier = 'free' | 'pro';
 
 const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; description: string; price: string; features: string[] }[] = [
   {
@@ -48,14 +47,6 @@ const tierOptions: { tier: SubscriptionTier; label: string; icon: typeof Crown; 
     price: '£10/month',
     features: ['Unlimited players', 'Unlimited reports', '5-player comparison'],
   },
-  {
-    tier: 'team',
-    label: 'Team',
-    icon: Users,
-    description: 'For professional scouting teams',
-    price: '£99/month',
-    features: ['Everything in Pro', 'Unlimited team members', 'White-label reports'],
-  },
 ];
 
 export default function Auth() {
@@ -69,7 +60,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [organization, setOrganization] = useState('');
-  const [teamName, setTeamName] = useState('');
+  
   const [promoCode, setPromoCode] = useState('');
   const [showPromoCode, setShowPromoCode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -91,7 +82,7 @@ export default function Auth() {
       setMode(modeParam);
     }
     
-    if (tierParam && ['free', 'pro', 'team'].includes(tierParam)) {
+    if (tierParam && ['free', 'pro'].includes(tierParam)) {
       setSelectedTier(tierParam as SubscriptionTier);
       setMode('signUp');
     }
@@ -159,14 +150,7 @@ export default function Auth() {
           password, 
           fullName: mode === 'signUp' ? fullName : undefined,
           organization: mode === 'signUp' ? organization : undefined,
-          teamName: mode === 'signUp' && selectedTier === 'team' ? teamName : undefined,
         });
-        
-        // Additional validation for team signup - require team name
-        if (mode === 'signUp' && selectedTier === 'team' && !teamName.trim()) {
-          setErrors({ teamName: 'Team name is required for Team plan' });
-          return false;
-        }
       }
       setErrors({});
       return true;
@@ -284,7 +268,7 @@ export default function Auth() {
           }
 
           // For paid tiers, redirect to Stripe checkout (payment required first)
-          if (!promoAppliedTier && (selectedTier === 'pro' || selectedTier === 'team')) {
+          if (!promoAppliedTier && selectedTier === 'pro') {
             try {
               toast.success('Account created! Redirecting to payment...');
               
@@ -439,29 +423,6 @@ export default function Auth() {
                         <p className="text-xs text-destructive">{errors.fullName}</p>
                       )}
                     </div>
-                    
-                    {/* Organization Field - Only for Team tier (optional) */}
-                    {selectedTier === 'team' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="organization" className="text-sm font-medium">
-                          Organization <span className="text-muted-foreground text-xs">(optional)</span>
-                        </Label>
-                        <div className="relative">
-                          <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="organization"
-                            type="text"
-                            placeholder="Your club or agency"
-                            value={organization}
-                            onChange={(e) => setOrganization(e.target.value)}
-                            className="pl-10 bg-input border-border focus:border-primary"
-                          />
-                        </div>
-                        {errors.organization && (
-                          <p className="text-xs text-destructive">{errors.organization}</p>
-                        )}
-                      </div>
-                    )}
                   </>
                 )}
 
@@ -577,32 +538,6 @@ export default function Auth() {
                         ))}
                       </div>
                     </div>
-                    
-                    {/* Team Name Field - For Team tier */}
-                    {selectedTier === 'team' && (
-                      <div className="space-y-2">
-                        <Label htmlFor="teamName" className="text-sm font-medium">
-                          Team Name
-                        </Label>
-                        <div className="relative">
-                          <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="teamName"
-                            type="text"
-                            placeholder="Your Scouting Organization"
-                            value={teamName}
-                            onChange={(e) => setTeamName(e.target.value)}
-                            className="pl-10 bg-input border-border focus:border-primary"
-                          />
-                        </div>
-                        {errors.teamName && (
-                          <p className="text-xs text-destructive">{errors.teamName}</p>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          You'll be the admin of this team and can invite other scouts.
-                        </p>
-                      </div>
-                    )}
 
                     {/* Promo Code Field */}
                     <div className="space-y-2">

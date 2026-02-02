@@ -48,27 +48,15 @@ Deno.serve(async (req) => {
       },
     });
 
-    // Check if requesting user is a team owner or team admin
-    const { data: userProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("team_id, team_role")
-      .eq("id", requestingUserId)
-      .single();
+    // Check if requesting user is a super admin
+    const { data: isSuperAdmin } = await supabaseAdmin.rpc('is_super_admin', { 
+      _user_id: requestingUserId 
+    });
 
-    // Also check if user owns a team
-    const { data: ownedTeam } = await supabaseAdmin
-      .from("teams")
-      .select("id")
-      .eq("owner_id", requestingUserId)
-      .maybeSingle();
-
-    const isTeamAdmin = userProfile?.team_role === "team_admin";
-    const isTeamOwner = !!ownedTeam;
-
-    if (!isTeamAdmin && !isTeamOwner) {
-      console.log("User is not a team owner or team admin:", requestingUserId);
+    if (!isSuperAdmin) {
+      console.log("User is not a super admin:", requestingUserId);
       return new Response(
-        JSON.stringify({ error: "Unauthorized: Team admin access required" }),
+        JSON.stringify({ error: "Unauthorized: Super admin access required" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -111,10 +99,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // SECURITY: Verify target user is in the same team as requester
+    // Verify target user exists
     const { data: targetProfile } = await supabaseAdmin
       .from("profiles")
-      .select("team_id")
+      .select("id")
       .eq("id", userId)
       .maybeSingle();
 
@@ -123,28 +111,6 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "User not found" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
-    }
-
-    // Team owners can only update passwords for their own team members
-    if (isTeamOwner && ownedTeam) {
-      if (targetProfile.team_id !== ownedTeam.id) {
-        console.log("Team owner attempted to update password for user not in their team");
-        return new Response(
-          JSON.stringify({ error: "You can only update passwords for members of your team" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
-
-    // Team admins can only update passwords for users in the same team
-    if (isTeamAdmin && !isTeamOwner) {
-      if (targetProfile.team_id !== userProfile?.team_id) {
-        console.log("Team admin attempted to update password for user not in their team");
-        return new Response(
-          JSON.stringify({ error: "You can only update passwords for members of your team" }),
-          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
     }
 
     console.log("Updating password for user:", userId);
