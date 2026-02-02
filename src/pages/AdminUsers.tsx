@@ -24,7 +24,6 @@ interface UserWithDetails {
   organization: string | null;
   created_at: string;
   subscription_tier: string;
-  team_id: string | null;
   role: 'scout' | 'admin';
   player_count: number;
   report_count: number;
@@ -480,9 +479,8 @@ export default function AdminUsers() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="free">Free</SelectItem>
+              <SelectItem value="free">Free</SelectItem>
                   <SelectItem value="pro">Pro</SelectItem>
-                  <SelectItem value="team">Team</SelectItem>
                 </SelectContent>
               </Select>
             </div>

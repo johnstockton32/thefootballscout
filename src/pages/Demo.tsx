@@ -47,7 +47,6 @@ import {
   Brain,
   PieChart,
   Activity,
-  UsersRound,
   Bell,
   Settings,
   LogOut,
@@ -687,120 +686,6 @@ function DemoAnalytics() {
   );
 }
 
-// Demo Team Features Component
-function DemoTeamFeatures() {
-  const teamMembers = [
-    { name: 'John Smith', role: 'Team Admin', reports: 45, avatar: 'JS' },
-    { name: 'Sarah Johnson', role: 'Senior Scout', reports: 32, avatar: 'SJ' },
-    { name: 'Mike Wilson', role: 'Scout', reports: 28, avatar: 'MW' },
-    { name: 'Emma Davis', role: 'Scout', reports: 23, avatar: 'ED' },
-  ];
-
-  const recentActivity = [
-    { user: 'Sarah Johnson', action: 'submitted a report on', target: 'Marcus Johnson', time: '2 hours ago' },
-    { user: 'Mike Wilson', action: 'added a new player', target: 'Lucas Hernandez', time: '4 hours ago' },
-    { user: 'Emma Davis', action: 'updated', target: 'Kenji Tanaka profile', time: '6 hours ago' },
-  ];
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-          <UsersRound className="w-6 h-6 text-purple-500" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold">Team Collaboration</h2>
-          <p className="text-muted-foreground">Work together with your scouting team</p>
-        </div>
-      </div>
-
-      {/* Team Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="card-glass border-l-4 border-l-purple-500">
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold">4</p>
-            <p className="text-sm text-muted-foreground">Team Members</p>
-          </CardContent>
-        </Card>
-        <Card className="card-glass border-l-4 border-l-primary">
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold">128</p>
-            <p className="text-sm text-muted-foreground">Combined Reports</p>
-          </CardContent>
-        </Card>
-        <Card className="card-glass border-l-4 border-l-amber-500">
-          <CardContent className="p-4 text-center">
-            <p className="text-3xl font-bold">47</p>
-            <p className="text-sm text-muted-foreground">Shared Players</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Team Members & Activity */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card className="card-glass">
-          <CardHeader>
-            <CardTitle className="text-lg">Team Members</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {teamMembers.map((member, i) => (
-              <motion.div
-                key={member.name}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-border">
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">{member.avatar}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="font-medium">{member.name}</p>
-                    <p className="text-xs text-muted-foreground">{member.role}</p>
-                  </div>
-                </div>
-                <Badge variant="secondary">{member.reports} reports</Badge>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="card-glass">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5 text-primary" />
-              Team Feed
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivity.map((activity, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
-                className="flex items-start gap-3 p-3 rounded-lg bg-muted/30"
-              >
-                <div className="w-2 h-2 rounded-full bg-primary mt-2 shrink-0" />
-                <div>
-                  <p className="text-sm">
-                    <span className="font-medium">{activity.user}</span>{' '}
-                    <span className="text-muted-foreground">{activity.action}</span>{' '}
-                    <span className="font-medium text-primary">{activity.target}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">{activity.time}</p>
-                </div>
-              </motion.div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
 export default function Demo() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedPlayer, setSelectedPlayer] = useState<DemoPlayer | null>(null);
@@ -822,7 +707,6 @@ export default function Demo() {
     { id: 'compare', label: 'Compare', icon: GitCompare },
     { id: 'discovery', label: 'AI Discovery', icon: Sparkles },
     { id: 'analytics', label: 'Analytics', icon: PieChart },
-    { id: 'team', label: 'Team', icon: UsersRound },
   ];
 
   return (
@@ -1149,8 +1033,6 @@ export default function Demo() {
                   {activeTab === 'discovery' && <DemoAIDiscovery />}
                   
                   {activeTab === 'analytics' && <DemoAnalytics />}
-                  
-                  {activeTab === 'team' && <DemoTeamFeatures />}
                 </motion.div>
               </AnimatePresence>
             </CardContent>
