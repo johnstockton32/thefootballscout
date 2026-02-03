@@ -7,6 +7,7 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 const PRODUCT_TO_TIER: Record<string, string> = {
   "prod_Tosg17axMRBxhO": "pro",     // Pro Monthly
   "prod_Tou2sHCFkvlj2D": "pro",     // Pro Annual
+  "prod_TosgIYUQYqmIWk": "pro",     // Pro (additional product)
 };
 
 const logStep = (step: string, details?: any) => {
@@ -101,13 +102,14 @@ serve(async (req) => {
       logStep("Active subscription found", { subscriptionId, endDate: subscriptionEnd });
       
       const productId = subscription.items.data[0]?.price?.product as string;
-      tier = PRODUCT_TO_TIER[productId] || "free";
+      tier = PRODUCT_TO_TIER[productId] || "pro"; // Default to pro if product exists but not mapped
       logStep("Determined subscription tier", { productId, tier });
       
       // Update profile with active subscription tier - use safe date handling
       try {
-        const updateData: { subscription_tier: string; subscription_started_at?: string } = { 
-          subscription_tier: tier 
+        const updateData: { subscription_tier: string; subscription_started_at?: string; trial_ends_at?: null } = { 
+          subscription_tier: tier,
+          trial_ends_at: null // Clear trial when paid subscription is active
         };
         
         // Only set subscription_started_at if we have a valid date
@@ -137,7 +139,31 @@ serve(async (req) => {
       });
       logStep("Canceled subscriptions fetched", { count: canceledSubs.data.length });
       
-      if (canceledSubs.data.length > 0) {
+      // Check for past_due subscriptions (payment failed but still in grace period)
+      const pastDueSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "past_due",
+        limit: 1,
+      });
+      logStep("Past due subscriptions fetched", { count: pastDueSubs.data.length });
+
+      if (pastDueSubs.data.length > 0) {
+        const pastDueSub = pastDueSubs.data[0];
+        subscriptionEnd = safeTimestampToISO(pastDueSub.current_period_end);
+        const productId = pastDueSub.items.data[0]?.price?.product as string;
+        tier = PRODUCT_TO_TIER[productId] || "pro";
+        logStep("Past due subscription found - payment failed but still active", { 
+          subscriptionId: pastDueSub.id, 
+          endDate: subscriptionEnd, 
+          tier 
+        });
+        
+        // Keep pro tier during grace period but note the payment issue
+        await supabaseClient
+          .from('profiles')
+          .update({ subscription_tier: tier })
+          .eq('id', user.id);
+      } else if (canceledSubs.data.length > 0) {
         const canceledSub = canceledSubs.data[0];
         const endTimestamp = canceledSub.current_period_end;
         
@@ -145,23 +171,51 @@ serve(async (req) => {
           // Still has access until end of period
           subscriptionEnd = safeTimestampToISO(endTimestamp);
           const productId = canceledSub.items.data[0]?.price?.product as string;
-          tier = PRODUCT_TO_TIER[productId] || "free";
+          tier = PRODUCT_TO_TIER[productId] || "pro";
           logStep("Canceled subscription still active until", { endDate: subscriptionEnd, tier });
-        } else {
-          logStep("Canceled subscription expired, updating to free");
-          // Update to free tier
+          
           await supabaseClient
             .from('profiles')
-            .update({ subscription_tier: 'free' })
+            .update({ subscription_tier: tier })
+            .eq('id', user.id);
+        } else {
+          logStep("Canceled subscription expired, downgrading to free");
+          // Downgrade to free tier - subscription ended
+          await supabaseClient
+            .from('profiles')
+            .update({ 
+              subscription_tier: 'free',
+              subscription_started_at: null 
+            })
             .eq('id', user.id);
         }
       } else {
-        logStep("No canceled subscriptions, updating to free");
-        // Update to free tier
-        await supabaseClient
+        // Check if user had a trial that expired
+        const { data: profile } = await supabaseClient
           .from('profiles')
-          .update({ subscription_tier: 'free' })
-          .eq('id', user.id);
+          .select('trial_ends_at, subscription_tier')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile?.trial_ends_at && new Date(profile.trial_ends_at) < new Date()) {
+          logStep("Trial expired without subscription, downgrading to free");
+          await supabaseClient
+            .from('profiles')
+            .update({ 
+              subscription_tier: 'free',
+              trial_ends_at: null 
+            })
+            .eq('id', user.id);
+        } else if (profile?.subscription_tier !== 'free') {
+          logStep("No active subscription found, downgrading to free");
+          await supabaseClient
+            .from('profiles')
+            .update({ 
+              subscription_tier: 'free',
+              subscription_started_at: null 
+            })
+            .eq('id', user.id);
+        }
       }
     }
 
