@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { SubscriptionGate } from '@/components/SubscriptionGate';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { 
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -42,6 +44,7 @@ const RECOMMENDATION_COLORS = {
 
 export default function ReportsAnalytics() {
   const { user } = useAuth();
+  const { limits } = useSubscription();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
@@ -55,10 +58,24 @@ export default function ReportsAnalytics() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && limits.hasAdvancedAnalytics) {
       fetchAnalyticsData();
     }
-  }, [user]);
+  }, [user, limits.hasAdvancedAnalytics]);
+
+  // Check for Pro tier access - after hooks
+  if (!limits.hasAdvancedAnalytics) {
+    return (
+      <SubscriptionGate
+        requiredTier="pro"
+        feature="hasAdvancedAnalytics"
+        featureName="Advanced Analytics"
+        featureDescription="Get detailed insights into your scouting activity with charts, trends, and performance metrics. Upgrade to Pro to unlock advanced analytics."
+      >
+        <div />
+      </SubscriptionGate>
+    );
+  }
 
   const fetchAnalyticsData = async () => {
     try {

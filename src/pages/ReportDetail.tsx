@@ -108,7 +108,7 @@ export default function ReportDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { tier } = useSubscription();
+  const { tier, limits } = useSubscription();
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
@@ -298,16 +298,28 @@ export default function ReportDetail() {
               <span className="hidden xs:inline">Edit</span>
               <span className="xs:hidden">Edit</span>
             </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleExportPDF} 
-              disabled={isExporting} 
-              className="flex-1 sm:flex-none text-sm cursor-pointer"
-            >
-              <Download className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">{isExporting ? 'Exporting...' : 'Export PDF'}</span>
-              <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
-            </Button>
+            {limits.hasPdfExport ? (
+              <Button 
+                variant="outline" 
+                onClick={handleExportPDF} 
+                disabled={isExporting} 
+                className="flex-1 sm:flex-none text-sm cursor-pointer"
+              >
+                <Download className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">{isExporting ? 'Exporting...' : 'Export PDF'}</span>
+                <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
+              </Button>
+            ) : (
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/pricing')}
+                className="flex-1 sm:flex-none text-sm cursor-pointer"
+              >
+                <Lock className="w-4 h-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">PDF Export (Pro)</span>
+                <span className="xs:hidden">Pro</span>
+              </Button>
+            )}
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline" size="icon" className="shrink-0 cursor-pointer">
