@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAIInsights, InsightType } from '@/hooks/useAIInsights';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { 
   Sparkles, 
   TrendingUp, 
@@ -12,7 +14,9 @@ import {
   FileText,
   Save,
   RefreshCw,
-  Loader2
+  Loader2,
+  Lock,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,9 +42,33 @@ const insightTypes: { type: InsightType; label: string; icon: React.ReactNode; d
 
 export function AIInsightsPanel({ player, reports, className }: AIInsightsPanelProps) {
   const { user } = useAuth();
+  const { limits } = useSubscription();
   const { isLoading, insight, generateInsight, saveInsight, clearInsight } = useAIInsights();
   const [selectedType, setSelectedType] = useState<InsightType>('summary');
   const [lastType, setLastType] = useState<InsightType | null>(null);
+
+  // Check if user has access to AI Insights
+  if (!limits.hasAIInsights) {
+    return (
+      <Card className={cn("card-glass", className)}>
+        <CardContent className="pt-8 pb-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-primary" />
+          </div>
+          <h3 className="text-xl font-bold mb-2">AI Insights</h3>
+          <p className="text-muted-foreground mb-6">
+            Get AI-powered player analysis, development plans, and transfer insights with Pro.
+          </p>
+          <Button variant="hero" asChild>
+            <Link to="/pricing">
+              <Crown className="w-4 h-4 mr-2" />
+              Upgrade to Pro
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const handleGenerate = async () => {
     setLastType(selectedType);
