@@ -174,6 +174,9 @@ ${reportsContext}
 Write a 3-4 sentence summary in plain text covering the overall assessment and standout qualities, any key concern or area to monitor, and your recommendation (sign, monitor, or pass). Use plain text only, no formatting.`;
     }
 
+    console.log("Sending request to AI gateway with insight type:", insightType);
+    console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
+    
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -181,14 +184,17 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 1000,
+        max_tokens: 1500,
+        temperature: 0.7,
       }),
     });
+    
+    console.log("AI gateway response status:", response.status);
 
     if (!response.ok) {
       if (response.status === 429) {

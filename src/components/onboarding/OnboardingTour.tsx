@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -16,7 +15,7 @@ import {
   Rocket
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { tourSteps, TourStep } from '@/hooks/useOnboardingTour';
+import { TourStep } from '@/hooks/useOnboardingTour';
 
 interface OnboardingTourProps {
   isOpen: boolean;
@@ -79,8 +78,11 @@ export function OnboardingTour({
     };
   }, [isOpen, currentTourStep]);
 
-  const getTooltipPosition = () => {
-    if (!targetRect || currentTourStep.position === 'center') {
+  const getTooltipPosition = (): React.CSSProperties => {
+    // Always center on mobile for better UX
+    const isMobile = window.innerWidth < 640;
+    
+    if (!targetRect || currentTourStep.position === 'center' || isMobile) {
       return {
         top: '50%',
         left: '50%',
@@ -89,7 +91,7 @@ export function OnboardingTour({
     }
 
     const padding = 16;
-    const tooltipWidth = 380;
+    const tooltipWidth = Math.min(380, window.innerWidth - 32);
     const tooltipHeight = 200;
 
     switch (currentTourStep.position) {
@@ -132,28 +134,28 @@ export function OnboardingTour({
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - solid color on mobile, no blur */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-background/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[100] bg-black/70"
             onClick={onSkip}
           />
 
-          {/* Highlight target element */}
-          {targetRect && currentTourStep.position !== 'center' && (
+          {/* Highlight target element - hidden on mobile */}
+          {targetRect && currentTourStep.position !== 'center' && window.innerWidth >= 640 && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed z-[101] pointer-events-none"
+              className="fixed z-[101] pointer-events-none hidden sm:block"
               style={{
                 top: targetRect.top - 8,
                 left: targetRect.left - 8,
                 width: targetRect.width + 16,
                 height: targetRect.height + 16,
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.5)',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
                 borderRadius: '12px',
               }}
             >
@@ -161,14 +163,14 @@ export function OnboardingTour({
             </motion.div>
           )}
 
-          {/* Tooltip Card */}
+          {/* Tooltip Card - Full width on mobile */}
           <motion.div
             ref={tooltipRef}
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className="fixed z-[102] w-[340px] sm:w-[380px] max-w-[calc(100vw-24px)] mx-3"
+            className="fixed z-[102] w-[calc(100vw-32px)] sm:w-[380px] max-w-[400px]"
             style={getTooltipPosition()}
           >
             <Card className="border-primary/20 shadow-2xl overflow-hidden bg-card">
@@ -186,23 +188,23 @@ export function OnboardingTour({
                 {/* Close Button */}
                 <button
                   onClick={onSkip}
-                  className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10 touch-manipulation"
                   aria-label="Close tour"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
 
                 {/* Icon & Step Counter */}
-                <div className="flex items-center justify-between mb-3 sm:mb-4 pr-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4 pr-8">
                   <div className={cn(
-                    "w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0",
+                    "w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0",
                     "bg-gradient-to-br from-primary/20 to-primary/5 text-primary"
                   )}>
                     <div className="w-6 h-6 sm:w-8 sm:h-8">
                       {stepIcons[currentTourStep.id] || <Sparkles className="w-full h-full" />}
                     </div>
                   </div>
-                  <span className="text-xs sm:text-sm text-muted-foreground">
+                  <span className="text-sm text-muted-foreground font-medium">
                     {currentStep + 1} of {totalSteps}
                   </span>
                 </div>
@@ -215,44 +217,53 @@ export function OnboardingTour({
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <h3 className="text-lg sm:text-xl font-bold mb-1.5 sm:mb-2">{currentTourStep.title}</h3>
-                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
+                  <h3 className="text-lg sm:text-xl font-bold mb-2">{currentTourStep.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">
                     {currentTourStep.description}
                   </p>
                 </motion.div>
 
                 {/* Navigation Buttons */}
-                <div className="flex items-center justify-between mt-4 sm:mt-6 pt-3 sm:pt-4 border-t border-border gap-2">
+                <div className="flex items-center justify-between mt-5 pt-4 border-t border-border gap-3">
                   <div className="shrink-0">
                     {!isFirstStep && (
-                      <Button variant="ghost" size="sm" onClick={onPrev} className="text-xs sm:text-sm px-2 sm:px-3">
-                        <ChevronLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-0.5 sm:mr-1" />
-                        <span className="hidden xs:inline">Back</span>
+                      <Button 
+                        variant="ghost" 
+                        size="default" 
+                        onClick={onPrev} 
+                        className="touch-manipulation min-h-[44px] px-3"
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" />
+                        Back
                       </Button>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 sm:gap-2">
+                  <div className="flex items-center gap-2">
                     {!isLastStep && (
-                      <Button variant="ghost" size="sm" onClick={onSkip} className="text-xs sm:text-sm px-2 sm:px-3">
+                      <Button 
+                        variant="ghost" 
+                        size="default" 
+                        onClick={onSkip} 
+                        className="touch-manipulation min-h-[44px] px-3"
+                      >
                         Skip
                       </Button>
                     )}
                     <Button 
                       variant="hero" 
-                      size="sm" 
+                      size="default" 
                       onClick={isLastStep ? onComplete : onNext}
-                      className="text-xs sm:text-sm px-3 sm:px-4"
+                      className="touch-manipulation min-h-[44px] px-4"
                     >
                       {isLastStep ? (
                         <>
-                          <span className="hidden xs:inline">Get Started</span>
-                          <span className="xs:hidden">Start</span>
-                          <Rocket className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
+                          Get Started
+                          <Rocket className="w-4 h-4 ml-1.5" />
                         </>
                       ) : (
                         <>
                           Next
-                          <ChevronRight className="w-3 h-3 sm:w-4 sm:h-4 ml-0.5 sm:ml-1" />
+                          <ChevronRight className="w-4 h-4 ml-1" />
                         </>
                       )}
                     </Button>
@@ -260,12 +271,12 @@ export function OnboardingTour({
                 </div>
 
                 {/* Step Indicators */}
-                <div className="flex justify-center gap-1 sm:gap-1.5 mt-3 sm:mt-4">
+                <div className="flex justify-center gap-1.5 mt-4">
                   {Array.from({ length: totalSteps }).map((_, i) => (
                     <motion.div
                       key={i}
                       className={cn(
-                        "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-colors",
+                        "w-2 h-2 rounded-full transition-colors",
                         i === currentStep ? "bg-primary" : "bg-muted"
                       )}
                       animate={i === currentStep ? { scale: [1, 1.2, 1] } : {}}

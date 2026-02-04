@@ -141,16 +141,27 @@ export function useOfflineSync() {
 
   // Listen for online/offline events
   useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
+      console.log('[OfflineSync] Device came online');
       setIsOnline(true);
-      toast.success('Back online! Syncing changes...');
-      // Delay sync slightly to ensure connection is stable
-      setTimeout(() => {
-        syncPendingOperations();
-      }, 1000);
+      
+      // Check pending count first
+      const pendingCount = await offlineStorage.getPendingCount();
+      console.log('[OfflineSync] Pending operations:', pendingCount);
+      
+      if (pendingCount > 0) {
+        toast.success(`Back online! Syncing ${pendingCount} change${pendingCount > 1 ? 's' : ''}...`);
+        // Delay sync slightly to ensure connection is stable
+        setTimeout(() => {
+          syncPendingOperations();
+        }, 1500);
+      } else {
+        toast.success('Back online!');
+      }
     };
 
     const handleOffline = () => {
+      console.log('[OfflineSync] Device went offline');
       setIsOnline(false);
       toast.warning('You are offline. Changes will be saved locally.');
     };
@@ -161,27 +172,31 @@ export function useOfflineSync() {
 
     // Initial sync check with retry
     const initialSync = async () => {
+      console.log('[OfflineSync] Initial sync check');
       await updatePendingCount();
       if (navigator.onLine) {
-        // Small delay for initial page load
-        setTimeout(() => {
-          syncPendingOperations();
-        }, 2000);
+        const count = await offlineStorage.getPendingCount();
+        if (count > 0) {
+          console.log('[OfflineSync] Found pending operations on load:', count);
+          // Small delay for initial page load
+          setTimeout(() => {
+            syncPendingOperations();
+          }, 2000);
+        }
       }
     };
     initialSync();
 
     // Periodic connectivity check (handles edge cases where events don't fire)
-    const connectivityCheck = setInterval(() => {
+    const connectivityCheck = setInterval(async () => {
       const currentOnlineStatus = navigator.onLine;
-      if (currentOnlineStatus !== isOnline) {
-        if (currentOnlineStatus) {
-          handleOnline();
-        } else {
-          handleOffline();
-        }
+      if (currentOnlineStatus && !isOnline) {
+        console.log('[OfflineSync] Periodic check detected online status');
+        await handleOnline();
+      } else if (!currentOnlineStatus && isOnline) {
+        handleOffline();
       }
-    }, 5000);
+    }, 3000);
 
     return () => {
       window.removeEventListener('online', handleOnline);

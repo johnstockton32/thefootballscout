@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface TourStep {
   id: string;
@@ -49,7 +51,7 @@ export const tourSteps: TourStep[] = [
   {
     id: 'subscription',
     title: 'Your Subscription',
-    description: 'Track your usage and upgrade your plan for unlimited players, reports, team collaboration, and advanced analytics.',
+    description: 'Track your usage and upgrade your plan for unlimited players, reports, and advanced analytics.',
     targetSelector: '[data-tour="subscription"]',
     position: 'bottom',
   },
@@ -62,19 +64,65 @@ export const tourSteps: TourStep[] = [
 ];
 
 export function useOnboardingTour() {
+  const { user, profile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [hasCompleted, setHasCompleted] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
+  // Check if user has completed the tour (from database or localStorage)
   useEffect(() => {
-    const completed = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!completed) {
-      setHasCompleted(false);
-      // Auto-start tour for new users after a brief delay
-      const timer = setTimeout(() => setIsOpen(true), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, []);
+    const checkTourStatus = async () => {
+      setIsChecking(true);
+      
+      // First check localStorage for quick response
+      const localCompleted = localStorage.getItem(TOUR_STORAGE_KEY);
+      if (localCompleted === 'true') {
+        setHasCompleted(true);
+        setIsChecking(false);
+        return;
+      }
+
+      // If user is logged in, check profile metadata
+      if (user?.id) {
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && data) {
+            // Check user metadata for tour completion
+            const { data: userData } = await supabase.auth.getUser();
+            const tourCompleted = userData?.user?.user_metadata?.onboarding_tour_completed;
+            
+            if (tourCompleted) {
+              localStorage.setItem(TOUR_STORAGE_KEY, 'true');
+              setHasCompleted(true);
+            } else {
+              setHasCompleted(false);
+              // Auto-start tour for new users after a brief delay
+              setTimeout(() => setIsOpen(true), 1500);
+            }
+          }
+        } catch (error) {
+          console.error('Error checking tour status:', error);
+          // Fall back to localStorage check
+          if (!localCompleted) {
+            setHasCompleted(false);
+            setTimeout(() => setIsOpen(true), 1500);
+          }
+        }
+      } else if (!localCompleted) {
+        setHasCompleted(false);
+      }
+      
+      setIsChecking(false);
+    };
+
+    checkTourStatus();
+  }, [user?.id]);
 
   const startTour = useCallback(() => {
     setCurrentStep(0);
@@ -99,17 +147,40 @@ export function useOnboardingTour() {
     completeTour();
   }, []);
 
-  const completeTour = useCallback(() => {
+  const completeTour = useCallback(async () => {
+    // Save to localStorage immediately
     localStorage.setItem(TOUR_STORAGE_KEY, 'true');
     setIsOpen(false);
     setHasCompleted(true);
     setCurrentStep(0);
-  }, []);
 
-  const resetTour = useCallback(() => {
+    // Also save to user metadata for cross-device persistence
+    if (user?.id) {
+      try {
+        await supabase.auth.updateUser({
+          data: { onboarding_tour_completed: true }
+        });
+      } catch (error) {
+        console.error('Error saving tour completion to user metadata:', error);
+      }
+    }
+  }, [user?.id]);
+
+  const resetTour = useCallback(async () => {
     localStorage.removeItem(TOUR_STORAGE_KEY);
     setHasCompleted(false);
-  }, []);
+    
+    // Also reset in user metadata
+    if (user?.id) {
+      try {
+        await supabase.auth.updateUser({
+          data: { onboarding_tour_completed: false }
+        });
+      } catch (error) {
+        console.error('Error resetting tour in user metadata:', error);
+      }
+    }
+  }, [user?.id]);
 
   return {
     isOpen,
@@ -117,6 +188,7 @@ export function useOnboardingTour() {
     totalSteps: tourSteps.length,
     currentTourStep: tourSteps[currentStep],
     hasCompleted,
+    isChecking,
     startTour,
     nextStep,
     prevStep,

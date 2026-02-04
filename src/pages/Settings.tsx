@@ -56,7 +56,13 @@ const emailSchema = z.object({
 });
 
 const passwordSchema = z.object({
-  newPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[a-z]/, 'Password must contain a lowercase letter')
+    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
+    .regex(/[0-9]/, 'Password must contain a number')
+    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'Password must contain a special character'),
   confirmPassword: z.string(),
 }).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
@@ -149,6 +155,7 @@ export default function Settings() {
   const passwordForm = useForm<PasswordFormData>({
     resolver: zodResolver(passwordSchema),
     defaultValues: {
+      currentPassword: '',
       newPassword: '',
       confirmPassword: '',
     },
@@ -238,6 +245,22 @@ export default function Settings() {
   const onPasswordSubmit = async (data: PasswordFormData) => {
     setIsChangingPassword(true);
     try {
+      // First verify current password by re-authenticating
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: data.currentPassword,
+      });
+      
+      if (signInError) {
+        toast({
+          title: 'Error',
+          description: 'Current password is incorrect',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // Now update to new password
       const { error } = await supabase.auth.updateUser({
         password: data.newPassword,
       });
@@ -1007,6 +1030,20 @@ export default function Settings() {
                   <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                     <FormField
                       control={passwordForm.control}
+                      name="currentPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Current Password</FormLabel>
+                          <FormControl>
+                            <Input type="password" placeholder="Enter current password" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={passwordForm.control}
                       name="newPassword"
                       render={({ field }) => (
                         <FormItem>
@@ -1015,6 +1052,9 @@ export default function Settings() {
                             <Input type="password" placeholder="Enter new password" {...field} />
                           </FormControl>
                           <FormMessage />
+                          <p className="text-xs text-muted-foreground">
+                            Must be at least 8 characters with uppercase, lowercase, number, and special character
+                          </p>
                         </FormItem>
                       )}
                     />
