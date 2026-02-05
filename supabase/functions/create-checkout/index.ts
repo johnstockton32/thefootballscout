@@ -5,8 +5,8 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // Stripe product/price mapping - Monthly and Annual (Pro tier only)
 const STRIPE_PRICES = {
-  pro_monthly: "price_1SrEv2A04SaxzpjBDWUcr1r9", // £10/month
-  pro_annual: "price_1SrGE1A04SaxzpjBO7ecPFzD", // £96/year (£8/month)
+  pro_monthly: "price_1SxOZeDO3m8kHfnyj9TKEhus", // £10/month
+  pro_annual: "price_1SxOZuDO3m8kHfnytJtNcnGP", // £96/year (£8/month)
 };
 
 // Map tier keys to base tier names for profile updates
