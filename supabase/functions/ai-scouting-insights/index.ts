@@ -184,12 +184,12 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 1500,
+        max_tokens: 2000,
         temperature: 0.7,
       }),
     });
