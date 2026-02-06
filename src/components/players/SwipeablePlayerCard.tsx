@@ -6,6 +6,7 @@ import { POSITION_ABBREV, POSITION_LABELS, calculateAge, PlayerPosition } from '
 import { cn } from '@/lib/utils';
 import { Calendar, MapPin, User, Trash2, Pencil } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { usePlayerPhotoUrl } from '@/hooks/useSignedUrl';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +39,7 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
+  const photoUrl = usePlayerPhotoUrl(player.photo_url);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   
@@ -91,8 +93,8 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
           <div className="p-3 sm:p-4">
             <div className="flex items-start gap-4">
               <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                {player.photo_url ? (
-                  <img src={player.photo_url} alt={player.full_name} className="w-full h-full object-cover" />
+                {photoUrl ? (
+                  <img src={photoUrl} alt={player.full_name} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-primary/10">
                     <User className="w-8 h-8 text-primary/50" />
@@ -190,8 +192,8 @@ export function SwipeablePlayerCard({ player, latestRating, reportsCount = 0, on
             <div className="p-3">
               <div className="flex items-start gap-3">
                 <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                  {player.photo_url ? (
-                    <img src={player.photo_url} alt={player.full_name} className="w-full h-full object-cover" />
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={player.full_name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-primary/10">
                       <User className="w-7 h-7 text-primary/50" />

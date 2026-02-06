@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { POSITION_ABBREV, POSITION_LABELS, calculateAge, getRatingColor, PlayerPosition } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import { Calendar, MapPin, User } from 'lucide-react';
+import { usePlayerPhotoUrl } from '@/hooks/useSignedUrl';
 
 interface PlayerCardProps {
   player: {
@@ -20,6 +21,7 @@ interface PlayerCardProps {
 
 export function PlayerCard({ player, latestRating, reportsCount = 0 }: PlayerCardProps) {
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
+  const photoUrl = usePlayerPhotoUrl(player.photo_url);
 
   return (
     <Link to={`/players/${player.id}`} className="block">
@@ -28,9 +30,9 @@ export function PlayerCard({ player, latestRating, reportsCount = 0 }: PlayerCar
           <div className="flex items-start gap-4">
             {/* Player Photo/Avatar */}
             <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-              {player.photo_url ? (
+              {photoUrl ? (
                 <img
-                  src={player.photo_url}
+                  src={photoUrl}
                   alt={player.full_name}
                   className="w-full h-full object-cover"
                 />
