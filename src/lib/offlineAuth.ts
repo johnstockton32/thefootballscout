@@ -8,7 +8,8 @@ const STORE_NAME = 'sessions';
 interface CachedSession {
   userId: string;
   email: string;
-  passwordHash: string; // Stored as SHA-256 hash, not plain text
+  passwordHash: string; // Stored as PBKDF2-derived key
+  salt: string; // Random salt (hex-encoded)
   profile: any;
   roles: string[];
   cachedAt: number;
@@ -46,12 +47,24 @@ class OfflineAuthStorage {
     return this.db!;
   }
 
-  // Hash password using Web Crypto API
-  private async hashPassword(password: string, salt: string): Promise<string> {
+  // Generate a random salt
+  private generateSalt(): string {
+    const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Hash password using PBKDF2 (Web Crypto API) - resistant to brute-force
+  private async hashPassword(password: string, saltHex: string): Promise<string> {
     const encoder = new TextEncoder();
-    const data = encoder.encode(password + salt);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const salt = new Uint8Array(saltHex.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
+    const passwordKey = await crypto.subtle.importKey(
+      'raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']
+    );
+    const derivedBits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+      passwordKey, 256
+    );
+    const hashArray = Array.from(new Uint8Array(derivedBits));
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   }
 
@@ -65,17 +78,19 @@ class OfflineAuthStorage {
   ): Promise<void> {
     const db = await this.getDB();
     
-    // Use email as salt for password hashing
-    const passwordHash = await this.hashPassword(password, email);
+    // Generate random salt for PBKDF2
+    const salt = this.generateSalt();
+    const passwordHash = await this.hashPassword(password, salt);
     
     const cachedSession: CachedSession = {
       userId,
       email,
       passwordHash,
+      salt,
       profile,
       roles,
       cachedAt: Date.now(),
-      expiresAt: Date.now() + (30 * 24 * 60 * 60 * 1000), // 30 days
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000), // 7 days
     };
 
     return new Promise((resolve, reject) => {
@@ -115,8 +130,8 @@ class OfflineAuthStorage {
           return;
         }
         
-        // Verify password hash
-        const passwordHash = await this.hashPassword(password, email);
+        // Verify password hash using stored salt
+        const passwordHash = await this.hashPassword(password, cachedSession.salt);
         
         if (passwordHash === cachedSession.passwordHash) {
           resolve({ success: true, session: cachedSession });
