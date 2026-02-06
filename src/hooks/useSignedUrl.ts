@@ -19,9 +19,24 @@ export function extractStoragePath(photoUrl: string | null): string | null {
 
 export function useSignedUrl(bucket: string, path: string | null) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [sessionReady, setSessionReady] = useState(false);
+
+  // Listen for auth state so we re-fetch signed URLs once the user is logged in
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSessionReady(!!data.session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSessionReady(!!session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
-    if (!path) {
+    if (!path || !sessionReady) {
+      if (!sessionReady) return; // wait for session
       setSignedUrl(null);
       return;
     }
@@ -41,6 +56,7 @@ export function useSignedUrl(bucket: string, path: string | null) {
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error || !data?.signedUrl) {
+          console.warn(`[useSignedUrl] Failed to sign ${bucket}/${path}:`, error?.message);
           setSignedUrl(null);
           return;
         }
@@ -52,7 +68,7 @@ export function useSignedUrl(bucket: string, path: string | null) {
       });
 
     return () => { cancelled = true; };
-  }, [bucket, path]);
+  }, [bucket, path, sessionReady]);
 
   return signedUrl;
 }
