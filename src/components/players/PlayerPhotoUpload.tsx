@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/lib/errorUtils';
+import { usePlayerPhotoUrl } from '@/hooks/useSignedUrl';
 
 interface PlayerPhotoUploadProps {
   photoUrl: string | null;
@@ -25,7 +26,8 @@ export function PlayerPhotoUpload({
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(photoUrl);
+  const signedUrl = usePlayerPhotoUrl(photoUrl);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
 
   const getInitials = (name?: string) => {
     if (!name) return 'P';
@@ -77,13 +79,9 @@ export function PlayerPhotoUpload({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('player-photos')
-        .getPublicUrl(fileName);
-
-      setPreviewUrl(publicUrl);
-      onPhotoChange(publicUrl);
+      // Store the path, not a public URL
+      setLocalPreview(URL.createObjectURL(file));
+      onPhotoChange(fileName);
       
       toast({
         title: 'Photo uploaded',
@@ -104,26 +102,28 @@ export function PlayerPhotoUpload({
   };
 
   const handleRemove = async () => {
-    if (!previewUrl) return;
+    if (!photoUrl) return;
 
     try {
-      // Extract path from URL
-      const pathMatch = previewUrl.match(/player-photos\/(.+?)(?:\?|$)/);
-      if (pathMatch) {
-        await supabase.storage.from('player-photos').remove([pathMatch[1]]);
+      const { extractStoragePath } = await import('@/hooks/useSignedUrl');
+      const path = extractStoragePath(photoUrl);
+      if (path) {
+        await supabase.storage.from('player-photos').remove([path]);
       }
     } catch (error) {
       console.error('Error removing old photo:', error);
     }
 
-    setPreviewUrl(null);
+    setLocalPreview(null);
     onPhotoChange(null);
   };
+
+  const displayUrl = localPreview || signedUrl;
 
   return (
     <div className="flex items-center gap-4">
       <Avatar className="h-20 w-20 border-2 border-border">
-        <AvatarImage src={previewUrl || undefined} alt={playerName || 'Player'} />
+        <AvatarImage src={displayUrl || undefined} alt={playerName || 'Player'} />
         <AvatarFallback className="text-xl bg-primary/10 text-primary">
           {playerName ? getInitials(playerName) : <User className="h-8 w-8" />}
         </AvatarFallback>
@@ -154,12 +154,12 @@ export function PlayerPhotoUpload({
           ) : (
             <>
               <Camera className="h-4 w-4" />
-              {previewUrl ? 'Change Photo' : 'Add Photo'}
+              {displayUrl ? 'Change Photo' : 'Add Photo'}
             </>
           )}
         </Button>
 
-        {previewUrl && (
+        {displayUrl && (
           <Button
             type="button"
             variant="ghost"

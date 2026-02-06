@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
@@ -54,6 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { usePlayerPhotoUrl } from '@/hooks/useSignedUrl';
 
 interface Player {
   id: string;
@@ -97,6 +98,7 @@ export default function PlayerDetail() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [player, setPlayer] = useState<Player | null>(null);
+  const playerPhotoUrl = usePlayerPhotoUrl(player?.photo_url ?? null);
   const [reports, setReports] = useState<Report[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(searchParams.get('edit') === 'true');
@@ -313,8 +315,8 @@ export default function PlayerDetail() {
             </Button>
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-xl bg-primary/20 flex items-center justify-center">
-                {player.photo_url ? (
-                  <img src={player.photo_url} alt={player.full_name} className="w-full h-full object-cover rounded-xl" />
+                {playerPhotoUrl ? (
+                  <img src={playerPhotoUrl} alt={player.full_name} className="w-full h-full object-cover rounded-xl" />
                 ) : (
                   <User className="w-8 h-8 text-primary" />
                 )}
