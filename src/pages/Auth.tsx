@@ -215,18 +215,6 @@ export default function Auth() {
 
     try {
       if (mode === 'signUp') {
-        // Check if email already exists
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email.toLowerCase().trim())
-          .maybeSingle();
-        
-        if (existingProfile) {
-          setFormError('An account with this email already exists. Please use a different email address or sign in to your existing account.');
-          setIsLoading(false);
-          return;
-        }
 
         const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
         if (error) {
