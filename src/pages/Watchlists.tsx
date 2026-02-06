@@ -42,6 +42,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PlayerPhotoImg } from '@/components/players/PlayerPhotoAvatar';
 
 interface Watchlist {
   id: string;
@@ -466,15 +467,12 @@ export default function Watchlists() {
                               className="flex items-center gap-3 min-w-0 flex-1 hover:text-primary transition-colors"
                             >
                               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center overflow-hidden">
-                                {wp.players.photo_url ? (
-                                  <img
-                                    src={wp.players.photo_url}
-                                    alt={wp.players.full_name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Users className="w-5 h-5 text-primary" />
-                                )}
+                                <PlayerPhotoImg
+                                  photoUrl={wp.players.photo_url}
+                                  playerName={wp.players.full_name}
+                                  className="w-full h-full object-cover"
+                                  fallback={<Users className="w-5 h-5 text-primary" />}
+                                />
                               </div>
                               <div className="min-w-0">
                                 <p className="font-medium truncate">{wp.players.full_name}</p>

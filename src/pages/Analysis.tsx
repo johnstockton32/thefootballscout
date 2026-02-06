@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PlayerPhotoAvatar } from '@/components/players/PlayerPhotoAvatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -701,12 +702,11 @@ export default function Analysis() {
                               }
                             }}
                           >
-                            <Avatar className="h-12 w-12 shrink-0">
-                              <AvatarImage src={player.photo_url || undefined} />
-                              <AvatarFallback>
-                                <User className="w-6 h-6" />
-                              </AvatarFallback>
-                            </Avatar>
+                            <PlayerPhotoAvatar
+                              photoUrl={player.photo_url}
+                              playerName={player.full_name}
+                              className="h-12 w-12 shrink-0"
+                            />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-medium truncate">{player.full_name}</span>
