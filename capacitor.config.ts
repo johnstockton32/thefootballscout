@@ -2,12 +2,20 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'app.lovable.41da28e932684e53b1421c3a1191a168',
-  appName: 'thefootballscout',
+  appName: 'The Football Scout',
   webDir: 'dist',
-  server: {
-    url: 'https://41da28e9-3268-4e53-b142-1c3a1191a168.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  }
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#0a0a0b',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+  },
 };
 
 export default config;
