@@ -447,18 +447,24 @@ export default function NewReport() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Player *</Label>
-                  <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
-                    <SelectTrigger className="bg-input">
-                      <SelectValue placeholder="Select player" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {players.map((player) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {players.length > 0 ? (
+                    <Select value={selectedPlayerId} onValueChange={setSelectedPlayerId}>
+                      <SelectTrigger className="bg-input">
+                        <SelectValue placeholder="Select player" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {players.map((player) => (
+                          <SelectItem key={player.id} value={player.id}>
+                            {player.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="h-10 bg-input rounded-md border border-border flex items-center px-3 text-sm text-muted-foreground animate-pulse">
+                      Loading players...
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
