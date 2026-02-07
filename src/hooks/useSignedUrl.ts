@@ -12,9 +12,12 @@ export function extractStoragePath(photoUrl: string | null): string | null {
   if (!photoUrl) return null;
   // If it's already a bare path (no http), return as-is
   if (!photoUrl.startsWith('http')) return photoUrl;
-  // Extract path from a full Supabase storage URL
+  // Extract path from a full Supabase storage URL (greedy match to get full path)
   const match = photoUrl.match(/player-photos\/(.+?)(?:\?|$)/);
-  return match ? match[1] : null;
+  if (match) return match[1];
+  // Fallback: try generic storage path extraction
+  const genericMatch = photoUrl.match(/\/object\/(?:public|sign)\/[^/]+\/(.+?)(?:\?|$)/);
+  return genericMatch ? genericMatch[1] : null;
 }
 
 export function useSignedUrl(bucket: string, path: string | null) {
