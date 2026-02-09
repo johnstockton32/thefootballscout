@@ -137,6 +137,50 @@ export type Database = {
         }
         Relationships: []
       }
+      player_development_notes: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          note_type: string
+          player_id: string
+          rating_snapshot: number | null
+          scout_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          note_type?: string
+          player_id: string
+          rating_snapshot?: number | null
+          scout_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          note_type?: string
+          player_id?: string
+          rating_snapshot?: number | null
+          scout_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_development_notes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           created_at: string
