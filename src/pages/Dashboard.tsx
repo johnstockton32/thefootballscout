@@ -67,6 +67,7 @@ export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [players, setPlayers] = useState<Player[]>([]);
   const [recentReports, setRecentReports] = useState<Report[]>([]);
+  const [recommendationStats, setRecommendationStats] = useState({ sign: 0, monitor: 0, reject: 0 });
   const [stats, setStats] = useState({
     totalPlayers: 0,
     totalReports: 0,
@@ -138,7 +139,7 @@ export default function Dashboard() {
       // Fetch report stats
       const { data: allReports } = await supabase
         .from('scouting_reports')
-        .select('overall_rating, created_at')
+        .select('overall_rating, created_at, recommendation')
         .eq('is_draft', false);
 
       const totalReports = allReports?.length || 0;
@@ -153,6 +154,12 @@ export default function Dashboard() {
       const thisMonthReports = allReports?.filter(
         r => new Date(r.created_at) >= startOfMonth
       ).length || 0;
+
+      // Recommendation breakdown
+      const sign = allReports?.filter(r => r.recommendation === 'Sign').length || 0;
+      const monitor = allReports?.filter(r => r.recommendation === 'Monitor').length || 0;
+      const reject = allReports?.filter(r => r.recommendation === 'Reject').length || 0;
+      setRecommendationStats({ sign, monitor, reject });
 
       setStats({
         totalPlayers: playerCount || 0,
@@ -353,6 +360,43 @@ export default function Dashboard() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Recommendation Breakdown */}
+        {(recommendationStats.sign > 0 || recommendationStats.monitor > 0 || recommendationStats.reject > 0) && (
+          <Card className="card-glass">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <Star className="w-4 h-4 text-primary" />
+                Recommendation Breakdown
+              </h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-3 rounded-lg bg-primary/10">
+                  <div className="text-2xl font-bold text-primary">{recommendationStats.sign}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Sign</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-amber-500/10">
+                  <div className="text-2xl font-bold text-amber-500">{recommendationStats.monitor}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Monitor</p>
+                </div>
+                <div className="text-center p-3 rounded-lg bg-destructive/10">
+                  <div className="text-2xl font-bold text-destructive">{recommendationStats.reject}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Reject</p>
+                </div>
+              </div>
+              {/* Visual bar */}
+              {(() => {
+                const total = recommendationStats.sign + recommendationStats.monitor + recommendationStats.reject;
+                return total > 0 ? (
+                  <div className="flex gap-0.5 h-2 rounded-full overflow-hidden mt-3">
+                    <div className="bg-primary rounded-l-full" style={{ width: `${(recommendationStats.sign / total) * 100}%` }} />
+                    <div className="bg-amber-500" style={{ width: `${(recommendationStats.monitor / total) * 100}%` }} />
+                    <div className="bg-destructive rounded-r-full" style={{ width: `${(recommendationStats.reject / total) * 100}%` }} />
+                  </div>
+                ) : null;
+              })()}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">

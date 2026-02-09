@@ -670,23 +670,37 @@ export default function NewReport() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Recommendation</Label>
-                  {voiceSupported && (
-                    <VoiceInputButton
-                      isListening={isListening && activeVoiceField === 'recommendation'}
-                      isSupported={voiceSupported}
-                      onClick={() => toggleVoiceForField('recommendation')}
-                    />
-                  )}
+              <div className="space-y-3">
+                <Label>Recommendation</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { value: 'Sign', label: 'Sign', color: 'bg-primary text-primary-foreground hover:bg-primary/90', icon: '✓' },
+                    { value: 'Monitor', label: 'Monitor', color: 'bg-amber-500 text-white hover:bg-amber-600', icon: '👁' },
+                    { value: 'Reject', label: 'Reject', color: 'bg-destructive text-destructive-foreground hover:bg-destructive/90', icon: '✗' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData(prev => ({ 
+                        ...prev, 
+                        recommendation: prev.recommendation === option.value ? '' : option.value 
+                      }))}
+                      className={`flex items-center justify-center gap-2 py-3 px-4 rounded-lg font-semibold text-sm transition-all border-2 ${
+                        formData.recommendation === option.value
+                          ? `${option.color} border-transparent shadow-md scale-[1.02]`
+                          : 'bg-muted/50 text-muted-foreground border-transparent hover:border-border'
+                      }`}
+                    >
+                      <span>{option.icon}</span>
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
                 </div>
-                <Textarea
-                  value={formData.recommendation}
-                  onChange={(e) => setFormData(prev => ({ ...prev, recommendation: e.target.value }))}
-                  placeholder="Your recommendation for this player..."
-                  className="bg-input min-h-[100px]"
-                />
+                {formData.recommendation && (
+                  <p className="text-xs text-muted-foreground">
+                    Selected: <span className="font-medium text-foreground">{formData.recommendation}</span> — click again to deselect
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
