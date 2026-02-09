@@ -76,6 +76,46 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
+      // No Stripe customer found by email — check for one-time payment via checkout sessions
+      // This handles cases where Stripe didn't create a customer (guest checkout)
+      logStep("No customer found by email, checking checkout sessions by client_reference_id");
+      
+      const checkoutSessions = await stripe.checkout.sessions.list({
+        limit: 20,
+      });
+      
+      const userSession = checkoutSessions.data.find(s => 
+        s.client_reference_id === user.id && 
+        s.payment_status === "paid" &&
+        s.metadata?.is_lifetime === "true"
+      );
+      
+      if (userSession) {
+        const lifetimeTier = userSession.metadata?.tier || "pro";
+        logStep("Found lifetime purchase via client_reference_id", { sessionId: userSession.id, tier: lifetimeTier });
+        
+        await supabaseClient
+          .from('profiles')
+          .update({ 
+            subscription_tier: lifetimeTier,
+            trial_ends_at: null,
+            subscription_started_at: userSession.created 
+              ? new Date(userSession.created * 1000).toISOString() 
+              : new Date().toISOString()
+          })
+          .eq('id', user.id);
+        
+        return new Response(JSON.stringify({
+          subscribed: true,
+          tier: lifetimeTier,
+          subscription_end: null,
+          is_lifetime: true,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
       // Check if user has a manually-assigned tier (e.g. admin accounts)
       const { data: profile } = await supabaseClient
         .from('profiles')
