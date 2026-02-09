@@ -1,5 +1,5 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import "https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 interface PlayerData {
@@ -41,7 +41,7 @@ interface ReportData {
   weaknesses: string | null;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
   
@@ -65,18 +65,20 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Validate the JWT token using getUser
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // Validate the JWT token using getClaims
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
 
-    if (userError || !user) {
-      console.error("Auth validation failed:", userError);
+    if (claimsError || !claims?.claims?.sub) {
+      console.error("Auth validation failed:", claimsError);
       return new Response(
         JSON.stringify({ error: "Invalid authorization" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Authenticated user:", user.id);
+    const userId = claims.claims.sub as string;
+    console.log("Authenticated user:", userId);
 
     const { player, reports, insightType } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
