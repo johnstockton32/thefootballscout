@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders, PlayCircle, CreditCard, ExternalLink } from 'lucide-react';
+import { User, Shield, Lock, Trash2, LogOut, FileText, Users, Palette, Sun, Moon, Monitor, Crown, Zap, Building2, Briefcase, Check, ArrowLeft, Mail, Loader2, Sliders, PlayCircle, CreditCard, ExternalLink, X, HelpCircle } from 'lucide-react';
 import { useOnboardingTour } from '@/hooks/useOnboardingTour';
 import { useTheme } from 'next-themes';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -784,6 +784,22 @@ export default function Settings() {
                       <Check className="h-4 w-4 text-primary" />
                       Compare up to {subscription.limits.maxComparisonPlayers} players
                     </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      Player development tracking
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      Watchlists
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      Dark/Light mode
+                    </li>
+                    <li className="flex items-center gap-2 text-sm">
+                      <Check className="h-4 w-4 text-primary" />
+                      Offline support
+                    </li>
                     {subscription.limits.hasAdvancedAnalytics && (
                       <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
@@ -799,7 +815,73 @@ export default function Settings() {
                     {subscription.limits.hasAIInsights && (
                       <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
-                        AI-powered insights
+                        AI-powered scouting insights
+                      </li>
+                    )}
+                    {subscription.limits.hasSmartDiscovery && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Smart Discovery AI search
+                      </li>
+                    )}
+                    {subscription.limits.hasBulkImportExport && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Bulk CSV import & export
+                      </li>
+                    )}
+                    {subscription.limits.hasVoiceToText && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Voice-to-text notes
+                      </li>
+                    )}
+                    {subscription.limits.hasCustomAttributeWeights && (
+                      <li className="flex items-center gap-2 text-sm">
+                        <Check className="h-4 w-4 text-primary" />
+                        Custom attribute weights
+                      </li>
+                    )}
+                    {!subscription.limits.hasAdvancedAnalytics && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        Advanced analytics & radar charts
+                      </li>
+                    )}
+                    {!subscription.limits.hasPdfExport && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        PDF export
+                      </li>
+                    )}
+                    {!subscription.limits.hasAIInsights && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        AI-powered scouting insights
+                      </li>
+                    )}
+                    {!subscription.limits.hasSmartDiscovery && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        Smart Discovery AI search
+                      </li>
+                    )}
+                    {!subscription.limits.hasBulkImportExport && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        Bulk CSV import & export
+                      </li>
+                    )}
+                    {!subscription.limits.hasVoiceToText && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        Voice-to-text notes
+                      </li>
+                    )}
+                    {!subscription.limits.hasCustomAttributeWeights && (
+                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <X className="h-4 w-4" />
+                        Custom attribute weights
                       </li>
                     )}
                   </ul>
@@ -1180,6 +1262,34 @@ export default function Settings() {
 
           {/* Account Tab */}
           <TabsContent value="account" className="space-y-6">
+            {/* Support */}
+            <Card className="card-glass">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HelpCircle className="h-5 w-5" />
+                  Support
+                </CardTitle>
+                <CardDescription>Need help? Get in touch with our support team</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border border-border">
+                  <Mail className="h-5 w-5 text-primary shrink-0" />
+                  <div>
+                    <p className="font-medium text-sm">Email Support</p>
+                    <a 
+                      href="mailto:support@thefootballscout.app" 
+                      className="text-sm text-primary hover:underline"
+                    >
+                      support@thefootballscout.app
+                    </a>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  We typically respond within 24 hours. Pro users receive priority support.
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Onboarding Tour */}
             <Card className="card-glass">
               <CardHeader>
