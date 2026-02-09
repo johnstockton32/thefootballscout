@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -45,6 +45,77 @@ interface VideoClip {
 interface VideoClipManagerProps {
   reportId: string;
   className?: string;
+}
+
+function VideoClipItem({ clip, onDelete }: { clip: VideoClip; onDelete: (id: string) => void }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // If the URL is already a full URL (external link like YouTube), use it directly
+    if (clip.video_url.startsWith('http')) {
+      setSignedUrl(clip.video_url);
+      return;
+    }
+    // Otherwise, generate a signed URL for the private bucket
+    supabase.storage
+      .from('video-clips')
+      .createSignedUrl(clip.video_url, 3600)
+      .then(({ data, error }) => {
+        if (data?.signedUrl) setSignedUrl(data.signedUrl);
+        else console.warn('Failed to sign video URL:', error?.message);
+      });
+  }, [clip.video_url]);
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
+          <Play className="w-5 h-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-medium truncate">{clip.title}</p>
+          {clip.description && (
+            <p className="text-sm text-muted-foreground truncate">{clip.description}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => signedUrl && window.open(signedUrl, '_blank')}
+          disabled={!signedUrl}
+        >
+          <ExternalLink className="w-4 h-4" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Video Clip</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove &quot;{clip.title}&quot; from this report.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete(clip.id)}
+                className="bg-destructive text-destructive-foreground"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
 }
 
 export function VideoClipManager({ reportId, className }: VideoClipManagerProps) {
@@ -108,11 +179,8 @@ export function VideoClipManager({ reportId, className }: VideoClipManagerProps)
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('video-clips')
-        .getPublicUrl(fileName);
-
-      setFormData({ ...formData, video_url: publicUrl });
+      // Store the path only (not a full URL) for private bucket
+      setFormData({ ...formData, video_url: fileName });
       toast.success('Video uploaded');
     } catch (error) {
       console.error('Upload error:', error);
@@ -267,58 +335,7 @@ export function VideoClipManager({ reportId, className }: VideoClipManagerProps)
         ) : (
           <div className="space-y-3">
             {clips.map((clip) => (
-              <div
-                key={clip.id}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
-                    <Play className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-medium truncate">{clip.title}</p>
-                    {clip.description && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {clip.description}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => window.open(clip.video_url, '_blank')}
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <Trash2 className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Video Clip</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently remove "{clip.title}" from this report.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteClip(clip.id)}
-                          className="bg-destructive text-destructive-foreground"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
+              <VideoClipItem key={clip.id} clip={clip} onDelete={handleDeleteClip} />
             ))}
           </div>
         )}
