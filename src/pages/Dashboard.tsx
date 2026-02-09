@@ -93,6 +93,40 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams, subscription]);
 
+  // Handle pending Pro signup: redirect to Stripe checkout after email confirmation
+  useEffect(() => {
+    const pendingPro = localStorage.getItem('pending_pro_signup');
+    if (pendingPro === 'true' && user) {
+      const redirectToCheckout = async () => {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          if (!accessToken) return;
+
+          toast.info('Completing your Pro setup...');
+          
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { tier: 'pro', isAnnual: false },
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+
+          if (!error && data?.url) {
+            localStorage.removeItem('pending_pro_signup');
+            window.location.href = data.url;
+          } else {
+            console.error('Pending checkout failed:', error);
+            localStorage.removeItem('pending_pro_signup');
+            toast.error('Could not start Pro checkout. You can upgrade from Settings.');
+          }
+        } catch (err) {
+          console.error('Pending checkout error:', err);
+          localStorage.removeItem('pending_pro_signup');
+        }
+      };
+      redirectToCheckout();
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchDashboardData();

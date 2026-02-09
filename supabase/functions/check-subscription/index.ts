@@ -107,13 +107,23 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    logStep("Fetching active subscriptions");
-    const subscriptions = await stripe.subscriptions.list({
+    // Check for active OR trialing subscriptions (Pro tier includes 14-day trial)
+    logStep("Fetching active/trialing subscriptions");
+    const activeSubscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
-    logStep("Active subscriptions fetched", { count: subscriptions.data.length });
+    
+    const trialingSubscriptions = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 1,
+    });
+    
+    // Combine: prefer active over trialing
+    const subscriptions = activeSubscriptions.data.length > 0 ? activeSubscriptions : trialingSubscriptions;
+    logStep("Subscriptions fetched", { active: activeSubscriptions.data.length, trialing: trialingSubscriptions.data.length });
 
     const hasActiveSub = subscriptions.data.length > 0;
     let tier = "free";
