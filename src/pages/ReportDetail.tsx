@@ -198,8 +198,19 @@ export default function ReportDetail() {
     
     setIsExporting(true);
     try {
-      await exportReportPDF(report.id, null);
-      toast.success('PDF exported successfully');
+      // Fetch user's branding settings if they're a Pro user
+      let brandingData = null;
+      if (limits.hasPdfExport && user) {
+        const { data } = await supabase
+          .from('branding_settings')
+          .select('logo_url, company_name, primary_color, secondary_color, show_default_branding')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        brandingData = data;
+      }
+
+      await exportReportPDF(report.id, brandingData?.logo_url || null, brandingData);
+      toast.success(brandingData ? 'PDF exported with your branding' : 'PDF exported successfully');
     } catch (error: any) {
       console.error('Error exporting PDF:', error);
       toast.error(error.message || 'Failed to export PDF');

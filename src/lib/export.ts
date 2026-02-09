@@ -206,8 +206,22 @@ function drawProgressBar(doc: jsPDF, x: number, y: number, width: number, height
   }
 }
 
+// Helper to convert hex color to RGB tuple
+function hexToRgb(hex: string): [number, number, number] | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : null;
+}
+
+interface BrandingOptions {
+  logo_url?: string | null;
+  company_name?: string | null;
+  primary_color?: string | null;
+  secondary_color?: string | null;
+  show_default_branding?: boolean;
+}
+
 // PDF Export Function - Matching app's color scheme
-export async function exportReportPDF(reportId: string, teamLogoUrl?: string | null) {
+export async function exportReportPDF(reportId: string, teamLogoUrl?: string | null, branding?: BrandingOptions | null) {
   const { data: report, error } = await supabase
     .from('scouting_reports')
     .select(`
@@ -278,9 +292,10 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   let y = margin;
 
   // ========== HEADER SECTION ==========
-  // Team logo (if available)
-  if (teamLogoUrl) {
-    const logoBase64 = await loadImageAsBase64(teamLogoUrl);
+  // Team logo or branding logo (if available)
+  const logoUrl = teamLogoUrl || branding?.logo_url;
+  if (logoUrl) {
+    const logoBase64 = await loadImageAsBase64(logoUrl);
     if (logoBase64) {
       try {
         doc.addImage(logoBase64, 'PNG', pageWidth - margin - 15, y, 14, 14);
@@ -288,6 +303,14 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
         console.warn('Could not add logo to PDF:', e);
       }
     }
+  }
+
+  // Branding company name (top-right, below logo)
+  if (branding?.company_name) {
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(7);
+    doc.setFont('helvetica', 'normal');
+    doc.text(branding.company_name, pageWidth - margin, y + 18, { align: 'right' });
   }
 
   // Player name
@@ -637,13 +660,20 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.setTextColor(...textMuted);
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('The Football Scout', margin, pageHeight - 8);
+
+  // Show branding company name or default branding
+  const showDefault = branding?.show_default_branding !== false;
+  const footerLeft = branding?.company_name || (showDefault ? 'The Football Scout' : '');
+  if (footerLeft) {
+    doc.text(footerLeft, margin, pageHeight - 8);
+  }
   
   const reportInfo = `Report: ${report.id.substring(0, 8)} • ${format(new Date(), 'MMM d, yyyy')}`;
   doc.text(reportInfo, pageWidth - margin, pageHeight - 8, { align: 'right' });
   
-  // Accent line at bottom
-  doc.setFillColor(...primaryColor);
+  // Accent line at bottom - use branding primary color if set
+  const footerAccentColor = branding?.primary_color ? hexToRgb(branding.primary_color) || primaryColor : primaryColor;
+  doc.setFillColor(...footerAccentColor);
   doc.rect(margin, pageHeight - 5, contentWidth, 0.8, 'F');
 
   // Save
