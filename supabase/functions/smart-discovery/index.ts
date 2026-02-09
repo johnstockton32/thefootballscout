@@ -176,7 +176,7 @@ Interpret queries naturally: "fast"=high pace, "young"=under 23, "creative"=high
 Players: ${JSON.stringify(playerProfiles)}
 Return up to 10 matches.`;
 
-    const models = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-lite", "openai/gpt-5-nano"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-nano"];
     let aiResponse: Response | null = null;
     let lastError = "";
 
