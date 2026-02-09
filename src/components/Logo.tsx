@@ -9,7 +9,7 @@ interface LogoProps {
 export const Logo = forwardRef<HTMLDivElement, LogoProps>(({ size = "md", showText = false, className }, ref) => {
   // The new circular logo contains the text, so we primarily use the image
   const iconSizes = {
-    sm: "w-10 h-10,
+    sm: "w-10 h-10",
     md: "w-12 h-12",
     lg: "w-16 h-16",
     xl: "w-24 h-24",
