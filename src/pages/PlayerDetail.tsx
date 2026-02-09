@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { PlayerTrendChart } from '@/components/charts/PlayerTrendChart';
 import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
+import { PlayerDevelopmentTimeline } from '@/components/players/PlayerDevelopmentTimeline';
 import { AddToWatchlistButton } from '@/components/watchlists/AddToWatchlistButton';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +43,7 @@ import {
   X,
   TrendingUp,
   Brain,
+  Flag,
 } from 'lucide-react';
 import {
   AlertDialog,
@@ -607,18 +609,22 @@ export default function PlayerDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Radar Chart & Tabs */}
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
+              <TabsList className="grid w-full grid-cols-4 mb-4">
                 <TabsTrigger value="overview" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
-                  Overview
+                  <span className="hidden sm:inline">Overview</span>
+                </TabsTrigger>
+                <TabsTrigger value="development" className="flex items-center gap-2">
+                  <Flag className="w-4 h-4" />
+                  <span className="hidden sm:inline">Development</span>
                 </TabsTrigger>
                 <TabsTrigger value="trends" className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4" />
-                  Trends
+                  <span className="hidden sm:inline">Trends</span>
                 </TabsTrigger>
                 <TabsTrigger value="insights" className="flex items-center gap-2">
                   <Brain className="w-4 h-4" />
-                  AI Insights
+                  <span className="hidden sm:inline">AI</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -683,6 +689,13 @@ export default function PlayerDetail() {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="development">
+                <PlayerDevelopmentTimeline
+                  playerId={player.id}
+                  currentAvgRating={avgRating}
+                />
               </TabsContent>
 
               <TabsContent value="trends">
