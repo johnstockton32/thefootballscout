@@ -74,6 +74,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const userId = claims.claims.sub;
+
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
       return new Response(JSON.stringify({ error: "Query is required" }), {
@@ -86,7 +88,7 @@ Deno.serve(async (req) => {
     const { data: players, error: playersError } = await supabase
       .from("players")
       .select("*")
-      .eq("scout_id", user.id);
+      .eq("scout_id", userId);
 
     if (playersError) {
       console.error("Error fetching players:", playersError);
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
       .from("scouting_reports")
       .select("*")
       .in("player_id", playerIds)
-      .eq("scout_id", user.id);
+      .eq("scout_id", userId);
 
     if (reportsError) {
       console.error("Error fetching reports:", reportsError);
@@ -181,7 +183,7 @@ Return up to 10 matches.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
