@@ -30,11 +30,14 @@ serve(async (req) => {
   
   const corsHeaders = getCorsHeaders(req);
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    { auth: { persistSession: false } }
-  );
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  // Service role client for DB operations
+  const supabaseClient = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { persistSession: false },
+  });
 
   try {
     logStep("Function started");
@@ -44,17 +47,26 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
 
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id });
+    // Use getClaims for signing-keys compatibility
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: claims, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claims?.claims?.sub) throw new Error(`Authentication error: ${claimsError?.message || 'Invalid token'}`);
+    
+    const userId = claims.claims.sub as string;
+    const userEmail = claims.claims.email as string;
+    if (!userEmail) throw new Error("User email not available in token");
+    logStep("User authenticated", { userId });
+
+    // Create a user-like object for compatibility below
+    const user = { id: userId, email: userEmail };
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
