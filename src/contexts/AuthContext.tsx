@@ -226,11 +226,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await deleteUserAccount(session.access_token);
     
     if (!result.error) {
+      // Clear all local state
       setUser(null);
       setSession(null);
       setProfile(null);
       setIsSuperAdmin(false);
       setRoles([]);
+      
+      // Sign out globally to clear all sessions
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch {
+        // Auth user is already deleted, signOut may fail — that's fine
+      }
+      
+      // Clear any localStorage tokens
+      localStorage.removeItem('pending_pro_signup');
+      localStorage.removeItem('pending_promo_code');
     }
     
     return result;
