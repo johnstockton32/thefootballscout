@@ -68,6 +68,28 @@ serve(async (req) => {
     const upperPromo = promoCode ? promoCode.toUpperCase().trim() : null;
     const promoConfig = upperPromo ? PROMO_PRICES[upperPromo] : null;
 
+    // Validate promo code usage limits from DB
+    if (upperPromo) {
+      const serviceClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      const { data: dbPromo } = await serviceClient
+        .from('promo_codes')
+        .select('current_uses, max_uses, is_active')
+        .eq('code', upperPromo)
+        .single();
+      
+      if (dbPromo) {
+        if (!dbPromo.is_active) {
+          throw new Error("This promo code is no longer active");
+        }
+        if (dbPromo.max_uses && (dbPromo.current_uses || 0) >= dbPromo.max_uses) {
+          throw new Error("This promo code has reached its maximum number of uses");
+        }
+      }
+    }
+
     let priceId: string;
     let checkoutMode: "payment" | "subscription" = "subscription";
     let baseTier = tier;
@@ -145,6 +167,43 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id });
+
+    // Track promo code usage in DB
+    if (upperPromo) {
+      const serviceClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+      
+      // Get promo code record
+      const { data: promoRecord } = await serviceClient
+        .from('promo_codes')
+        .select('id, current_uses, max_uses')
+        .eq('code', upperPromo)
+        .single();
+      
+      if (promoRecord) {
+        // Check if max uses exceeded
+        if (promoRecord.max_uses && (promoRecord.current_uses || 0) >= promoRecord.max_uses) {
+          logStep("Promo code max uses reached", { code: upperPromo });
+          // Still allow checkout but log warning
+        }
+        
+        // Record redemption
+        await serviceClient.from('promo_code_redemptions').insert({
+          promo_code_id: promoRecord.id,
+          user_id: user.id,
+        });
+        
+        // Increment current_uses
+        await serviceClient
+          .from('promo_codes')
+          .update({ current_uses: (promoRecord.current_uses || 0) + 1 })
+          .eq('id', promoRecord.id);
+        
+        logStep("Promo code redemption recorded", { code: upperPromo, uses: (promoRecord.current_uses || 0) + 1 });
+      }
+    }
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
