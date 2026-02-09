@@ -216,6 +216,13 @@ export default function Auth() {
     try {
       if (mode === 'signUp') {
 
+        // Store selected tier before signup so we can redirect after email confirmation
+        if (selectedTier === 'pro') {
+          localStorage.setItem('pending_pro_signup', 'true');
+        } else {
+          localStorage.removeItem('pending_pro_signup');
+        }
+
         const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
         if (error) {
           if (error.message.includes('already registered') || error.message.includes('already been registered')) {
@@ -224,6 +231,7 @@ export default function Auth() {
             setFormError(error.message);
             toast.error(error.message);
           }
+          localStorage.removeItem('pending_pro_signup');
           return;
         }
         
@@ -231,13 +239,13 @@ export default function Auth() {
         await updateGdprConsent(true);
         
         // Wait for session to be established
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         const { data: sessionData } = await supabase.auth.getSession();
         const currentUser = sessionData.session?.user;
         const accessToken = sessionData.session?.access_token;
         
-        if (currentUser) {
+        if (currentUser && accessToken) {
           // Redeem promo code if valid
           let promoAppliedTier: string | null = null;
           if (promoCode.trim() && promoCodeStatus === 'valid') {
@@ -249,18 +257,18 @@ export default function Auth() {
             const result = redeemResult as { success: boolean; tier_upgrade?: string; error?: string } | null;
             if (result?.success && result.tier_upgrade) {
               promoAppliedTier = result.tier_upgrade;
+              localStorage.removeItem('pending_pro_signup');
               toast.success(`Welcome! Your ${promoAppliedTier.charAt(0).toUpperCase() + promoAppliedTier.slice(1)} access has been activated!`);
               navigate('/dashboard');
               return;
             }
           }
 
-          // For paid tiers, redirect to Stripe checkout (payment required first)
+          // For paid tiers, redirect to Stripe checkout
           if (!promoAppliedTier && selectedTier === 'pro') {
             try {
               toast.success('Account created! Redirecting to payment...');
               
-              // Create Stripe checkout session
               const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
                 body: { tier: selectedTier, isAnnual: false },
                 headers: {
@@ -270,32 +278,39 @@ export default function Auth() {
 
               if (checkoutError) {
                 console.error('Checkout error:', checkoutError);
-                toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+                toast.error('Account created but payment setup failed. You can upgrade from Settings.');
                 navigate('/dashboard');
                 return;
               }
 
               if (data?.url) {
-                // Redirect to Stripe checkout in same window
+                localStorage.removeItem('pending_pro_signup');
                 window.location.href = data.url;
                 return;
               } else {
-                toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+                toast.error('Account created but payment setup failed. You can upgrade from Settings.');
                 navigate('/dashboard');
                 return;
               }
             } catch (checkoutErr) {
               console.error('Checkout error:', checkoutErr);
-              toast.error('Account created but payment setup failed. Please upgrade from your dashboard.');
+              toast.error('Account created but payment setup failed. You can upgrade from Settings.');
               navigate('/dashboard');
               return;
             }
           }
           
-          // Free tier - just go to dashboard
+          localStorage.removeItem('pending_pro_signup');
           toast.success('Welcome to The Football Scout!');
+          navigate('/dashboard');
+        } else {
+          // No session yet (email confirmation required)
+          if (selectedTier === 'pro') {
+            toast.success('Account created! Please check your email to confirm, then you\'ll be redirected to complete your Pro setup.');
+          } else {
+            toast.success('Account created! Please check your email to confirm your account.');
+          }
         }
-        navigate('/dashboard');
       } else {
         const { error } = await signIn(email, password);
         if (error) {
