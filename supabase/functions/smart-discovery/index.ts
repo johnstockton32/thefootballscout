@@ -176,66 +176,84 @@ Interpret queries naturally: "fast"=high pace, "young"=under 23, "creative"=high
 Players: ${JSON.stringify(playerProfiles)}
 Return up to 10 matches.`;
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_search_results",
-              description: "Return the search results with matching players",
-              parameters: {
-                type: "object",
-                properties: {
-                  matches: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        player_id: { type: "string", description: "The player's ID" },
-                        match_score: { type: "number", description: "Match score from 0 to 1" },
-                        match_reason: { type: "string", description: "Brief explanation of why this player matches" },
+    const models = ["google/gemini-2.5-flash", "google/gemini-2.5-flash-lite", "openai/gpt-5-nano"];
+    let aiResponse: Response | null = null;
+    let lastError = "";
+
+    for (const model of models) {
+      console.log(`Smart discovery trying model: ${model}`);
+      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "return_search_results",
+                description: "Return the search results with matching players",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    matches: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          player_id: { type: "string", description: "The player's ID" },
+                          match_score: { type: "number", description: "Match score from 0 to 1" },
+                          match_reason: { type: "string", description: "Brief explanation of why this player matches" },
+                        },
+                        required: ["player_id", "match_score", "match_reason"],
                       },
-                      required: ["player_id", "match_score", "match_reason"],
                     },
+                    summary: { type: "string", description: "Brief summary of the search results" },
                   },
-                  summary: { type: "string", description: "Brief summary of the search results" },
+                  required: ["matches", "summary"],
                 },
-                required: ["matches", "summary"],
               },
             },
-          },
-        ],
-        tool_choice: "auto",
-      }),
-    });
+          ],
+          tool_choice: "auto",
+        }),
+      });
 
-    if (!aiResponse.ok) {
+      console.log(`Model ${model} response status:`, aiResponse.status);
+
+      if (aiResponse.ok) break;
+
       if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Payment required" }), {
+        return new Response(JSON.stringify({ error: "AI usage limit reached. Please add credits." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const errorText = await aiResponse.text();
-      console.error("AI gateway error:", aiResponse.status, errorText);
-      throw new Error("AI gateway error");
+
+      lastError = await aiResponse.text();
+      console.warn(`Model ${model} failed:`, aiResponse.status, lastError);
+      aiResponse = null;
+    }
+
+    if (!aiResponse || !aiResponse.ok) {
+      console.error("All AI models failed. Last error:", lastError);
+      return new Response(
+        JSON.stringify({ error: "AI service temporarily unavailable. Please try again in a moment." }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const aiData = await aiResponse.json();
