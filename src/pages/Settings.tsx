@@ -404,17 +404,15 @@ export default function Settings() {
     }
   };
 
-  // Handle upgrade
+  // Handle upgrade - always go through Stripe checkout
   const handleUpgrade = async (tier: SubscriptionTier) => {
+    if (tier === 'free') {
+      // Downgrade: route through Stripe portal if subscribed via Stripe
+      return handleCancelSubscription();
+    }
     setIsUpgrading(true);
     try {
-      const success = await subscription.upgradePlan(tier);
-      if (success) {
-        toast({
-          title: 'Plan upgraded!',
-          description: `You're now on the ${tier.charAt(0).toUpperCase() + tier.slice(1)} plan.`,
-        });
-      }
+      await subscription.createCheckout(tier, false);
     } catch (error) {
       toast({
         title: 'Error',
@@ -426,16 +424,26 @@ export default function Settings() {
     }
   };
 
-  // Handle cancel subscription
+  // Handle cancel subscription - use Stripe portal to cancel at period end
   const handleCancelSubscription = async () => {
     setIsCancelling(true);
     try {
-      const success = await subscription.cancelSubscription();
-      if (success) {
+      if (subscription.isSubscribedViaStripe) {
+        // Route through Stripe portal - this lets Stripe handle cancel at period end
+        await subscription.openCustomerPortal();
         toast({
-          title: 'Subscription cancelled',
-          description: 'You have been downgraded to the Free plan.',
+          title: 'Manage your subscription',
+          description: 'Use the Stripe portal to cancel. You\'ll keep access until the end of your billing period.',
         });
+      } else {
+        // Manual tier - cancel immediately
+        const success = await subscription.cancelSubscription();
+        if (success) {
+          toast({
+            title: 'Subscription cancelled',
+            description: 'You have been downgraded to the Free plan.',
+          });
+        }
       }
     } catch (error) {
       toast({
@@ -942,41 +950,16 @@ export default function Settings() {
                         <span className="text-lg font-bold">£0/month</span>
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        Basic features with limited players & reports
+                        You'll keep Pro access until the end of your billing period
                       </p>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline">
-                          Downgrade
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Downgrade to Free?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            You will be downgraded to the Free plan. You'll have:
-                            <ul className="list-disc list-inside mt-2 space-y-1">
-                              <li>Up to 10 player profiles</li>
-                              <li>Up to 5 reports per month</li>
-                              <li>Basic analytics</li>
-                            </ul>
-                            <p className="mt-3 p-3 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400">
-                              <strong>Important:</strong> You'll retain access to Pro features until the end of your current billing period. After that, you'll lose access to unlimited players, reports, AI insights, and PDF export.
-                            </p>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Keep Pro Plan</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleUpgrade('free')}
-                            disabled={isUpgrading}
-                          >
-                            {isUpgrading ? 'Processing...' : 'Downgrade to Free'}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button 
+                      variant="outline"
+                      onClick={handleCancelSubscription}
+                      disabled={isCancelling}
+                    >
+                      {isCancelling ? 'Processing...' : 'Downgrade'}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -988,40 +971,51 @@ export default function Settings() {
                 <CardHeader>
                   <CardTitle className="text-destructive">Cancel Subscription</CardTitle>
                   <CardDescription>
-                    Downgrade to the free plan. You'll lose access to premium features.
+                    Cancel your subscription. You'll keep access until the end of your billing period.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
-                        Cancel Subscription
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          You will be downgraded to the Free plan immediately. You'll lose access to:
-                          <ul className="list-disc list-inside mt-2 space-y-1">
-                            <li>Unlimited player profiles (limited to 10)</li>
-                            <li>Unlimited reports (limited to 5/month)</li>
-                            <li>Advanced analytics and PDF export</li>
-                          </ul>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleCancelSubscription}
-                          disabled={isCancelling}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  {subscription.isSubscribedViaStripe ? (
+                    <Button 
+                      variant="outline" 
+                      className="text-destructive border-destructive hover:bg-destructive/10"
+                      onClick={handleCancelSubscription}
+                      disabled={isCancelling}
+                    >
+                      {isCancelling ? 'Opening...' : 'Manage / Cancel Subscription'}
+                    </Button>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
+                          Cancel Subscription
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Cancel your subscription?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            You will be downgraded to the Free plan. You'll lose access to:
+                            <ul className="list-disc list-inside mt-2 space-y-1">
+                              <li>Unlimited player profiles (limited to 10)</li>
+                              <li>Unlimited reports (limited to 5/month)</li>
+                              <li>Advanced analytics and PDF export</li>
+                            </ul>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleCancelSubscription}
+                            disabled={isCancelling}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
                 </CardContent>
               </Card>
             )}
