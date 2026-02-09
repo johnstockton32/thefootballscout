@@ -307,12 +307,12 @@ export default function AdminPromoCodes() {
 
                   <div className="space-y-2">
                     <Label htmlFor="tier">Tier Upgrade</Label>
-                    <Select value={formData.tier_upgrade} onValueChange={(v) => setFormData({ ...formData, tier_upgrade: v })}>
+                    <Select value={formData.tier_upgrade || "none"} onValueChange={(v) => setFormData({ ...formData, tier_upgrade: v === "none" ? "" : v })}>
                       <SelectTrigger>
                         <SelectValue placeholder="None" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         <SelectItem value="pro">Pro</SelectItem>
                       </SelectContent>
                     </Select>
