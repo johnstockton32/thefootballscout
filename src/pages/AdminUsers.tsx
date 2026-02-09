@@ -212,8 +212,8 @@ export default function AdminUsers() {
     }
 
     try {
-      // Call the edge function to delete user and their auth account
-      const response = await supabase.functions.invoke('delete-team-user', {
+      // Call the delete-account edge function with target userId
+      const response = await supabase.functions.invoke('delete-account', {
         body: { userId },
       });
 
