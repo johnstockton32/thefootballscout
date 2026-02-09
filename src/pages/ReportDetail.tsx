@@ -721,13 +721,28 @@ export default function ReportDetail() {
                 )}
                 
                 {report.recommendation && (
-                  <Card className="card-glass">
+                  <Card className={`card-glass border-l-4 ${
+                    report.recommendation === 'Sign' ? 'border-l-primary' :
+                    report.recommendation === 'Monitor' ? 'border-l-amber-500' :
+                    report.recommendation === 'Reject' ? 'border-l-destructive' : 'border-l-muted'
+                  }`}>
                     <CardContent className="p-5">
-                      <h4 className="font-semibold text-primary mb-3 flex items-center gap-2">
-                        <Trophy className="w-4 h-4" />
-                        Recommendation
-                      </h4>
-                      <p className="text-muted-foreground whitespace-pre-wrap">{report.recommendation}</p>
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold mb-1 flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-primary" />
+                          Recommendation
+                        </h4>
+                        <Badge className={`text-sm px-3 py-1 ${
+                          report.recommendation === 'Sign' ? 'bg-primary text-primary-foreground' :
+                          report.recommendation === 'Monitor' ? 'bg-amber-500 text-white' :
+                          report.recommendation === 'Reject' ? 'bg-destructive text-destructive-foreground' : ''
+                        }`}>
+                          {report.recommendation}
+                        </Badge>
+                      </div>
+                      {!['Sign', 'Monitor', 'Reject'].includes(report.recommendation) && (
+                        <p className="text-muted-foreground whitespace-pre-wrap mt-2">{report.recommendation}</p>
+                      )}
                     </CardContent>
                   </Card>
                 )}
