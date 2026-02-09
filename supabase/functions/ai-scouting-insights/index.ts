@@ -179,41 +179,56 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     console.log("Sending request to AI gateway with insight type:", insightType);
     console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
     
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-      }),
+    const requestBody = JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      max_tokens: 2000,
+      temperature: 0.7,
     });
-    
-    console.log("AI gateway response status:", response.status);
 
-    if (!response.ok) {
-      if (response.status === 429) {
+    let response: Response | null = null;
+    let lastError = "";
+
+    // Retry up to 2 times on 500 errors
+    for (let attempt = 0; attempt < 2; attempt++) {
+      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: requestBody,
+      });
+
+      console.log(`AI gateway response status (attempt ${attempt + 1}):`, response.status);
+
+      if (response.status !== 500) break;
+
+      lastError = await response.text();
+      console.warn(`AI gateway 500 on attempt ${attempt + 1}:`, lastError);
+      if (attempt < 1) await new Promise(r => setTimeout(r, 1500));
+    }
+
+    if (!response || !response.ok) {
+      const status = response?.status || 500;
+      if (status === 429) {
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      if (response.status === 402) {
+      if (status === 402) {
         return new Response(
           JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      throw new Error(`AI gateway error: ${response.status}`);
+      const errorText = lastError || (response ? await response.text() : "No response");
+      console.error("AI gateway error:", status, errorText);
+      throw new Error(`AI service temporarily unavailable. Please try again.`);
     }
 
     const data = await response.json();
