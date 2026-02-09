@@ -216,11 +216,15 @@ export default function Auth() {
     try {
       if (mode === 'signUp') {
 
-        // Store selected tier before signup so we can redirect after email confirmation
-        if (selectedTier === 'pro') {
+        // Store selected tier and promo code before signup so we can redirect after email confirmation
+        if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
           localStorage.setItem('pending_pro_signup', 'true');
+          if (promoCode.trim()) {
+            localStorage.setItem('pending_promo_code', promoCode.trim());
+          }
         } else {
           localStorage.removeItem('pending_pro_signup');
+          localStorage.removeItem('pending_promo_code');
         }
 
         const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
@@ -232,6 +236,7 @@ export default function Auth() {
             toast.error(error.message);
           }
           localStorage.removeItem('pending_pro_signup');
+          localStorage.removeItem('pending_promo_code');
           return;
         }
         
@@ -246,9 +251,9 @@ export default function Auth() {
         const accessToken = sessionData.session?.access_token;
         
         if (currentUser && accessToken) {
-          // Redeem promo code if valid
+          // Redeem promo code if valid (only for codes that give free tier upgrades, not payment-based ones)
           let promoAppliedTier: string | null = null;
-          if (promoCode.trim() && promoCodeStatus === 'valid') {
+          if (promoCode.trim() && promoCodeStatus === 'valid' && promoCodeBenefits?.tierUpgrade) {
             const { data: redeemResult } = await supabase.rpc('redeem_promo_code', { 
               _user_id: currentUser.id, 
               _code: promoCode.trim() 
@@ -258,19 +263,21 @@ export default function Auth() {
             if (result?.success && result.tier_upgrade) {
               promoAppliedTier = result.tier_upgrade;
               localStorage.removeItem('pending_pro_signup');
+              localStorage.removeItem('pending_promo_code');
               toast.success(`Welcome! Your ${promoAppliedTier.charAt(0).toUpperCase() + promoAppliedTier.slice(1)} access has been activated!`);
               navigate('/dashboard');
               return;
             }
           }
 
-          // For paid tiers, redirect to Stripe checkout
-          if (!promoAppliedTier && selectedTier === 'pro') {
+          // For paid tiers or promo codes that require payment, redirect to Stripe checkout
+          const pendingPromoCode = promoCode.trim() || localStorage.getItem('pending_promo_code') || undefined;
+          if (!promoAppliedTier && (selectedTier === 'pro' || pendingPromoCode)) {
             try {
               toast.success('Account created! Redirecting to payment...');
               
               const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
-                body: { tier: selectedTier, isAnnual: false },
+                body: { tier: 'pro', isAnnual: false, promoCode: pendingPromoCode },
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
                 },
@@ -285,6 +292,7 @@ export default function Auth() {
 
               if (data?.url) {
                 localStorage.removeItem('pending_pro_signup');
+                localStorage.removeItem('pending_promo_code');
                 window.location.href = data.url;
                 return;
               } else {
