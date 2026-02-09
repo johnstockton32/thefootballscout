@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BarChart3, Users, FileText, Shield, Zap, Target, Download } from 'lucide-react';
+import { ArrowRight, BarChart3, Users, FileText, Shield, Zap, Target } from 'lucide-react';
 export default function Index() {
   const navigate = useNavigate();
   const {
@@ -46,10 +46,6 @@ export default function Index() {
         <div className="container mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-1.5 sm:gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/install')}>
-              <Download className="w-4 h-4 mr-1" />
-              Install
-            </Button>
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/pricing')}>
               Pricing
             </Button>
