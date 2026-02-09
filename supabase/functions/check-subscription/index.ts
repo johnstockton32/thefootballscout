@@ -7,7 +7,11 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 const PRODUCT_TO_TIER: Record<string, string> = {
   "prod_TvF36xqkHghuBF": "pro",     // Pro Monthly
   "prod_TvF4Ye5zHm8jIi": "pro",     // Pro Annual
+  "prod_TwkfUm5lSdM5cz": "pro",     // Welcome Launch Lifetime Pro
 };
+
+// Product IDs that represent lifetime (one-time) purchases
+const LIFETIME_PRODUCTS = new Set(["prod_TwkfUm5lSdM5cz"]);
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -137,17 +141,16 @@ serve(async (req) => {
       logStep("Active subscription found", { subscriptionId, endDate: subscriptionEnd });
       
       const productId = subscription.items.data[0]?.price?.product as string;
-      tier = PRODUCT_TO_TIER[productId] || "pro"; // Default to pro if product exists but not mapped
+      tier = PRODUCT_TO_TIER[productId] || "pro";
       logStep("Determined subscription tier", { productId, tier });
       
-      // Update profile with active subscription tier - use safe date handling
+      // Update profile with active subscription tier
       try {
         const updateData: { subscription_tier: string; subscription_started_at?: string; trial_ends_at?: null } = { 
           subscription_tier: tier,
-          trial_ends_at: null // Clear trial when paid subscription is active
+          trial_ends_at: null
         };
         
-        // Only set subscription_started_at if we have a valid date
         const startDate = safeTimestampToISO(subscription.start_date) || 
                           safeTimestampToISO(subscription.created);
         if (startDate) {
@@ -164,6 +167,46 @@ serve(async (req) => {
         logStep("Profile update failed, continuing", { error: String(updateError) });
       }
     } else {
+      // Check for one-time lifetime purchases via checkout sessions
+      logStep("Checking for lifetime purchases");
+      const checkoutSessions = await stripe.checkout.sessions.list({
+        customer: customerId,
+        status: "complete",
+        limit: 10,
+      });
+      
+      const lifetimePurchase = checkoutSessions.data.find(session => 
+        session.metadata?.is_lifetime === "true" && session.payment_status === "paid"
+      );
+      
+      if (lifetimePurchase) {
+        tier = lifetimePurchase.metadata?.tier || "pro";
+        logStep("Lifetime purchase found", { sessionId: lifetimePurchase.id, tier });
+        
+        await supabaseClient
+          .from('profiles')
+          .update({ 
+            subscription_tier: tier,
+            trial_ends_at: null,
+            subscription_started_at: lifetimePurchase.created 
+              ? new Date(lifetimePurchase.created * 1000).toISOString() 
+              : new Date().toISOString()
+          })
+          .eq('id', user.id);
+        
+        logStep("Returning response", { subscribed: true, tier, lifetime: true });
+        return new Response(JSON.stringify({
+          subscribed: true,
+          tier,
+          subscription_end: null, // lifetime = no end
+          subscription_id: null,
+          is_lifetime: true,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
       logStep("No active subscription found, checking for canceled");
       
       // Check for canceled subscriptions to see if they still have access
@@ -174,7 +217,6 @@ serve(async (req) => {
       });
       logStep("Canceled subscriptions fetched", { count: canceledSubs.data.length });
       
-      // Check for past_due subscriptions (payment failed but still in grace period)
       const pastDueSubs = await stripe.subscriptions.list({
         customer: customerId,
         status: "past_due",
@@ -187,13 +229,8 @@ serve(async (req) => {
         subscriptionEnd = safeTimestampToISO(pastDueSub.current_period_end);
         const productId = pastDueSub.items.data[0]?.price?.product as string;
         tier = PRODUCT_TO_TIER[productId] || "pro";
-        logStep("Past due subscription found - payment failed but still active", { 
-          subscriptionId: pastDueSub.id, 
-          endDate: subscriptionEnd, 
-          tier 
-        });
+        logStep("Past due subscription found", { subscriptionId: pastDueSub.id, endDate: subscriptionEnd, tier });
         
-        // Keep pro tier during grace period but note the payment issue
         await supabaseClient
           .from('profiles')
           .update({ subscription_tier: tier })
@@ -203,7 +240,6 @@ serve(async (req) => {
         const endTimestamp = canceledSub.current_period_end;
         
         if (endTimestamp && endTimestamp * 1000 > Date.now()) {
-          // Still has access until end of period
           subscriptionEnd = safeTimestampToISO(endTimestamp);
           const productId = canceledSub.items.data[0]?.price?.product as string;
           tier = PRODUCT_TO_TIER[productId] || "pro";
@@ -215,7 +251,6 @@ serve(async (req) => {
             .eq('id', user.id);
         } else {
           logStep("Canceled subscription expired, downgrading to free");
-          // Downgrade to free tier - subscription ended
           await supabaseClient
             .from('profiles')
             .update({ 
@@ -225,7 +260,6 @@ serve(async (req) => {
             .eq('id', user.id);
         }
       } else {
-        // Check if user had a trial that expired
         const { data: profile } = await supabaseClient
           .from('profiles')
           .select('trial_ends_at, subscription_tier')

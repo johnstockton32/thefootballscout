@@ -29,7 +29,7 @@ interface SubscriptionData {
   cancelSubscription: () => Promise<boolean>;
   refreshSubscription: () => Promise<void>;
   openCustomerPortal: () => Promise<void>;
-  createCheckout: (tier: SubscriptionTier, isAnnual?: boolean) => Promise<void>;
+  createCheckout: (tier: SubscriptionTier, isAnnual?: boolean, promoCode?: string) => Promise<void>;
   isSubscribedViaStripe: boolean;
 }
 
@@ -174,7 +174,7 @@ export function useSubscription(): SubscriptionData {
     }
   };
 
-  const createCheckout = async (checkoutTier: SubscriptionTier, isAnnual: boolean = false): Promise<void> => {
+  const createCheckout = async (checkoutTier: SubscriptionTier, isAnnual: boolean = false, promoCode?: string): Promise<void> => {
     const { data: sessionData } = await supabase.auth.getSession();
     const accessToken = sessionData.session?.access_token;
     
@@ -189,10 +189,10 @@ export function useSubscription(): SubscriptionData {
     }
 
     try {
-      console.log('[Checkout] Creating checkout session', { tier: checkoutTier, isAnnual });
+      console.log('[Checkout] Creating checkout session', { tier: checkoutTier, isAnnual, promoCode });
       
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { tier: checkoutTier, isAnnual },
+        body: { tier: checkoutTier, isAnnual, promoCode },
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
