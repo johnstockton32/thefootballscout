@@ -15,25 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription, SubscriptionTier } from '@/hooks/useSubscription';
@@ -48,27 +31,19 @@ import { format, formatDistanceToNow } from 'date-fns';
 // Validation schemas
 const profileSchema = z.object({
   full_name: z.string().trim().max(100, 'Name must be less than 100 characters').optional(),
-  organization: z.string().trim().max(200, 'Organization must be less than 200 characters').optional(),
+  organization: z.string().trim().max(200, 'Organization must be less than 200 characters').optional()
 });
-
 const emailSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
+  email: z.string().email('Please enter a valid email address')
 });
-
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
-  newPassword: z.string()
-    .min(8, 'Password must be at least 8 characters')
-    .regex(/[a-z]/, 'Password must contain a lowercase letter')
-    .regex(/[A-Z]/, 'Password must contain an uppercase letter')
-    .regex(/[0-9]/, 'Password must contain a number')
-    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'Password must contain a special character'),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
+  newPassword: z.string().min(8, 'Password must be at least 8 characters').regex(/[a-z]/, 'Password must contain a lowercase letter').regex(/[A-Z]/, 'Password must contain an uppercase letter').regex(/[0-9]/, 'Password must contain a number').regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/, 'Password must contain a special character'),
+  confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
-  path: ['confirmPassword'],
+  path: ['confirmPassword']
 });
-
 type ProfileFormData = z.infer<typeof profileSchema>;
 type EmailFormData = z.infer<typeof emailSchema>;
 type PasswordFormData = z.infer<typeof passwordSchema>;
@@ -76,33 +51,43 @@ type PasswordFormData = z.infer<typeof passwordSchema>;
 // RestartTourButton component
 function RestartTourButton() {
   const navigate = useNavigate();
-  const { resetTour } = useOnboardingTour();
-  const { toast } = useToast();
-
+  const {
+    resetTour
+  } = useOnboardingTour();
+  const {
+    toast
+  } = useToast();
   const handleRestartTour = () => {
     resetTour();
     toast({
       title: 'Tour reset',
-      description: 'Redirecting to dashboard to start the tour...',
+      description: 'Redirecting to dashboard to start the tour...'
     });
     navigate('/dashboard');
   };
-
-  return (
-    <Button variant="outline" onClick={handleRestartTour} className="gap-2">
+  return <Button variant="outline" onClick={handleRestartTour} className="gap-2">
       <PlayCircle className="h-4 w-4" />
       Restart Onboarding Tour
-    </Button>
-  );
+    </Button>;
 }
-
 export default function Settings() {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const { user, profile, signOut, updateGdprConsent, updateProfile, deleteAccount } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const {
+    toast
+  } = useToast();
+  const {
+    user,
+    profile,
+    signOut,
+    updateGdprConsent,
+    updateProfile,
+    deleteAccount
+  } = useAuth();
+  const {
+    theme,
+    setTheme
+  } = useTheme();
   const subscription = useSubscription();
-  
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -122,16 +107,16 @@ export default function Settings() {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       full_name: profile?.full_name || '',
-      organization: profile?.organization || '',
-    },
+      organization: profile?.organization || ''
+    }
   });
 
   // Email form
   const emailForm = useForm<EmailFormData>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
-      email: user?.email || '',
-    },
+      email: user?.email || ''
+    }
   });
 
   // Reset form when profile data loads
@@ -139,7 +124,7 @@ export default function Settings() {
     if (profile) {
       profileForm.reset({
         full_name: profile.full_name || '',
-        organization: profile.organization || '',
+        organization: profile.organization || ''
       });
     }
   }, [profile, profileForm]);
@@ -147,7 +132,9 @@ export default function Settings() {
   // Reset email form when user data loads
   useEffect(() => {
     if (user?.email) {
-      emailForm.reset({ email: user.email });
+      emailForm.reset({
+        email: user.email
+      });
     }
   }, [user?.email, emailForm]);
 
@@ -157,30 +144,30 @@ export default function Settings() {
     defaultValues: {
       currentPassword: '',
       newPassword: '',
-      confirmPassword: '',
-    },
+      confirmPassword: ''
+    }
   });
 
   // Handle profile update
   const onProfileSubmit = async (data: ProfileFormData) => {
     setIsUpdatingProfile(true);
     try {
-      const { error } = await updateProfile({
+      const {
+        error
+      } = await updateProfile({
         full_name: data.full_name || null,
-        organization: data.organization || null,
+        organization: data.organization || null
       });
-      
       if (error) throw error;
-      
       toast({
         title: 'Profile updated',
-        description: 'Your profile has been updated successfully.',
+        description: 'Your profile has been updated successfully.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'updating profile'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsUpdatingProfile(false);
@@ -192,49 +179,44 @@ export default function Settings() {
     if (data.email === user?.email) {
       toast({
         title: 'No change',
-        description: 'The email address is the same as your current email.',
+        description: 'The email address is the same as your current email.'
       });
       return;
     }
-
     setIsChangingEmail(true);
     try {
       // Check if email is already in use by another user
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', data.email)
-        .neq('id', user?.id || '')
-        .maybeSingle();
-
+      const {
+        data: existingProfile,
+        error: checkError
+      } = await supabase.from('profiles').select('id').eq('email', data.email).neq('id', user?.id || '').maybeSingle();
       if (checkError) throw checkError;
-
       if (existingProfile) {
         toast({
           title: 'Email already in use',
           description: 'This email address is already registered to another account.',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
 
       // Update email in Supabase Auth
-      const { error } = await supabase.auth.updateUser({
-        email: data.email,
+      const {
+        error
+      } = await supabase.auth.updateUser({
+        email: data.email
       });
-      
       if (error) throw error;
-      
       setShowEmailForm(false);
       toast({
         title: 'Verification email sent',
-        description: 'Please check your new email address to confirm the change.',
+        description: 'Please check your new email address to confirm the change.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'changing email'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsChangingEmail(false);
@@ -246,37 +228,38 @@ export default function Settings() {
     setIsChangingPassword(true);
     try {
       // First verify current password by re-authenticating
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const {
+        error: signInError
+      } = await supabase.auth.signInWithPassword({
         email: user?.email || '',
-        password: data.currentPassword,
+        password: data.currentPassword
       });
-      
       if (signInError) {
         toast({
           title: 'Error',
           description: 'Current password is incorrect',
-          variant: 'destructive',
+          variant: 'destructive'
         });
         return;
       }
-      
+
       // Now update to new password
-      const { error } = await supabase.auth.updateUser({
-        password: data.newPassword,
+      const {
+        error
+      } = await supabase.auth.updateUser({
+        password: data.newPassword
       });
-      
       if (error) throw error;
-      
       passwordForm.reset();
       toast({
         title: 'Password changed',
-        description: 'Your password has been updated successfully.',
+        description: 'Your password has been updated successfully.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'changing password'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsChangingPassword(false);
@@ -290,13 +273,13 @@ export default function Settings() {
       await exportPlayersCSV();
       toast({
         title: 'Export complete',
-        description: 'Your players have been exported to CSV.',
+        description: 'Your players have been exported to CSV.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'exporting players'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsExportingPlayers(false);
@@ -310,13 +293,13 @@ export default function Settings() {
       await exportReportsCSV();
       toast({
         title: 'Export complete',
-        description: 'Your reports have been exported to CSV.',
+        description: 'Your reports have been exported to CSV.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'exporting reports'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsExportingReports(false);
@@ -327,18 +310,19 @@ export default function Settings() {
   const handleWithdrawConsent = async () => {
     setIsWithdrawingConsent(true);
     try {
-      const { error } = await updateGdprConsent(false);
+      const {
+        error
+      } = await updateGdprConsent(false);
       if (error) throw error;
-      
       toast({
         title: 'Consent withdrawn',
-        description: 'Your GDPR consent has been withdrawn. Some features may be limited.',
+        description: 'Your GDPR consent has been withdrawn. Some features may be limited.'
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'withdrawing consent'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsWithdrawingConsent(false);
@@ -348,22 +332,22 @@ export default function Settings() {
   // Handle account deletion
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') return;
-    
     setIsDeletingAccount(true);
     try {
-      const { error } = await deleteAccount();
+      const {
+        error
+      } = await deleteAccount();
       if (error) throw error;
-      
       toast({
         title: 'Account deleted',
-        description: 'Your account has been permanently deleted.',
+        description: 'Your account has been permanently deleted.'
       });
       navigate('/');
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'deleting account'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsDeletingAccount(false);
@@ -384,20 +368,20 @@ export default function Settings() {
       if (success) {
         toast({
           title: 'Trial started!',
-          description: 'Your 14-day Pro trial has begun. Enjoy unlimited access!',
+          description: 'Your 14-day Pro trial has begun. Enjoy unlimited access!'
         });
       } else {
         toast({
           title: 'Unable to start trial',
           description: 'You may have already used your trial period.',
-          variant: 'destructive',
+          variant: 'destructive'
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
         description: handleError(error, 'starting trial'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsStartingTrial(false);
@@ -417,7 +401,7 @@ export default function Settings() {
       toast({
         title: 'Error',
         description: handleError(error, 'upgrading plan'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsUpgrading(false);
@@ -433,7 +417,7 @@ export default function Settings() {
         await subscription.openCustomerPortal();
         toast({
           title: 'Manage your subscription',
-          description: 'Use the Stripe portal to cancel. You\'ll keep access until the end of your billing period.',
+          description: 'Use the Stripe portal to cancel. You\'ll keep access until the end of your billing period.'
         });
       } else {
         // Manual tier - cancel immediately
@@ -441,7 +425,7 @@ export default function Settings() {
         if (success) {
           toast({
             title: 'Subscription cancelled',
-            description: 'You have been downgraded to the Free plan.',
+            description: 'You have been downgraded to the Free plan.'
           });
         }
       }
@@ -449,31 +433,33 @@ export default function Settings() {
       toast({
         title: 'Error',
         description: handleError(error, 'cancelling subscription'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsCancelling(false);
     }
   };
-
   const getTierIcon = (tier: SubscriptionTier) => {
     switch (tier) {
-      case 'free': return <Zap className="h-5 w-5" />;
-      case 'pro': return <Crown className="h-5 w-5" />;
-      default: return <Zap className="h-5 w-5" />;
+      case 'free':
+        return <Zap className="h-5 w-5" />;
+      case 'pro':
+        return <Crown className="h-5 w-5" />;
+      default:
+        return <Zap className="h-5 w-5" />;
     }
   };
-
   const getTierColor = (tier: SubscriptionTier) => {
     switch (tier) {
-      case 'free': return 'bg-muted text-muted-foreground';
-      case 'pro': return 'bg-primary text-primary-foreground';
-      default: return 'bg-muted text-muted-foreground';
+      case 'free':
+        return 'bg-muted text-muted-foreground';
+      case 'pro':
+        return 'bg-primary text-primary-foreground';
+      default:
+        return 'bg-muted text-muted-foreground';
     }
   };
-
-  return (
-    <DashboardLayout>
+  return <DashboardLayout>
       <div className="container mx-auto py-6 px-4 max-w-4xl">
         <div className="mb-8">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2">
@@ -527,16 +513,11 @@ export default function Settings() {
                 <CardDescription>Upload a photo to personalize your account</CardDescription>
               </CardHeader>
               <CardContent>
-                {user && (
-                  <ProfilePhotoUpload
-                    userId={user.id}
-                    currentPhotoUrl={profile?.photo_url || null}
-                    fullName={profile?.full_name || null}
-                    onPhotoUpdated={(url) => {
-                      updateProfile({ photo_url: url });
-                    }}
-                  />
-                )}
+                {user && <ProfilePhotoUpload userId={user.id} currentPhotoUrl={profile?.photo_url || null} fullName={profile?.full_name || null} onPhotoUpdated={url => {
+                updateProfile({
+                  photo_url: url
+                });
+              }} />}
               </CardContent>
             </Card>
 
@@ -552,98 +533,57 @@ export default function Settings() {
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <Label>Email</Label>
-                        {!showEmailForm && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowEmailForm(true)}
-                            className="text-xs h-auto py-1"
-                          >
+                        {!showEmailForm && <Button type="button" variant="ghost" size="sm" onClick={() => setShowEmailForm(true)} className="text-xs h-auto py-1">
                             Change Email
-                          </Button>
-                        )}
+                          </Button>}
                       </div>
-                      {!showEmailForm ? (
-                        <Input value={user?.email || ''} disabled className="bg-muted" />
-                      ) : (
-                        <div className="space-y-3">
+                      {!showEmailForm ? <Input value={user?.email || ''} disabled className="bg-muted" /> : <div className="space-y-3">
                           <div className="relative">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              type="email"
-                              placeholder="Enter new email address"
-                              className="pl-10"
-                              value={emailForm.watch('email')}
-                              onChange={(e) => emailForm.setValue('email', e.target.value)}
-                            />
+                            <Input type="email" placeholder="Enter new email address" className="pl-10" value={emailForm.watch('email')} onChange={e => emailForm.setValue('email', e.target.value)} />
                           </div>
-                          {emailForm.formState.errors.email && (
-                            <p className="text-sm text-destructive">{emailForm.formState.errors.email.message}</p>
-                          )}
+                          {emailForm.formState.errors.email && <p className="text-sm text-destructive">{emailForm.formState.errors.email.message}</p>}
                           <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              size="sm"
-                              onClick={emailForm.handleSubmit(onEmailSubmit)}
-                              disabled={isChangingEmail}
-                            >
-                              {isChangingEmail ? (
-                                <>
+                            <Button type="button" size="sm" onClick={emailForm.handleSubmit(onEmailSubmit)} disabled={isChangingEmail}>
+                              {isChangingEmail ? <>
                                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                   Sending...
-                                </>
-                              ) : (
-                                'Update Email'
-                              )}
+                                </> : 'Update Email'}
                             </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setShowEmailForm(false);
-                                emailForm.reset({ email: user?.email || '' });
-                              }}
-                              disabled={isChangingEmail}
-                            >
+                            <Button type="button" variant="outline" size="sm" onClick={() => {
+                          setShowEmailForm(false);
+                          emailForm.reset({
+                            email: user?.email || ''
+                          });
+                        }} disabled={isChangingEmail}>
                               Cancel
                             </Button>
                           </div>
                           <p className="text-xs text-muted-foreground">
                             A verification email will be sent to your new email address.
                           </p>
-                        </div>
-                      )}
+                        </div>}
                     </div>
                     
-                    <FormField
-                      control={profileForm.control}
-                      name="full_name"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={profileForm.control} name="full_name" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Full Name</FormLabel>
                           <FormControl>
                             <Input placeholder="Enter your full name" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={profileForm.control}
-                      name="organization"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={profileForm.control} name="organization" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Organization</FormLabel>
                           <FormControl>
                             <Input placeholder="Enter your organization" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
                     <Button type="submit" disabled={isUpdatingProfile}>
                       {isUpdatingProfile ? 'Saving...' : 'Save Changes'}
@@ -679,8 +619,7 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Stripe Subscription Management */}
-                {subscription.isSubscribedViaStripe && (
-                  <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                {subscription.isSubscribedViaStripe && <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center gap-2 mb-1">
@@ -688,56 +627,44 @@ export default function Settings() {
                           <span className="font-semibold text-green-700 dark:text-green-300">Active Subscription</span>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {subscription.subscriptionEndsAt && (
-                            <>Next billing: {format(subscription.subscriptionEndsAt, 'MMMM d, yyyy')}</>
-                          )}
+                          {subscription.subscriptionEndsAt && <>Next billing: {format(subscription.subscriptionEndsAt, 'MMMM d, yyyy')}</>}
                         </p>
                       </div>
-                      <Button 
-                        variant="outline" 
-                        onClick={async () => {
-                          setIsOpeningPortal(true);
-                          try {
-                            await subscription.openCustomerPortal();
-                          } finally {
-                            setIsOpeningPortal(false);
-                          }
-                        }}
-                        disabled={isOpeningPortal}
-                        className="gap-2"
-                      >
-                        {isOpeningPortal ? (
-                          <>
+                      <Button variant="outline" onClick={async () => {
+                    setIsOpeningPortal(true);
+                    try {
+                      await subscription.openCustomerPortal();
+                    } finally {
+                      setIsOpeningPortal(false);
+                    }
+                  }} disabled={isOpeningPortal} className="gap-2">
+                        {isOpeningPortal ? <>
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Opening...
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             <ExternalLink className="h-4 w-4" />
                             Manage Billing
-                          </>
-                        )}
+                          </>}
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-2">
                       View invoices, update payment method, upgrade, downgrade, or cancel your subscription.
                     </p>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Trial Status */}
-                {subscription.isInTrial && subscription.trialEndsAt && (
-                  <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                {subscription.isInTrial && subscription.trialEndsAt && <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                     <div className="flex items-center gap-2 mb-2">
                       <Crown className="h-5 w-5 text-primary" />
                       <span className="font-semibold">Pro Trial Active</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Your trial ends {formatDistanceToNow(subscription.trialEndsAt, { addSuffix: true })} 
+                      Your trial ends {formatDistanceToNow(subscription.trialEndsAt, {
+                    addSuffix: true
+                  })} 
                       ({format(subscription.trialEndsAt, 'MMMM d, yyyy')})
                     </p>
-                  </div>
-                )}
+                  </div>}
 
                 {/* Usage Stats */}
                 <div className="space-y-4">
@@ -750,12 +677,7 @@ export default function Settings() {
                         {subscription.usage.playerCount} / {subscription.limits.maxPlayers === Infinity ? '∞' : subscription.limits.maxPlayers}
                       </span>
                     </div>
-                    {subscription.tier === 'free' && (
-                      <Progress 
-                        value={(subscription.usage.playerCount / subscription.limits.maxPlayers) * 100} 
-                        className="h-2"
-                      />
-                    )}
+                    {subscription.tier === 'free' && <Progress value={subscription.usage.playerCount / subscription.limits.maxPlayers * 100} className="h-2" />}
                   </div>
 
                   <div className="space-y-2">
@@ -765,12 +687,7 @@ export default function Settings() {
                         {subscription.usage.monthlyReportCount} / {subscription.limits.maxReportsPerMonth === Infinity ? '∞' : subscription.limits.maxReportsPerMonth}
                       </span>
                     </div>
-                    {subscription.tier === 'free' && (
-                      <Progress 
-                        value={(subscription.usage.monthlyReportCount / subscription.limits.maxReportsPerMonth) * 100} 
-                        className="h-2"
-                      />
-                    )}
+                    {subscription.tier === 'free' && <Progress value={subscription.usage.monthlyReportCount / subscription.limits.maxReportsPerMonth * 100} className="h-2" />}
                   </div>
                 </div>
 
@@ -808,98 +725,69 @@ export default function Settings() {
                       <Check className="h-4 w-4 text-primary" />
                       Offline support
                     </li>
-                    {subscription.limits.hasAdvancedAnalytics && (
-                      <li className="flex items-center gap-2 text-sm">
+                    {subscription.limits.hasAdvancedAnalytics && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         Advanced analytics & radar charts
-                      </li>
-                    )}
-                    {subscription.limits.hasPdfExport && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasPdfExport && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         PDF export
-                      </li>
-                    )}
-                    {subscription.limits.hasAIInsights && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasAIInsights && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         AI-powered scouting insights
-                      </li>
-                    )}
-                    {subscription.limits.hasSmartDiscovery && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasSmartDiscovery && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         Smart Discovery AI search
-                      </li>
-                    )}
-                    {subscription.limits.hasBulkImportExport && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasBulkImportExport && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         Bulk CSV import & export
-                      </li>
-                    )}
-                    {subscription.limits.hasVoiceToText && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasVoiceToText && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         Voice-to-text notes
-                      </li>
-                    )}
-                    {subscription.limits.hasCustomAttributeWeights && (
-                      <li className="flex items-center gap-2 text-sm">
+                      </li>}
+                    {subscription.limits.hasCustomAttributeWeights && <li className="flex items-center gap-2 text-sm">
                         <Check className="h-4 w-4 text-primary" />
                         Custom attribute weights
-                      </li>
-                    )}
-                    {!subscription.limits.hasAdvancedAnalytics && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasAdvancedAnalytics && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         Advanced analytics & radar charts
-                      </li>
-                    )}
-                    {!subscription.limits.hasPdfExport && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasPdfExport && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         PDF export
-                      </li>
-                    )}
-                    {!subscription.limits.hasAIInsights && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasAIInsights && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         AI-powered scouting insights
-                      </li>
-                    )}
-                    {!subscription.limits.hasSmartDiscovery && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasSmartDiscovery && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         Smart Discovery AI search
-                      </li>
-                    )}
-                    {!subscription.limits.hasBulkImportExport && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasBulkImportExport && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         Bulk CSV import & export
-                      </li>
-                    )}
-                    {!subscription.limits.hasVoiceToText && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasVoiceToText && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         Voice-to-text notes
-                      </li>
-                    )}
-                    {!subscription.limits.hasCustomAttributeWeights && (
-                      <li className="flex items-center gap-2 text-sm text-muted-foreground">
+                      </li>}
+                    {!subscription.limits.hasCustomAttributeWeights && <li className="flex items-center gap-2 text-sm text-muted-foreground">
                         <X className="h-4 w-4" />
                         Custom attribute weights
-                      </li>
-                    )}
+                      </li>}
                   </ul>
                 </div>
               </CardContent>
             </Card>
 
             {/* Upgrade Options */}
-            {subscription.tier === 'free' && (
-              <Card className="card-glass border-primary/20">
+            {subscription.tier === 'free' && <Card className="card-glass border-primary/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Crown className="h-5 w-5 text-primary" />
@@ -920,21 +808,16 @@ export default function Settings() {
                         Unlimited players, reports, and advanced features
                       </p>
                     </div>
-                    <Button 
-                      onClick={() => handleUpgrade('pro')}
-                      disabled={isUpgrading}
-                    >
+                    <Button onClick={() => handleUpgrade('pro')} disabled={isUpgrading}>
                       {isUpgrading ? 'Upgrading...' : 'Upgrade to Pro'}
                     </Button>
                   </div>
 
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Pro Plan Management */}
-            {subscription.tier === 'pro' && !subscription.isInTrial && (
-              <Card className="card-glass">
+            {subscription.tier === 'pro' && !subscription.isInTrial && <Card className="card-glass">
                 <CardHeader>
                   <CardTitle>Plan Management</CardTitle>
                   <CardDescription>Upgrade or modify your subscription</CardDescription>
@@ -953,21 +836,15 @@ export default function Settings() {
                         You'll keep Pro access until the end of your billing period
                       </p>
                     </div>
-                    <Button 
-                      variant="outline"
-                      onClick={handleCancelSubscription}
-                      disabled={isCancelling}
-                    >
+                    <Button variant="outline" onClick={handleCancelSubscription} disabled={isCancelling}>
                       {isCancelling ? 'Processing...' : 'Downgrade'}
                     </Button>
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Cancel Subscription */}
-            {(subscription.tier !== 'free') && (
-              <Card className="card-glass border-destructive/20">
+            {subscription.tier !== 'free' && <Card className="card-glass border-destructive/20">
                 <CardHeader>
                   <CardTitle className="text-destructive">Cancel Subscription</CardTitle>
                   <CardDescription>
@@ -975,17 +852,9 @@ export default function Settings() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {subscription.isSubscribedViaStripe ? (
-                    <Button 
-                      variant="outline" 
-                      className="text-destructive border-destructive hover:bg-destructive/10"
-                      onClick={handleCancelSubscription}
-                      disabled={isCancelling}
-                    >
+                  {subscription.isSubscribedViaStripe ? <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10" onClick={handleCancelSubscription} disabled={isCancelling}>
                       {isCancelling ? 'Opening...' : 'Manage / Cancel Subscription'}
-                    </Button>
-                  ) : (
-                    <AlertDialog>
+                    </Button> : <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
                           Cancel Subscription
@@ -1005,20 +874,14 @@ export default function Settings() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleCancelSubscription}
-                            disabled={isCancelling}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
+                          <AlertDialogAction onClick={handleCancelSubscription} disabled={isCancelling} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             {isCancelling ? 'Cancelling...' : 'Cancel Subscription'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
-                    </AlertDialog>
-                  )}
+                    </AlertDialog>}
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
           </TabsContent>
 
           {/* Appearance Tab */}
@@ -1030,14 +893,7 @@ export default function Settings() {
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3">
-                  <button
-                    onClick={() => setTheme('light')}
-                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
-                      theme === 'light' 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                    }`}
-                  >
+                  <button onClick={() => setTheme('light')} className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${theme === 'light' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center shrink-0">
                       <Sun className="h-6 w-6 text-amber-600" />
                     </div>
@@ -1045,19 +901,10 @@ export default function Settings() {
                       <p className="font-medium">Light</p>
                       <p className="text-sm text-muted-foreground">Bright and clean</p>
                     </div>
-                    {theme === 'light' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
-                    )}
+                    {theme === 'light' && <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>}
                   </button>
 
-                  <button
-                    onClick={() => setTheme('dark')}
-                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
-                      theme === 'dark' 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                    }`}
-                  >
+                  <button onClick={() => setTheme('dark')} className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${theme === 'dark' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shrink-0">
                       <Moon className="h-6 w-6 text-slate-300" />
                     </div>
@@ -1065,19 +912,10 @@ export default function Settings() {
                       <p className="font-medium">Dark</p>
                       <p className="text-sm text-muted-foreground">Stadium night mode</p>
                     </div>
-                    {theme === 'dark' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
-                    )}
+                    {theme === 'dark' && <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>}
                   </button>
 
-                  <button
-                    onClick={() => setTheme('system')}
-                    className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${
-                      theme === 'system' 
-                        ? 'border-primary bg-primary/10' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50'
-                    }`}
-                  >
+                  <button onClick={() => setTheme('system')} className={`flex items-center gap-4 p-4 rounded-lg border-2 transition-all w-full ${theme === 'system' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50 hover:bg-muted/50'}`}>
                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shrink-0">
                       <Monitor className="h-6 w-6 text-white" />
                     </div>
@@ -1085,9 +923,7 @@ export default function Settings() {
                       <p className="font-medium">System</p>
                       <p className="text-sm text-muted-foreground">Match device</p>
                     </div>
-                    {theme === 'system' && (
-                      <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>
-                    )}
+                    {theme === 'system' && <Badge variant="default" className="bg-primary text-primary-foreground shrink-0">Active</Badge>}
                   </button>
                 </div>
               </CardContent>
@@ -1104,25 +940,19 @@ export default function Settings() {
               <CardContent>
                 <Form {...passwordForm}>
                   <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
-                    <FormField
-                      control={passwordForm.control}
-                      name="currentPassword"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={passwordForm.control} name="currentPassword" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Current Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="Enter current password" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={passwordForm.control}
-                      name="newPassword"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={passwordForm.control} name="newPassword" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>New Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="Enter new password" {...field} />
@@ -1131,23 +961,17 @@ export default function Settings() {
                           <p className="text-xs text-muted-foreground">
                             Must be at least 8 characters with uppercase, lowercase, number, and special character
                           </p>
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
-                    <FormField
-                      control={passwordForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
+                    <FormField control={passwordForm.control} name="confirmPassword" render={({
+                    field
+                  }) => <FormItem>
                           <FormLabel>Confirm Password</FormLabel>
                           <FormControl>
                             <Input type="password" placeholder="Confirm new password" {...field} />
                           </FormControl>
                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                        </FormItem>} />
                     
                     <Button type="submit" disabled={isChangingPassword}>
                       {isChangingPassword ? 'Changing...' : 'Change Password'}
@@ -1169,19 +993,13 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-3">
                   <span className="text-sm text-muted-foreground">Status:</span>
-                  {profile?.gdpr_consent ? (
-                    <Badge variant="default" className="bg-emerald-500">Consent Given</Badge>
-                  ) : (
-                    <Badge variant="destructive">No Consent</Badge>
-                  )}
+                  {profile?.gdpr_consent ? <Badge variant="default" className="bg-emerald-500">Consent Given</Badge> : <Badge variant="destructive">No Consent</Badge>}
                 </div>
                 
-                {profile?.gdpr_consent_date && (
-                  <div className="flex items-center gap-3">
+                {profile?.gdpr_consent_date && <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">Consent Date:</span>
                     <span className="text-sm">{format(new Date(profile.gdpr_consent_date), 'MMMM d, yyyy')}</span>
-                  </div>
-                )}
+                  </div>}
                 
                 <Separator />
                 
@@ -1190,8 +1008,7 @@ export default function Settings() {
                     View GDPR Agreement
                   </Button>
                   
-                  {profile?.gdpr_consent && (
-                    <AlertDialog>
+                  {profile?.gdpr_consent && <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="outline" className="text-destructive border-destructive hover:bg-destructive/10">
                           Withdraw Consent
@@ -1207,17 +1024,12 @@ export default function Settings() {
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleWithdrawConsent}
-                            disabled={isWithdrawingConsent}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
+                          <AlertDialogAction onClick={handleWithdrawConsent} disabled={isWithdrawingConsent} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                             {isWithdrawingConsent ? 'Withdrawing...' : 'Withdraw Consent'}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
-                    </AlertDialog>
-                  )}
+                    </AlertDialog>}
                 </div>
               </CardContent>
             </Card>
@@ -1230,22 +1042,12 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleExportPlayers}
-                    disabled={isExportingPlayers}
-                    className="justify-start gap-2"
-                  >
+                  <Button variant="outline" onClick={handleExportPlayers} disabled={isExportingPlayers} className="justify-start gap-2">
                     <Users className="h-4 w-4" />
                     {isExportingPlayers ? 'Exporting...' : 'Export Players'}
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    onClick={handleExportReports}
-                    disabled={isExportingReports}
-                    className="justify-start gap-2"
-                  >
+                  <Button variant="outline" onClick={handleExportReports} disabled={isExportingReports} className="justify-start gap-2">
                     <FileText className="h-4 w-4" />
                     {isExportingReports ? 'Exporting...' : 'Export Reports'}
                   </Button>
@@ -1270,12 +1072,7 @@ export default function Settings() {
                   <Mail className="h-5 w-5 text-primary shrink-0" />
                   <div>
                     <p className="font-medium text-sm">Email Support</p>
-                    <a 
-                      href="mailto:support@thefootballscout.app" 
-                      className="text-sm text-primary hover:underline"
-                    >
-                      support@thefootballscout.app
-                    </a>
+                    <a href="mailto:support@thefootballscout.app" className="text-sm text-primary hover:underline">support@thefootballscout.com</a>
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -1335,23 +1132,13 @@ export default function Settings() {
                           <Label htmlFor="delete-confirm" className="text-sm font-medium">
                             Type <span className="font-bold text-destructive">DELETE</span> to confirm:
                           </Label>
-                          <Input
-                            id="delete-confirm"
-                            value={deleteConfirmText}
-                            onChange={(e) => setDeleteConfirmText(e.target.value)}
-                            placeholder="DELETE"
-                            className="mt-2"
-                          />
+                          <Input id="delete-confirm" value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} placeholder="DELETE" className="mt-2" />
                         </div>
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteAccount}
-                        disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
+                      <AlertDialogAction onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         {isDeletingAccount ? 'Deleting...' : 'Delete Account'}
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -1362,6 +1149,5 @@ export default function Settings() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
-  );
+    </DashboardLayout>;
 }
