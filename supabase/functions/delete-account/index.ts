@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   try {
     // Get authorization header
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(
         JSON.stringify({ error: "No authorization header provided" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -23,24 +23,50 @@ Deno.serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-    // Client with user's token to verify identity
-    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
     // Admin client for deletions
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) {
+    // Parse request body for admin-initiated deletions
+    let targetUserId: string | null = null;
+    let isAdminDeletion = false;
+    
+    try {
+      const body = await req.json();
+      if (body?.userId) {
+        targetUserId = body.userId;
+      }
+    } catch {
+      // No body or invalid JSON — self-deletion
+    }
+
+    // Verify caller identity using getClaims
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claims, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+    if (claimsError || !claims?.claims?.sub) {
       return new Response(
         JSON.stringify({ error: "Invalid or expired token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = user.id;
+    const callerId = claims.claims.sub as string;
+
+    // If admin is deleting another user, verify admin status
+    if (targetUserId && targetUserId !== callerId) {
+      const { data: isAdmin } = await supabaseAdmin.rpc('is_super_admin', { _user_id: callerId });
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      isAdminDeletion = true;
+    }
+
+    const userId = targetUserId || callerId;
 
     console.log(`Starting account deletion for user: ${userId}`);
 

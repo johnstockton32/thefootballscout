@@ -72,14 +72,28 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 
     if (customers.data.length === 0) {
-      logStep("No customer found, returning free tier");
-      
-      // Update profile to free tier
-      await supabaseClient
+      // Check if user has a manually-assigned tier (e.g. admin accounts)
+      const { data: profile } = await supabaseClient
         .from('profiles')
-        .update({ subscription_tier: 'free' })
-        .eq('id', user.id);
-        
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single();
+      
+      const currentTier = profile?.subscription_tier || 'free';
+      
+      if (currentTier !== 'free') {
+        logStep("No Stripe customer but user has manual tier, preserving", { tier: currentTier });
+        return new Response(JSON.stringify({ 
+          subscribed: true, 
+          tier: currentTier,
+          subscription_end: null 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      logStep("No customer found, returning free tier");
       return new Response(JSON.stringify({ 
         subscribed: false, 
         tier: 'free',
