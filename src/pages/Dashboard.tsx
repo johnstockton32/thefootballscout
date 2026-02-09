@@ -105,22 +105,27 @@ export default function Dashboard() {
 
           toast.info('Completing your Pro setup...');
           
+          const pendingPromoCode = localStorage.getItem('pending_promo_code') || undefined;
+          
           const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { tier: 'pro', isAnnual: false },
+            body: { tier: 'pro', isAnnual: false, promoCode: pendingPromoCode },
             headers: { Authorization: `Bearer ${accessToken}` },
           });
 
           if (!error && data?.url) {
             localStorage.removeItem('pending_pro_signup');
+            localStorage.removeItem('pending_promo_code');
             window.location.href = data.url;
           } else {
             console.error('Pending checkout failed:', error);
             localStorage.removeItem('pending_pro_signup');
+            localStorage.removeItem('pending_promo_code');
             toast.error('Could not start Pro checkout. You can upgrade from Settings.');
           }
         } catch (err) {
           console.error('Pending checkout error:', err);
           localStorage.removeItem('pending_pro_signup');
+          localStorage.removeItem('pending_promo_code');
         }
       };
       redirectToCheckout();
