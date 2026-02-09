@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Check, ArrowRight, Zap, Crown, Loader2, Download } from 'lucide-react';
+import { Check, ArrowRight, Zap, Crown, Loader2, Download, Tag } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
@@ -67,6 +68,7 @@ export default function Pricing() {
   const [searchParams] = useSearchParams();
   const [isAnnual, setIsAnnual] = useState(false);
   const [isCheckingOut, setIsCheckingOut] = useState<string | null>(null);
+  const [promoCode, setPromoCode] = useState('');
   const { user } = useAuth();
   const subscription = useSubscription();
 
@@ -101,7 +103,7 @@ export default function Pricing() {
     // Start checkout process
     setIsCheckingOut(tierName);
     try {
-      await subscription.createCheckout(tierName, isAnnual);
+      await subscription.createCheckout(tierName, isAnnual, promoCode || undefined);
     } finally {
       setIsCheckingOut(null);
     }
@@ -253,6 +255,36 @@ export default function Pricing() {
               );
             })}
           </div>
+        </div>
+      </section>
+
+      {/* Promo Code Section */}
+      <section className="pb-12 px-4">
+        <div className="container mx-auto max-w-md">
+          <Card className="card-glass border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold">Have a promo code?</h3>
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Enter promo code"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  className="uppercase"
+                />
+                {promoCode && (
+                  <Badge variant="secondary" className="whitespace-nowrap self-center bg-primary/10 text-primary">
+                    Applied
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Enter your code and then click Subscribe on the Pro plan above.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </section>
 

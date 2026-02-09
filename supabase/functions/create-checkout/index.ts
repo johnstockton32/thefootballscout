@@ -9,6 +9,11 @@ const STRIPE_PRICES = {
   pro_annual: "price_1SxOZuDO3m8kHfnytJtNcnGP", // £96/year (£8/month)
 };
 
+// Welcome Launch lifetime deal
+const PROMO_PRICES: Record<string, { priceId: string; mode: "payment" | "subscription" }> = {
+  WELCOMELAUNCH: { priceId: "price_1Syr9hDO3m8kHfnyOYJzV31b", mode: "payment" },
+};
+
 // Map tier keys to base tier names for profile updates
 const TIER_TO_BASE: Record<string, string> = {
   pro_monthly: "pro",
@@ -56,15 +61,33 @@ serve(async (req) => {
     
     logStep("Origin determined", { origin });
 
-    const { tier, isAnnual } = await req.json();
-    logStep("Requested tier", { tier, isAnnual });
+    const { tier, isAnnual, promoCode } = await req.json();
+    logStep("Requested tier", { tier, isAnnual, promoCode });
 
-    // Construct the price key based on tier and billing period
-    const billingPeriod = isAnnual ? "annual" : "monthly";
-    const priceKey = `${tier}_${billingPeriod}` as keyof typeof STRIPE_PRICES;
-    
-    if (!tier || !STRIPE_PRICES[priceKey]) {
-      throw new Error(`Invalid tier or billing period: ${tier}, ${billingPeriod}`);
+    // Check if this is a promo code purchase
+    const upperPromo = promoCode ? promoCode.toUpperCase().trim() : null;
+    const promoConfig = upperPromo ? PROMO_PRICES[upperPromo] : null;
+
+    let priceId: string;
+    let checkoutMode: "payment" | "subscription" = "subscription";
+    let baseTier = tier;
+
+    if (promoConfig) {
+      // Promo code lifetime deal
+      priceId = promoConfig.priceId;
+      checkoutMode = promoConfig.mode;
+      baseTier = "pro";
+      logStep("Using promo code pricing", { promoCode: upperPromo, priceId, mode: checkoutMode });
+    } else {
+      // Standard subscription flow
+      const billingPeriod = isAnnual ? "annual" : "monthly";
+      const priceKey = `${tier}_${billingPeriod}` as keyof typeof STRIPE_PRICES;
+      
+      if (!tier || !STRIPE_PRICES[priceKey]) {
+        throw new Error(`Invalid tier or billing period: ${tier}, ${billingPeriod}`);
+      }
+      priceId = STRIPE_PRICES[priceKey];
+      baseTier = TIER_TO_BASE[priceKey];
     }
 
     const authHeader = req.headers.get("Authorization");
@@ -88,10 +111,7 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    const priceId = STRIPE_PRICES[priceKey];
-    const baseTier = TIER_TO_BASE[priceKey];
-    const isPro = baseTier === "pro";
-    logStep("Creating checkout session", { priceId, priceKey, baseTier, hasTrial: isPro });
+    logStep("Creating checkout session", { priceId, baseTier, mode: checkoutMode });
 
     const sessionParams: any = {
       customer: customerId,
@@ -103,18 +123,19 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: "subscription",
+      mode: checkoutMode,
       success_url: `${origin}/dashboard?subscription=success`,
       cancel_url: `${origin}/pricing?subscription=cancelled`,
       metadata: {
         user_id: user.id,
         tier: baseTier,
-        billing_period: billingPeriod,
+        promo_code: upperPromo || "",
+        is_lifetime: promoConfig ? "true" : "false",
       },
     };
 
-    // Add 14-day free trial for all Pro subscriptions (monthly and annual)
-    if (isPro) {
+    // Add 14-day free trial for standard Pro subscriptions only (not promo)
+    if (!promoConfig && baseTier === "pro") {
       sessionParams.subscription_data = {
         trial_period_days: 14,
       };
