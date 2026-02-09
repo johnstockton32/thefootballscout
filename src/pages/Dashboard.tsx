@@ -83,12 +83,13 @@ export default function Dashboard() {
   useEffect(() => {
     const subscriptionStatus = searchParams.get('subscription');
     if (subscriptionStatus === 'success') {
-      // Refresh subscription data after successful checkout
+      // Payment completed — clear pending flags and refresh
+      localStorage.removeItem('pending_pro_signup');
+      localStorage.removeItem('pending_promo_code');
       subscription.refreshSubscription();
       toast.success('Subscription activated!', {
         description: 'Your plan has been upgraded successfully.',
       });
-      // Remove the query param
       setSearchParams({});
     }
   }, [searchParams, setSearchParams, subscription]);
@@ -97,6 +98,20 @@ export default function Dashboard() {
   useEffect(() => {
     const pendingPro = localStorage.getItem('pending_pro_signup');
     if (pendingPro === 'true' && user) {
+      // Check if subscription is already active (payment was completed)
+      if (subscription.tier === 'pro' || subscription.isSubscribedViaStripe) {
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
+        return;
+      }
+
+      // Don't auto-redirect if we just came back from a cancelled checkout
+      const subscriptionStatus = searchParams.get('subscription');
+      if (subscriptionStatus === 'cancelled') {
+        // Keep the pending flag so they can retry, but don't auto-redirect
+        return;
+      }
+
       const redirectToCheckout = async () => {
         try {
           const { data: sessionData } = await supabase.auth.getSession();
@@ -113,8 +128,7 @@ export default function Dashboard() {
           });
 
           if (!error && data?.url) {
-            localStorage.removeItem('pending_pro_signup');
-            localStorage.removeItem('pending_promo_code');
+            // Don't clear pending flags until payment succeeds (handled by success redirect above)
             window.location.href = data.url;
           } else {
             console.error('Pending checkout failed:', error);
@@ -130,7 +144,7 @@ export default function Dashboard() {
       };
       redirectToCheckout();
     }
-  }, [user]);
+  }, [user, subscription.tier, subscription.isSubscribedViaStripe]);
 
   useEffect(() => {
     if (user) {
