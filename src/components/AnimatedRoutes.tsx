@@ -26,7 +26,7 @@ const Settings = lazy(() => import('@/pages/Settings'));
 const Pricing = lazy(() => import('@/pages/Pricing'));
 const Watchlists = lazy(() => import('@/pages/Watchlists'));
 const Analysis = lazy(() => import('@/pages/Analysis'));
-const Install = lazy(() => import('@/pages/Install'));
+
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -46,7 +46,7 @@ export function AnimatedRoutes() {
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
         <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
-        <Route path="/install" element={<PageTransition><Install /></PageTransition>} />
+        
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
         <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
         <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
