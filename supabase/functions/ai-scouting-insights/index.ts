@@ -179,37 +179,37 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     console.log("Sending request to AI gateway with insight type:", insightType);
     console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
     
-    const requestBody = JSON.stringify({
-      model: "google/gemini-2.5-flash",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      max_tokens: 2000,
-      temperature: 0.7,
-    });
-
+    const models = ["google/gemini-2.5-flash", "openai/gpt-5-nano"];
+    
     let response: Response | null = null;
     let lastError = "";
 
-    // Retry up to 2 times on 500 errors
-    for (let attempt = 0; attempt < 2; attempt++) {
+    for (const model of models) {
+      console.log(`Trying model: ${model}`);
       response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
           "Content-Type": "application/json",
         },
-        body: requestBody,
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_tokens: 2000,
+          temperature: 0.7,
+        }),
       });
 
-      console.log(`AI gateway response status (attempt ${attempt + 1}):`, response.status);
+      console.log(`Model ${model} response status:`, response.status);
 
-      if (response.status !== 500) break;
+      if (response.ok) break;
 
       lastError = await response.text();
-      console.warn(`AI gateway 500 on attempt ${attempt + 1}:`, lastError);
-      if (attempt < 1) await new Promise(r => setTimeout(r, 1500));
+      console.warn(`Model ${model} failed:`, response.status, lastError);
+      response = null;
     }
 
     if (!response || !response.ok) {
