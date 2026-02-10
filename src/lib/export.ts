@@ -259,9 +259,9 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   // Determine accent color from branding or default
   const brandPrimary = branding?.primary_color ? hexToRgb(branding.primary_color) : null;
   
-  const bgDark: [number, number, number] = [18, 21, 26]; // --background: 220 20% 8%
-  const bgCard: [number, number, number] = [25, 30, 38]; // --card: 220 18% 12%
-  const bgMuted: [number, number, number] = [35, 40, 48]; // --muted: 220 15% 18%
+  const bgDark: [number, number, number] = [255, 255, 255]; // White background
+  const bgCard: [number, number, number] = [245, 247, 250]; // Light gray card
+  const bgMuted: [number, number, number] = [228, 232, 238]; // Muted gray
   const primaryColor: [number, number, number] = brandPrimary || [41, 171, 135]; // --primary: 158 64% 45% (emerald)
   const primaryLight: [number, number, number] = brandPrimary 
     ? [Math.min(brandPrimary[0] + 31, 255), Math.min(brandPrimary[1] + 16, 255), Math.min(brandPrimary[2] + 20, 255)]
@@ -269,10 +269,10 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const accentColor: [number, number, number] = [243, 172, 18]; // --accent: 38 92% 50% (amber)
   const blueColor: [number, number, number] = [59, 130, 246]; // Blue for tactical
   const purpleColor: [number, number, number] = [168, 85, 247]; // Purple for mental
-  const destructiveColor: [number, number, number] = [239, 68, 68]; // --destructive: red
-  const white: [number, number, number] = [240, 242, 245]; // --foreground
-  const textMuted: [number, number, number] = [120, 130, 145]; // --muted-foreground
-  const textLight: [number, number, number] = [200, 205, 215];
+  const destructiveColor: [number, number, number] = [220, 50, 50]; // Slightly darker red for contrast on white
+  const white: [number, number, number] = [20, 25, 30]; // Dark text on white bg
+  const textMuted: [number, number, number] = [100, 110, 125]; // Muted text
+  const textLight: [number, number, number] = [60, 65, 75]; // Slightly lighter dark text
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
