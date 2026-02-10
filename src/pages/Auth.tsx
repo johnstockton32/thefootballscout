@@ -72,6 +72,7 @@ export default function Auth() {
   const [gdprConsent, setGdprConsent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
@@ -381,6 +382,64 @@ export default function Auth() {
     }
 
     await proceedWithGoogleSignIn();
+  };
+
+  const handleAppleSignIn = async () => {
+    if (!isOnline) {
+      toast.error('You need to be online to sign in with Apple.');
+      return;
+    }
+
+    if (mode === 'signUp' && !gdprConsent) {
+      toast.error('Please accept the data processing agreement to continue');
+      return;
+    }
+
+    if (mode === 'signUp' && selectedTier === 'free' && !(promoCode.trim() && promoCodeStatus === 'valid')) {
+      setFreeConfirmSource('google');
+      setShowFreeConfirm(true);
+      return;
+    }
+
+    await proceedWithAppleSignIn();
+  };
+
+  const proceedWithAppleSignIn = async () => {
+    if (mode === 'signUp') {
+      localStorage.setItem('pending_gdpr_consent', 'true');
+      if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
+        localStorage.setItem('pending_pro_signup', 'true');
+        localStorage.setItem('pending_is_annual', isAnnual ? 'true' : 'false');
+        if (promoCode.trim()) {
+          localStorage.setItem('pending_promo_code', promoCode.trim());
+        }
+      } else {
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
+      }
+    }
+
+    setIsAppleLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("apple", {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error(result.error.message || 'Apple sign-in failed');
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
+      }
+    } catch (err) {
+      toast.error('Apple sign-in failed. Please try again.');
+      localStorage.removeItem('pending_pro_signup');
+      localStorage.removeItem('pending_promo_code');
+      localStorage.removeItem('pending_is_annual');
+      localStorage.removeItem('pending_gdpr_consent');
+    } finally {
+      setIsAppleLoading(false);
+    }
   };
 
   const proceedWithGoogleSignIn = async () => {
@@ -969,6 +1028,23 @@ export default function Auth() {
                       </svg>
                     )}
                     {isGoogleLoading ? 'Signing in...' : 'Continue with Google'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    className="w-full mt-2"
+                    onClick={handleAppleSignIn}
+                    disabled={isAppleLoading || isLoading}
+                  >
+                    {isAppleLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    ) : (
+                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+                      </svg>
+                    )}
+                    {isAppleLoading ? 'Signing in...' : 'Continue with Apple'}
                   </Button>
                 </>
               )}
