@@ -151,10 +151,9 @@ export default function Dashboard() {
             localStorage.removeItem('pending_pro_signup');
             localStorage.removeItem('pending_promo_code');
             localStorage.removeItem('pending_is_annual');
-            // Try direct redirect first, fall back to new tab for iframe environments
-            try {
-              window.location.href = data.url;
-            } catch {
+            // Use window.open for reliable cross-environment navigation
+            const opened = window.open(data.url, '_self');
+            if (!opened) {
               window.open(data.url, '_blank');
             }
           } else {
