@@ -55,7 +55,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       checkIsSuperAdmin(userId),
     ]);
     
-    if (profileData) setProfile(profileData);
+    if (profileData) {
+      setProfile(profileData);
+    } else {
+      // Profile doesn't exist (e.g., Google OAuth user without trigger) — create one
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email || '',
+          full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
+          organization: user.user_metadata?.organization || null,
+        });
+        if (!error) {
+          const newProfile = await fetchUserProfile(userId);
+          if (newProfile) setProfile(newProfile);
+        }
+      }
+    }
     setRoles(userRoles);
     setIsSuperAdmin(superAdminStatus);
   }, []);

@@ -143,7 +143,7 @@ export default function Auth() {
     return () => clearTimeout(timeout);
   }, [promoCode]);
 
-  const isCompletingSignup = searchParams.get('complete') === 'true' && mode === 'signUp';
+  const isCompletingSignup = searchParams.get('complete') === 'true' && searchParams.get('mode') === 'signUp';
 
   useEffect(() => {
     if (user && !isCompletingSignup) {
