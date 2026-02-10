@@ -345,6 +345,20 @@ export default function Auth() {
       toast.error('You need to be online to sign in with Google.');
       return;
     }
+
+    // If in signup mode with Pro selected, store pending flags so Dashboard redirects to checkout after OAuth
+    if (mode === 'signUp') {
+      if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
+        localStorage.setItem('pending_pro_signup', 'true');
+        if (promoCode.trim()) {
+          localStorage.setItem('pending_promo_code', promoCode.trim());
+        }
+      } else {
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
+      }
+    }
+
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
@@ -352,9 +366,14 @@ export default function Auth() {
       });
       if (result.error) {
         toast.error(result.error.message || 'Google sign-in failed');
+        // Clear flags on error
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
       }
     } catch (err) {
       toast.error('Google sign-in failed. Please try again.');
+      localStorage.removeItem('pending_pro_signup');
+      localStorage.removeItem('pending_promo_code');
     } finally {
       setIsGoogleLoading(false);
     }
