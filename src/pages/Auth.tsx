@@ -150,6 +150,20 @@ export default function Auth() {
     if (user && !isCompletingSignup) {
       navigate('/dashboard');
     }
+    // If completing signup with a user and pending pro signup, apply GDPR and go to dashboard
+    // (Dashboard will handle the Stripe checkout redirect)
+    if (isCompletingSignup && user) {
+      const pendingGdpr = localStorage.getItem('pending_gdpr_consent');
+      if (pendingGdpr === 'true') {
+        // GDPR will be applied by Dashboard useEffect
+      }
+      // If there's a pending pro signup, go to dashboard which handles checkout
+      const pendingPro = localStorage.getItem('pending_pro_signup');
+      if (pendingPro === 'true') {
+        navigate('/dashboard');
+        return;
+      }
+    }
     // If on complete flow but no user, redirect to normal sign-in
     if (isCompletingSignup && !user) {
       navigate('/auth', { replace: true });
