@@ -164,10 +164,13 @@ export default function Auth() {
     }
   }, [user, navigate, isCompletingSignup]);
 
+  // Detect if we're in an OAuth auto-trigger redirect (show loading instead of form)
+  const providerParam = searchParams.get('provider');
+  const isOAuthAutoTrigger = (providerParam === 'apple' || providerParam === 'google') && !user;
+
   // Auto-trigger OAuth when redirected from custom domain with ?provider= param
   useEffect(() => {
     if (oauthTriggered.current || user) return;
-    const providerParam = searchParams.get('provider');
     if (providerParam === 'apple' || providerParam === 'google') {
       oauthTriggered.current = true;
       if (providerParam === 'apple') {
@@ -604,6 +607,13 @@ export default function Auth() {
 
       {/* Main content - scrollable on mobile */}
       <main className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 pb-8 safe-area-bottom">
+        {/* Show loading screen when auto-triggering OAuth from redirect */}
+        {isOAuthAutoTrigger ? (
+          <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-24 gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm">Connecting to {providerParam === 'apple' ? 'Apple' : 'Google'}...</p>
+          </div>
+        ) : (
         <div className="w-full max-w-md mx-auto animate-fade-in">
           <Card className="card-glass border-border/50">
             <CardHeader className="text-center pb-2 px-4 sm:px-6">
@@ -1126,6 +1136,7 @@ export default function Auth() {
             <span>GDPR Compliant • Data stored securely in EU</span>
           </div>
         </div>
+        )}
       </main>
 
       {/* Free Plan Upsell Confirmation */}
