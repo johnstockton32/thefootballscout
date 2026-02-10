@@ -441,7 +441,7 @@ export default function Auth() {
     setIsAppleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: window.location.origin,
+        redirect_uri: "https://thefootballscout.lovable.app",
       });
       if (result.error) {
         toast.error(result.error.message || 'Apple sign-in failed');
@@ -482,7 +482,7 @@ export default function Auth() {
     setIsGoogleLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: "https://thefootballscout.lovable.app",
       });
       if (result.error) {
         toast.error(result.error.message || 'Google sign-in failed');
