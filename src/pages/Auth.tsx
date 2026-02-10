@@ -83,7 +83,7 @@ export default function Auth() {
   const [promoCodeMessage, setPromoCodeMessage] = useState<string>('');
   const [promoCodeBenefits, setPromoCodeBenefits] = useState<{ tierUpgrade?: string; discountPercent?: number } | null>(null);
   const [showFreeConfirm, setShowFreeConfirm] = useState(false);
-  const [freeConfirmSource, setFreeConfirmSource] = useState<'manual' | 'google'>('manual');
+  const [freeConfirmSource, setFreeConfirmSource] = useState<'manual' | 'google' | 'apple'>('manual');
   const oauthTriggered = useRef(false);
   const rateLimit = useAuthRateLimit();
 
@@ -437,7 +437,7 @@ export default function Auth() {
     }
 
     if (mode === 'signUp' && selectedTier === 'free' && !(promoCode.trim() && promoCodeStatus === 'valid')) {
-      setFreeConfirmSource('google');
+      setFreeConfirmSource('apple');
       setShowFreeConfirm(true);
       return;
     }
@@ -1192,6 +1192,8 @@ export default function Auth() {
                 setShowFreeConfirm(false);
                 if (freeConfirmSource === 'manual') {
                   proceedWithSubmit();
+                } else if (freeConfirmSource === 'apple') {
+                  proceedWithAppleSignIn();
                 } else {
                   proceedWithGoogleSignIn();
                 }
