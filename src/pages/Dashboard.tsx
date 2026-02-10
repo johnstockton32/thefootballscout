@@ -423,18 +423,18 @@ export default function Dashboard() {
                 Recommendation Breakdown
               </h3>
               <div className="grid grid-cols-3 gap-3">
-                <div className="text-center p-3 rounded-lg bg-primary/10">
+                <Link to="/reports?recommendation=Sign" className="text-center p-3 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer">
                   <div className="text-2xl font-bold text-primary">{recommendationStats.sign}</div>
                   <p className="text-xs text-muted-foreground mt-1">Sign</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-amber-500/10">
+                </Link>
+                <Link to="/reports?recommendation=Monitor" className="text-center p-3 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 transition-colors cursor-pointer">
                   <div className="text-2xl font-bold text-amber-500">{recommendationStats.monitor}</div>
                   <p className="text-xs text-muted-foreground mt-1">Monitor</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-destructive/10">
+                </Link>
+                <Link to="/reports?recommendation=Reject" className="text-center p-3 rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors cursor-pointer">
                   <div className="text-2xl font-bold text-destructive">{recommendationStats.reject}</div>
                   <p className="text-xs text-muted-foreground mt-1">Reject</p>
-                </div>
+                </Link>
               </div>
               {/* Visual bar */}
               {(() => {
