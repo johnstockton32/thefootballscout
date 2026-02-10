@@ -164,9 +164,9 @@ export default function Auth() {
     }
   }, [user, navigate, isCompletingSignup]);
 
-  // Detect if we're in an OAuth auto-trigger redirect (show loading instead of form)
+  // Detect if we're in an OAuth redirect or actively loading OAuth (show loading instead of form)
   const providerParam = searchParams.get('provider');
-  const isOAuthAutoTrigger = (providerParam === 'apple' || providerParam === 'google') && !user;
+  const isOAuthInProgress = isGoogleLoading || isAppleLoading || ((providerParam === 'apple' || providerParam === 'google') && !user);
 
   // Auto-trigger OAuth when redirected from custom domain with ?provider= param
   useEffect(() => {
@@ -607,11 +607,13 @@ export default function Auth() {
 
       {/* Main content - scrollable on mobile */}
       <main className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 pb-8 safe-area-bottom">
-        {/* Show loading screen when auto-triggering OAuth from redirect */}
-        {isOAuthAutoTrigger ? (
+        {/* Show loading screen when OAuth is in progress */}
+        {isOAuthInProgress ? (
           <div className="w-full max-w-md mx-auto flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-            <p className="text-muted-foreground text-sm">Connecting to {providerParam === 'apple' ? 'Apple' : 'Google'}...</p>
+            <p className="text-muted-foreground text-sm">
+              Connecting to {(providerParam === 'apple' || isAppleLoading) ? 'Apple' : 'Google'}...
+            </p>
           </div>
         ) : (
         <div className="w-full max-w-md mx-auto animate-fade-in">
