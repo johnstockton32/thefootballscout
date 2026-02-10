@@ -27,6 +27,7 @@ const Pricing = lazy(() => import('@/pages/Pricing'));
 const Watchlists = lazy(() => import('@/pages/Watchlists'));
 const Analysis = lazy(() => import('@/pages/Analysis'));
 const Install = lazy(() => import('@/pages/Install'));
+const ContactFeedback = lazy(() => import('@/pages/ContactFeedback'));
 
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
@@ -67,6 +68,7 @@ export function AnimatedRoutes() {
         <Route path="/watchlists" element={<ProtectedRoute><PageTransition><Watchlists /></PageTransition></ProtectedRoute>} />
         <Route path="/analysis" element={<ProtectedRoute><PageTransition><Analysis /></PageTransition></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><PageTransition><Settings /></PageTransition></ProtectedRoute>} />
+        <Route path="/contact" element={<ProtectedRoute><PageTransition><ContactFeedback /></PageTransition></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute requireAdmin><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute requireAdmin><PageTransition><AdminUsers /></PageTransition></ProtectedRoute>} />
         <Route path="/admin/data" element={<ProtectedRoute requireAdmin><PageTransition><AdminData /></PageTransition></ProtectedRoute>} />

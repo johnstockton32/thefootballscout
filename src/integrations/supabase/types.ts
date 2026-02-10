@@ -101,6 +101,39 @@ export type Database = {
         }
         Relationships: []
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          message_type: string
+          name: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          message_type?: string
+          name: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          message_type?: string
+          name?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       custom_attribute_weights: {
         Row: {
           created_at: string
@@ -133,6 +166,33 @@ export type Database = {
           tactical_weight?: number
           technical_weight?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      feature_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          feedback: string
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          feedback: string
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          feedback?: string
+          id?: string
+          rating?: number | null
           user_id?: string
         }
         Relationships: []

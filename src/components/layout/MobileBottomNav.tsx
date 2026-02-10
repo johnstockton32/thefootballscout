@@ -14,6 +14,7 @@ import {
   List,
   BarChart3,
   MoreHorizontal,
+  MessageSquare,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ export function MobileBottomNav() {
   const secondaryNavItems = [
     { icon: BarChart3, label: 'Compare', href: '/players/compare', show: true },
     { icon: List, label: 'Watchlists', href: '/watchlists', show: true },
+    { icon: MessageSquare, label: 'Contact', href: '/contact', show: true },
     { icon: Sparkles, label: 'Analysis', href: '/analysis', show: limits.hasAdvancedAnalytics },
     { icon: Shield, label: 'Admin', href: '/admin', show: isAdmin },
   ].filter(item => item.show);
