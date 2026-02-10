@@ -95,6 +95,23 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams, subscription]);
 
+  // Apply pending GDPR consent after Google OAuth redirect
+  useEffect(() => {
+    const pendingGdpr = localStorage.getItem('pending_gdpr_consent');
+    if (pendingGdpr === 'true' && user) {
+      supabase
+        .from('profiles')
+        .update({
+          gdpr_consent: true,
+          gdpr_consent_date: new Date().toISOString(),
+        })
+        .eq('id', user.id)
+        .then(() => {
+          localStorage.removeItem('pending_gdpr_consent');
+        });
+    }
+  }, [user]);
+
   // Handle pending Pro signup: redirect to Stripe checkout after email confirmation
   useEffect(() => {
     const pendingPro = localStorage.getItem('pending_pro_signup');
@@ -110,7 +127,6 @@ export default function Dashboard() {
       // Don't auto-redirect if we just came back from a cancelled checkout
       const subscriptionStatus = searchParams.get('subscription');
       if (subscriptionStatus === 'cancelled') {
-        // Keep the pending flag so they can retry, but don't auto-redirect
         return;
       }
 
@@ -123,7 +139,6 @@ export default function Dashboard() {
           toast.info('Completing your Pro setup...');
           
           const pendingPromoCode = localStorage.getItem('pending_promo_code') || undefined;
-          
           const pendingIsAnnual = localStorage.getItem('pending_is_annual') === 'true';
           
           const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -132,7 +147,6 @@ export default function Dashboard() {
           });
 
           if (!error && data?.url) {
-            // Don't clear pending flags until payment succeeds (handled by success redirect above)
             window.location.href = data.url;
           } else {
             console.error('Pending checkout failed:', error);

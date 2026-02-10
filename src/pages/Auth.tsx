@@ -351,8 +351,17 @@ export default function Auth() {
       return;
     }
 
-    // If in signup mode with Pro selected, store pending flags so Dashboard redirects to checkout after OAuth
+    // Enforce GDPR consent for signup mode
+    if (mode === 'signUp' && !gdprConsent) {
+      toast.error('Please accept the data processing agreement to continue');
+      return;
+    }
+
+    // If in signup mode, store pending flags so Dashboard handles post-auth flow
     if (mode === 'signUp') {
+      // Store GDPR consent flag for post-OAuth application
+      localStorage.setItem('pending_gdpr_consent', 'true');
+      
       if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
         localStorage.setItem('pending_pro_signup', 'true');
         localStorage.setItem('pending_is_annual', isAnnual ? 'true' : 'false');
@@ -383,6 +392,7 @@ export default function Auth() {
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
       localStorage.removeItem('pending_is_annual');
+      localStorage.removeItem('pending_gdpr_consent');
     } finally {
       setIsGoogleLoading(false);
     }
