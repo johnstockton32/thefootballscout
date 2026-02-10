@@ -258,35 +258,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* Promo Code Section */}
-      <section className="pb-12 px-4">
-        <div className="container mx-auto max-w-md">
-          <Card className="card-glass border-border/50">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-2 mb-3">
-                <Tag className="w-5 h-5 text-primary" />
-                <h3 className="font-semibold">Have a promo code?</h3>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter promo code"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                  className="uppercase"
-                />
-                {promoCode && (
-                  <Badge variant="secondary" className="whitespace-nowrap self-center bg-primary/10 text-primary">
-                    Applied
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Enter your code and then click Subscribe on the Pro plan above.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </section>
 
       {/* FAQ Section */}
       <section className="py-20 px-4 bg-card/30">
