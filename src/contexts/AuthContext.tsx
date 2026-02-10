@@ -243,6 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Clear any localStorage tokens
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
+      localStorage.removeItem('pending_is_annual');
     }
     
     return result;

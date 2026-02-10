@@ -9,6 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2, WifiOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
 import { z } from 'zod';
 import { supabase } from '@/integrations/supabase/client';
@@ -72,6 +74,7 @@ export default function Auth() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<SubscriptionTier>('free');
+  const [isAnnual, setIsAnnual] = useState(false);
   const [promoCodeStatus, setPromoCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [promoCodeMessage, setPromoCodeMessage] = useState<string>('');
   const [promoCodeBenefits, setPromoCodeBenefits] = useState<{ tierUpgrade?: string; discountPercent?: number } | null>(null);
@@ -222,12 +225,14 @@ export default function Auth() {
         // Store selected tier and promo code before signup so we can redirect after email confirmation
         if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
           localStorage.setItem('pending_pro_signup', 'true');
+          localStorage.setItem('pending_is_annual', isAnnual ? 'true' : 'false');
           if (promoCode.trim()) {
             localStorage.setItem('pending_promo_code', promoCode.trim());
           }
         } else {
           localStorage.removeItem('pending_pro_signup');
           localStorage.removeItem('pending_promo_code');
+          localStorage.removeItem('pending_is_annual');
         }
 
         const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
@@ -280,7 +285,7 @@ export default function Auth() {
               toast.success('Account created! Redirecting to payment...');
               
               const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
-                body: { tier: 'pro', isAnnual: false, promoCode: pendingPromoCode },
+                body: { tier: 'pro', isAnnual, promoCode: pendingPromoCode },
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
                 },
@@ -350,12 +355,14 @@ export default function Auth() {
     if (mode === 'signUp') {
       if (selectedTier === 'pro' || (promoCode.trim() && promoCodeStatus === 'valid')) {
         localStorage.setItem('pending_pro_signup', 'true');
+        localStorage.setItem('pending_is_annual', isAnnual ? 'true' : 'false');
         if (promoCode.trim()) {
           localStorage.setItem('pending_promo_code', promoCode.trim());
         }
       } else {
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
       }
     }
 
@@ -369,11 +376,13 @@ export default function Auth() {
         // Clear flags on error
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
       }
     } catch (err) {
       toast.error('Google sign-in failed. Please try again.');
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
+      localStorage.removeItem('pending_is_annual');
     } finally {
       setIsGoogleLoading(false);
     }
@@ -575,7 +584,12 @@ export default function Auth() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="font-medium text-sm">{option.label}</span>
-                                <span className="text-xs text-muted-foreground">{option.price}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  {option.tier === 'pro' 
+                                    ? (isAnnual ? '£8/month (billed annually)' : '£10/month')
+                                    : option.price
+                                  }
+                                </span>
                                 {option.tier === 'pro' && (
                                   <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
                                     14-day trial
@@ -591,6 +605,26 @@ export default function Auth() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Annual Billing Toggle (only when Pro is selected) */}
+                    {selectedTier === 'pro' && (
+                      <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor="annual-toggle" className="text-sm font-medium cursor-pointer">
+                            Annual billing
+                          </Label>
+                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
+                            Save 20%
+                          </Badge>
+                        </div>
+                        <Switch
+                          id="annual-toggle"
+                          checked={isAnnual}
+                          onCheckedChange={setIsAnnual}
+                          className="data-[state=checked]:bg-primary"
+                        />
+                      </div>
+                    )}
 
                     {/* Promo Code Field */}
                     <div className="space-y-2">

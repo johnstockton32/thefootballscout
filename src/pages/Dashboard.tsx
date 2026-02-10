@@ -86,6 +86,7 @@ export default function Dashboard() {
       // Payment completed — clear pending flags and refresh
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
+      localStorage.removeItem('pending_is_annual');
       subscription.refreshSubscription();
       toast.success('Subscription activated!', {
         description: 'Your plan has been upgraded successfully.',
@@ -102,6 +103,7 @@ export default function Dashboard() {
       if (subscription.tier === 'pro' || subscription.isSubscribedViaStripe) {
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
         return;
       }
 
@@ -122,8 +124,10 @@ export default function Dashboard() {
           
           const pendingPromoCode = localStorage.getItem('pending_promo_code') || undefined;
           
+          const pendingIsAnnual = localStorage.getItem('pending_is_annual') === 'true';
+          
           const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { tier: 'pro', isAnnual: false, promoCode: pendingPromoCode },
+            body: { tier: 'pro', isAnnual: pendingIsAnnual, promoCode: pendingPromoCode },
             headers: { Authorization: `Bearer ${accessToken}` },
           });
 
@@ -134,12 +138,14 @@ export default function Dashboard() {
             console.error('Pending checkout failed:', error);
             localStorage.removeItem('pending_pro_signup');
             localStorage.removeItem('pending_promo_code');
+            localStorage.removeItem('pending_is_annual');
             toast.error('Could not start Pro checkout. You can upgrade from Settings.');
           }
         } catch (err) {
           console.error('Pending checkout error:', err);
           localStorage.removeItem('pending_pro_signup');
           localStorage.removeItem('pending_promo_code');
+          localStorage.removeItem('pending_is_annual');
         }
       };
       redirectToCheckout();
