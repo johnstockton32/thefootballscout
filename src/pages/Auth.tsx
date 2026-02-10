@@ -145,17 +145,7 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !isCompletingSignup) {
-      navigate('/dashboard');
-    }
-    if (isCompletingSignup && user) {
-      const pendingPro = localStorage.getItem('pending_pro_signup');
-      if (pendingPro === 'true') {
-        navigate('/dashboard');
-        return;
-      }
-    }
-    if (isCompletingSignup && !user) {
-      navigate('/auth', { replace: true });
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate, isCompletingSignup]);
 
