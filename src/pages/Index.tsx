@@ -77,7 +77,7 @@ export default function Index() {
               <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-rating-gold/20 to-primary/20 rounded-full blur-2xl scale-125" />
               {/* Logo with enhanced styling */}
               <div className="relative p-4 sm:p-6 rounded-full bg-gradient-to-br from-card/80 to-card/40 backdrop-blur-sm border border-primary/20 shadow-2xl shadow-primary/20">
-                <Logo size="xl" className="drop-shadow-2xl [&_img]:w-28 [&_img]:h-28 sm:[&_img]:w-36 sm:[&_img]:h-36 md:[&_img]:w-44 md:[&_img]:h-44" />
+                <Logo size="xl" className="drop-shadow-2xl [&_img]:w-36 [&_img]:h-36 sm:[&_img]:w-48 sm:[&_img]:h-48 md:[&_img]:w-56 md:[&_img]:h-56" />
               </div>
             </div>
           </div>
