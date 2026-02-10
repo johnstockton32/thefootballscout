@@ -169,12 +169,18 @@ export default function Index() {
       <footer className="border-t border-border py-6 sm:py-8 px-4">
         <div className="container mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size="sm" />
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-4">
+            <a href="/privacy-policy" className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
+              Privacy Policy
+            </a>
+            <a href="/terms-of-service" className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
+              Terms of Service
+            </a>
             <a href="mailto:support@thefootballscout.app" className="text-xs sm:text-sm text-muted-foreground hover:text-primary transition-colors">
               Contact Us
             </a>
-            <p className="text-xs sm:text-sm text-muted-foreground text-center">
-              © 2026 The Football Scout. GDPR Compliant.
+            <p className="text-xs sm:text-sm text-muted-foreground text-center w-full sm:w-auto">
+              © 2026 The Football Scout. All rights reserved.
             </p>
           </div>
         </div>
