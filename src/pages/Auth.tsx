@@ -150,6 +150,10 @@ export default function Auth() {
     if (user && !isCompletingSignup) {
       navigate('/dashboard');
     }
+    // If on complete flow but no user, redirect to normal sign-in
+    if (isCompletingSignup && !user) {
+      navigate('/auth', { replace: true });
+    }
   }, [user, navigate, isCompletingSignup]);
 
   const validateForm = () => {
