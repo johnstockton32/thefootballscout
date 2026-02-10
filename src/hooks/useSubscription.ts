@@ -212,7 +212,12 @@ export function useSubscription(): SubscriptionData {
 
       if (data?.url) {
         console.log('[Checkout] Redirecting to:', data.url);
-        window.location.href = data.url;
+        // Use window.open as primary method - works in all environments including iframes
+        const opened = window.open(data.url, '_self');
+        if (!opened) {
+          // Fallback: try new tab if same-window open was blocked
+          window.open(data.url, '_blank');
+        }
       } else {
         throw new Error('No checkout URL returned');
       }
@@ -239,7 +244,7 @@ export function useSubscription(): SubscriptionData {
       if (error) throw error;
 
       if (data?.url) {
-        window.open(data.url, '_blank');
+        window.open(data.url, '_blank') || (window.location.href = data.url);
       } else {
         throw new Error('No portal URL returned');
       }

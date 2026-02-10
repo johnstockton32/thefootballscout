@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Logo } from '@/components/Logo';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { PasswordStrengthIndicator } from '@/components/ui/password-strength-indicator';
 import { lovable } from '@/integrations/lovable/index';
 import { Separator } from '@/components/ui/separator';
+import { isCustomDomain, getOAuthRedirectUri, buildOAuthRedirectUrl } from '@/lib/oauthHelper';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -82,6 +83,7 @@ export default function Auth() {
   const [promoCodeBenefits, setPromoCodeBenefits] = useState<{ tierUpgrade?: string; discountPercent?: number } | null>(null);
   const [showFreeConfirm, setShowFreeConfirm] = useState(false);
   const [freeConfirmSource, setFreeConfirmSource] = useState<'manual' | 'google'>('manual');
+  const oauthTriggered = useRef(false);
 
   // Check for mode and tier from URL params (from pricing page)
   useEffect(() => {
@@ -150,32 +152,31 @@ export default function Auth() {
     if (user && !isCompletingSignup) {
       navigate('/dashboard');
     }
-    // If completing signup with a user and pending pro signup, apply GDPR and go to dashboard
-    // (Dashboard will handle the Stripe checkout redirect)
     if (isCompletingSignup && user) {
-      const pendingGdpr = localStorage.getItem('pending_gdpr_consent');
-      if (pendingGdpr === 'true') {
-        // GDPR will be applied by Dashboard useEffect
-      }
-      // If there's a pending pro signup, go to dashboard which handles checkout
       const pendingPro = localStorage.getItem('pending_pro_signup');
       if (pendingPro === 'true') {
         navigate('/dashboard');
         return;
       }
     }
-    // If on complete flow but no user, redirect to normal sign-in
     if (isCompletingSignup && !user) {
       navigate('/auth', { replace: true });
     }
-    // Auto-trigger OAuth if redirected from custom domain with provider param
-    const providerParam = searchParams.get('provider');
-    if (providerParam === 'apple' && !user && !isAppleLoading) {
-      handleAppleSignIn();
-    } else if (providerParam === 'google' && !user && !isGoogleLoading) {
-      handleGoogleSignIn();
-    }
   }, [user, navigate, isCompletingSignup]);
+
+  // Auto-trigger OAuth when redirected from custom domain with ?provider= param
+  useEffect(() => {
+    if (oauthTriggered.current || user) return;
+    const providerParam = searchParams.get('provider');
+    if (providerParam === 'apple' || providerParam === 'google') {
+      oauthTriggered.current = true;
+      if (providerParam === 'apple') {
+        proceedWithAppleSignIn();
+      } else {
+        proceedWithGoogleSignIn();
+      }
+    }
+  }, [searchParams, user]);
 
   const validateForm = () => {
     try {
@@ -447,15 +448,13 @@ export default function Auth() {
 
     setIsAppleLoading(true);
     try {
-      // OAuth endpoints only work on *.lovable.app domains, not custom domains
-      // If on a custom domain, redirect to the lovable.app domain for OAuth
-      const isCustomDomain = !window.location.origin.includes('lovable.app') && !window.location.origin.includes('lovableproject.com') && !window.location.origin.includes('localhost');
-      if (isCustomDomain) {
-        window.location.href = `https://thefootballscout.lovable.app/auth?mode=${mode}&provider=apple`;
+      // OAuth endpoints only work on *.lovable.app domains
+      if (isCustomDomain()) {
+        window.location.href = buildOAuthRedirectUrl('apple', mode);
         return;
       }
       const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: "https://thefootballscout.lovable.app",
+        redirect_uri: getOAuthRedirectUri(),
       });
       if (result.error) {
         toast.error(result.error.message || 'Apple sign-in failed');
@@ -495,13 +494,12 @@ export default function Auth() {
 
     setIsGoogleLoading(true);
     try {
-      const isCustomDomain = !window.location.origin.includes('lovable.app') && !window.location.origin.includes('lovableproject.com') && !window.location.origin.includes('localhost');
-      if (isCustomDomain) {
-        window.location.href = `https://thefootballscout.lovable.app/auth?mode=${mode}&provider=google`;
+      if (isCustomDomain()) {
+        window.location.href = buildOAuthRedirectUrl('google', mode);
         return;
       }
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: "https://thefootballscout.lovable.app",
+        redirect_uri: getOAuthRedirectUri(),
       });
       if (result.error) {
         toast.error(result.error.message || 'Google sign-in failed');
