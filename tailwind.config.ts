@@ -93,6 +93,7 @@ export default {
       },
       fontFamily: {
         sans: ["Inter", "sans-serif"],
+        heading: ["Space Grotesk", "Inter", "sans-serif"],
         display: ["Bebas Neue", "sans-serif"],
       },
       keyframes: {
@@ -116,6 +117,14 @@ export default {
           from: { opacity: "0", transform: "scale(0.95)" },
           to: { opacity: "1", transform: "scale(1)" },
         },
+        "bounce-in": {
+          from: { opacity: "0", transform: "scale(0.8) translateY(20px)" },
+          to: { opacity: "1", transform: "scale(1) translateY(0)" },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -123,11 +132,15 @@ export default {
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.6s ease-out forwards",
         "scale-in": "scale-in 0.3s ease-out forwards",
+        "bounce-in": "bounce-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "shimmer": "shimmer 2s linear infinite",
       },
       backgroundImage: {
         "gradient-pitch": "linear-gradient(135deg, hsl(var(--pitch-green)), hsl(var(--pitch-green-dark)))",
         "gradient-gold": "linear-gradient(135deg, hsl(var(--rating-gold)), hsl(var(--rating-gold-light)))",
-        "gradient-card": "linear-gradient(135deg, hsl(220 18% 14%), hsl(220 18% 10%))",
+        "gradient-card": "linear-gradient(145deg, hsl(225 22% 12%), hsl(225 22% 8%))",
+        "gradient-energy": "linear-gradient(135deg, hsl(var(--pitch-green)), hsl(var(--energy)))",
+        "shimmer-gradient": "linear-gradient(90deg, transparent 0%, hsla(0,0%,100%,0.05) 50%, transparent 100%)",
       },
     },
   },

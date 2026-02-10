@@ -32,47 +32,52 @@ export function StatCard({ title, value, subtitle, icon, trend, variant = 'defau
   return (
     <div
       className={cn(
-        'rounded-xl p-5 transition-all duration-200 hover:scale-[1.03] cursor-pointer hover:shadow-lg',
-        variant === 'default' && 'card-glass hover:border-primary/20',
-        variant === 'primary' && 'card-glow hover:border-primary/40',
-        variant === 'gold' && 'card-gold-glow hover:border-accent/40'
+        'rounded-2xl p-5 transition-all duration-300 cursor-pointer group relative overflow-hidden',
+        variant === 'default' && 'card-glass hover:border-primary/30 hover:-translate-y-1 hover:shadow-lg',
+        variant === 'primary' && 'card-glow hover:border-primary/50 hover:-translate-y-1',
+        variant === 'gold' && 'card-gold-glow hover:border-accent/50 hover:-translate-y-1'
       )}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div
-          className={cn(
-            'p-2.5 rounded-lg',
-            variant === 'default' && 'bg-muted',
-            variant === 'primary' && 'bg-primary/20',
-            variant === 'gold' && 'bg-accent/20'
-          )}
-        >
-          <span
+      {/* Shimmer overlay on hover */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-foreground/[0.02] to-transparent" />
+      
+      <div className="relative">
+        <div className="flex items-start justify-between mb-4">
+          <div
             className={cn(
-              variant === 'default' && 'text-muted-foreground',
-              variant === 'primary' && 'text-primary',
-              variant === 'gold' && 'text-accent'
+              'p-3 rounded-xl transition-transform duration-300 group-hover:scale-110',
+              variant === 'default' && 'bg-muted',
+              variant === 'primary' && 'bg-primary/15',
+              variant === 'gold' && 'bg-accent/15'
             )}
           >
-            {icon}
-          </span>
-        </div>
-        {trend && (
-          <div className={cn('flex items-center gap-1 text-xs font-medium', getTrendColor())}>
-            {getTrendIcon()}
-            <span>{Math.abs(trend.value)}%</span>
+            <span
+              className={cn(
+                variant === 'default' && 'text-muted-foreground',
+                variant === 'primary' && 'text-primary',
+                variant === 'gold' && 'text-accent'
+              )}
+            >
+              {icon}
+            </span>
           </div>
-        )}
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground mb-1">{title}</p>
-        <p className="text-3xl font-bold tabular-nums">{value}</p>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-        )}
-        {trend && (
-          <p className="text-xs text-muted-foreground mt-2">{trend.label}</p>
-        )}
+          {trend && (
+            <div className={cn('flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-muted/50', getTrendColor())}>
+              {getTrendIcon()}
+              <span>{Math.abs(trend.value)}%</span>
+            </div>
+          )}
+        </div>
+        <div>
+          <p className="text-sm text-muted-foreground mb-1 font-medium">{title}</p>
+          <p className="text-4xl font-bold tabular-nums font-heading tracking-tight">{value}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
+          )}
+          {trend && (
+            <p className="text-xs text-muted-foreground mt-2">{trend.label}</p>
+          )}
+        </div>
       </div>
     </div>
   );
