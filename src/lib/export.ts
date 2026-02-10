@@ -256,12 +256,16 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   // Background: hsl(220 20% 8%) = Dark charcoal
   // Card: hsl(220 18% 12%) = Slightly lighter charcoal
   // Accent: hsl(38 92% 50%) = Amber gold
+  // Determine accent color from branding or default
+  const brandPrimary = branding?.primary_color ? hexToRgb(branding.primary_color) : null;
   
   const bgDark: [number, number, number] = [18, 21, 26]; // --background: 220 20% 8%
   const bgCard: [number, number, number] = [25, 30, 38]; // --card: 220 18% 12%
   const bgMuted: [number, number, number] = [35, 40, 48]; // --muted: 220 15% 18%
-  const primaryColor: [number, number, number] = [41, 171, 135]; // --primary: 158 64% 45% (emerald)
-  const primaryLight: [number, number, number] = [72, 187, 155]; // Lighter emerald
+  const primaryColor: [number, number, number] = brandPrimary || [41, 171, 135]; // --primary: 158 64% 45% (emerald)
+  const primaryLight: [number, number, number] = brandPrimary 
+    ? [Math.min(brandPrimary[0] + 31, 255), Math.min(brandPrimary[1] + 16, 255), Math.min(brandPrimary[2] + 20, 255)]
+    : [72, 187, 155]; // Lighter emerald
   const accentColor: [number, number, number] = [243, 172, 18]; // --accent: 38 92% 50% (amber)
   const blueColor: [number, number, number] = [59, 130, 246]; // Blue for tactical
   const purpleColor: [number, number, number] = [168, 85, 247]; // Purple for mental
