@@ -25,6 +25,7 @@ import {
   Crown,
   Sparkles,
   List,
+  MessageSquare,
 } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -43,6 +44,7 @@ const featureNavItems = [
   { icon: Sparkles, label: 'Analysis', href: '/analysis', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
   { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'free' as const },
   { icon: List, label: 'Watchlists', href: '/watchlists', minTier: 'free' as const },
+  { icon: MessageSquare, label: 'Contact', href: '/contact', minTier: 'free' as const },
 ];
 
 const adminNavItems = [
