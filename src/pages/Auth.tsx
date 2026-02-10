@@ -466,7 +466,7 @@ export default function Auth() {
       // OAuth endpoints only work on *.lovable.app domains
       if (isCustomDomain()) {
         window.location.href = buildOAuthRedirectUrl('apple', mode);
-        return;
+        return; // Page is navigating away, don't reset loading
       }
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: getOAuthRedirectUri(),
@@ -476,14 +476,15 @@ export default function Auth() {
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
         localStorage.removeItem('pending_is_annual');
+        setIsAppleLoading(false);
       }
+      // Don't reset loading on success — page will redirect away
     } catch (err) {
       toast.error('Apple sign-in failed. Please try again.');
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
       localStorage.removeItem('pending_is_annual');
       localStorage.removeItem('pending_gdpr_consent');
-    } finally {
       setIsAppleLoading(false);
     }
   };
@@ -511,7 +512,7 @@ export default function Auth() {
     try {
       if (isCustomDomain()) {
         window.location.href = buildOAuthRedirectUrl('google', mode);
-        return;
+        return; // Page is navigating away, don't reset loading
       }
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: getOAuthRedirectUri(),
@@ -522,14 +523,15 @@ export default function Auth() {
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
         localStorage.removeItem('pending_is_annual');
+        setIsGoogleLoading(false);
       }
+      // Don't reset loading on success — page will redirect away
     } catch (err) {
       toast.error('Google sign-in failed. Please try again.');
       localStorage.removeItem('pending_pro_signup');
       localStorage.removeItem('pending_promo_code');
       localStorage.removeItem('pending_is_annual');
       localStorage.removeItem('pending_gdpr_consent');
-    } finally {
       setIsGoogleLoading(false);
     }
   };
