@@ -28,7 +28,7 @@ export const ProtectedRoute = forwardRef<HTMLDivElement, ProtectedRouteProps>(
       return <Navigate to="/auth" state={{ from: location }} replace />;
     }
 
-    // New Google users without GDPR consent need to complete signup
+    // Users without GDPR consent need to complete signup
     if (profile && !profile.gdpr_consent && location.pathname !== '/gdpr-consent') {
       return <Navigate to="/auth?mode=signUp&complete=true" replace />;
     }
