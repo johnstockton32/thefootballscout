@@ -143,11 +143,13 @@ export default function Auth() {
     return () => clearTimeout(timeout);
   }, [promoCode]);
 
+  const isCompletingSignup = searchParams.get('complete') === 'true' && mode === 'signUp';
+
   useEffect(() => {
-    if (user) {
+    if (user && !isCompletingSignup) {
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isCompletingSignup]);
 
   const validateForm = () => {
     try {
@@ -423,7 +425,45 @@ export default function Auth() {
     }
   };
 
+  const handleCompleteSignup = async () => {
+    if (!gdprConsent) {
+      toast.error('Please accept the data processing agreement to continue');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Update GDPR consent
+      await updateGdprConsent(true);
+
+      // Handle pro tier selection
+      if (selectedTier === 'pro') {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (accessToken) {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { tier: 'pro', isAnnual },
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          if (!error && data?.url) {
+            window.location.href = data.url;
+            return;
+          }
+        }
+        toast.error('Could not start Pro checkout. You can upgrade from Settings.');
+      }
+
+      toast.success('Welcome to The Football Scout!');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error('Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const getTitle = () => {
+    if (isCompletingSignup) return 'Complete your signup';
     switch (mode) {
       case 'signUp': return 'Create your account';
       case 'resetPassword': return 'Reset your password';
@@ -432,6 +472,7 @@ export default function Auth() {
   };
 
   const getDescription = () => {
+    if (isCompletingSignup) return 'Choose your plan and accept our data policy to get started';
     switch (mode) {
       case 'signUp': return 'Start scouting the next generation of talent';
       case 'resetPassword': return 'Enter your email and we\'ll send you a reset link';
@@ -480,6 +521,116 @@ export default function Auth() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Completion flow for Google users without GDPR consent */}
+              {isCompletingSignup && user ? (
+                <div className="space-y-4">
+                  {/* Tier Selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Choose your plan</Label>
+                    <div className="grid gap-1.5">
+                      {tierOptions.map((option) => (
+                        <button
+                          key={option.tier}
+                          type="button"
+                          onClick={() => setSelectedTier(option.tier)}
+                          className={cn(
+                            'flex items-center gap-2.5 p-2.5 rounded-lg border text-left transition-all',
+                            selectedTier === option.tier
+                              ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                              : 'border-border hover:border-primary/50 hover:bg-muted/50'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-8 h-8 rounded-full flex items-center justify-center shrink-0',
+                            selectedTier === option.tier ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                          )}>
+                            <option.icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-medium text-sm">{option.label}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {option.tier === 'pro' 
+                                  ? (isAnnual ? '£8/month (billed annually)' : '£10/month')
+                                  : option.price
+                                }
+                              </span>
+                              {option.tier === 'pro' && (
+                                <span className="text-[9px] bg-primary/20 text-primary px-1.5 py-0.5 rounded-full font-medium whitespace-nowrap">
+                                  14-day trial
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-muted-foreground truncate">{option.description}</p>
+                          </div>
+                          {selectedTier === option.tier && (
+                            <Check className="w-4 h-4 text-primary shrink-0" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Annual Billing Toggle */}
+                  {selectedTier === 'pro' && (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="annual-toggle-complete" className="text-sm font-medium cursor-pointer">
+                          Annual billing
+                        </Label>
+                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
+                          Save 20%
+                        </Badge>
+                      </div>
+                      <Switch
+                        id="annual-toggle-complete"
+                        checked={isAnnual}
+                        onCheckedChange={setIsAnnual}
+                        className="data-[state=checked]:bg-primary"
+                      />
+                    </div>
+                  )}
+
+                  {/* GDPR Consent */}
+                  <div className="flex items-start space-x-3 py-2">
+                    <Checkbox
+                      id="gdpr-complete"
+                      checked={gdprConsent}
+                      onCheckedChange={(checked) => setGdprConsent(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="space-y-1">
+                      <Label htmlFor="gdpr-complete" className="text-sm font-medium leading-tight cursor-pointer">
+                        I agree to data processing
+                      </Label>
+                      <p className="text-xs text-muted-foreground">
+                        I consent to the processing of my personal data in accordance with GDPR.{' '}
+                        <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Privacy Policy</a>
+                        {' '}and{' '}
+                        <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Terms of Service</a>.
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="hero"
+                    size="lg"
+                    className="w-full"
+                    disabled={!gdprConsent || isLoading}
+                    onClick={handleCompleteSignup}
+                  >
+                    {isLoading ? (
+                      <span className="animate-pulse">Processing...</span>
+                    ) : (
+                      <>
+                        Get Started
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+              <>
               {/* Form Error Banner */}
               {formError && (
                 <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-start gap-2">
@@ -853,6 +1004,8 @@ export default function Auth() {
                   </button>
                 )}
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
 

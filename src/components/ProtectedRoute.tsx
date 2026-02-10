@@ -10,7 +10,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = forwardRef<HTMLDivElement, ProtectedRouteProps>(
   ({ children, requireAdmin = false }, ref) => {
-    const { user, isLoading, isAdmin } = useAuth();
+    const { user, profile, isLoading, isAdmin } = useAuth();
     const location = useLocation();
 
     if (isLoading) {
@@ -26,6 +26,11 @@ export const ProtectedRoute = forwardRef<HTMLDivElement, ProtectedRouteProps>(
 
     if (!user) {
       return <Navigate to="/auth" state={{ from: location }} replace />;
+    }
+
+    // New Google users without GDPR consent need to complete signup
+    if (profile && !profile.gdpr_consent && location.pathname !== '/gdpr-consent') {
+      return <Navigate to="/auth?mode=signUp&complete=true" replace />;
     }
 
     if (requireAdmin && !isAdmin) {
