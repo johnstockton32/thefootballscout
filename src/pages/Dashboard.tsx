@@ -95,22 +95,6 @@ export default function Dashboard() {
     }
   }, [searchParams, setSearchParams, subscription]);
 
-  // Apply pending GDPR consent after Google OAuth redirect
-  useEffect(() => {
-    const pendingGdpr = localStorage.getItem('pending_gdpr_consent');
-    if (pendingGdpr === 'true' && user) {
-      supabase
-        .from('profiles')
-        .update({
-          gdpr_consent: true,
-          gdpr_consent_date: new Date().toISOString(),
-        })
-        .eq('id', user.id)
-        .then(() => {
-          localStorage.removeItem('pending_gdpr_consent');
-        });
-    }
-  }, [user]);
 
   // Handle pending Pro signup: redirect to Stripe checkout after email confirmation
   useEffect(() => {

@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (profileData) {
       setProfile(profileData);
     } else {
-      // Profile doesn't exist (e.g., Google OAuth user without trigger) — create one
+      // Profile doesn't exist — create one
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { error } = await supabase.from('profiles').insert({
