@@ -166,7 +166,8 @@ Deno.serve(async (req) => {
 
     const systemPrompt = `You are a football scout assistant. Match players from the database to the search query.
 
-IMPORTANT: Respond using the return_search_results tool with player_id, match_score (0-1), and match_reason.
+IMPORTANT: You MUST respond with ONLY a valid JSON object in this exact format, no other text:
+{"matches":[{"player_id":"<id>","match_score":<0-1>,"match_reason":"<reason>"}],"summary":"<brief summary>"}
 
 Player data format: id, n=name, p=position (goalkeeper/centre_back/full_back/defensive_midfielder/central_midfielder/attacking_midfielder/winger/striker), c=club, nat=nationality, a=age, f=foot, h=height_cm, plus stat averages (1-20 scale): overall_rating, potential_rating, technical_dribbling/passing/shooting, physical_pace/strength, tactical_positioning/awareness, mental_composure/work_rate.
 
@@ -176,76 +177,58 @@ Interpret queries naturally: "fast"=high pace, "young"=under 23, "creative"=high
 Players: ${JSON.stringify(playerProfiles)}
 Return up to 10 matches.`;
 
-    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-nano"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
     let aiResponse: Response | null = null;
     let lastError = "";
 
     for (const model of models) {
       console.log(`Smart discovery trying model: ${model}`);
-      aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "return_search_results",
-                description: "Return the search results with matching players",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    matches: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          player_id: { type: "string", description: "The player's ID" },
-                          match_score: { type: "number", description: "Match score from 0 to 1" },
-                          match_reason: { type: "string", description: "Brief explanation of why this player matches" },
-                        },
-                        required: ["player_id", "match_score", "match_reason"],
-                      },
-                    },
-                    summary: { type: "string", description: "Brief summary of the search results" },
-                  },
-                  required: ["matches", "summary"],
-                },
-              },
-            },
-          ],
-          tool_choice: "auto",
-        }),
-      });
-
-      console.log(`Model ${model} response status:`, aiResponse.status);
-
-      if (aiResponse.ok) break;
-
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+      
+      // Retry up to 2 times per model for transient 500 errors
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 1000));
+          console.log(`Retrying model ${model}, attempt ${attempt + 1}`);
+        }
+        
+        aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          }),
         });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI usage limit reached. Please add credits." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
 
-      lastError = await aiResponse.text();
-      console.warn(`Model ${model} failed:`, aiResponse.status, lastError);
-      aiResponse = null;
+        console.log(`Model ${model} response status:`, aiResponse.status);
+
+        if (aiResponse.ok) break;
+
+        if (aiResponse.status === 429) {
+          return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        if (aiResponse.status === 402) {
+          return new Response(JSON.stringify({ error: "AI usage limit reached. Please add credits." }), {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        lastError = await aiResponse.text();
+        console.warn(`Model ${model} failed (attempt ${attempt + 1}):`, aiResponse.status, lastError);
+        aiResponse = null;
+      }
+      
+      if (aiResponse?.ok) break;
     }
 
     if (!aiResponse || !aiResponse.ok) {
@@ -259,25 +242,22 @@ Return up to 10 matches.`;
     const aiData = await aiResponse.json();
     console.log("AI response received:", JSON.stringify(aiData).slice(0, 500));
     
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+    const content = aiData.choices?.[0]?.message?.content || "";
     
     let searchResults;
-    if (toolCall?.function?.arguments) {
-      try {
-        searchResults = JSON.parse(toolCall.function.arguments);
-      } catch (parseError) {
-        console.error("Failed to parse tool arguments:", parseError);
-        throw new Error("Failed to parse AI response");
+    try {
+      // Extract JSON from content (may be wrapped in markdown code blocks)
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        searchResults = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("No JSON found in response");
       }
-    } else {
-      // Fallback: try to extract from content if tool call failed
-      const content = aiData.choices?.[0]?.message?.content;
-      console.log("No tool call found, content:", content?.slice(0, 200));
-      
-      // Return empty results if AI couldn't process
-      searchResults = { matches: [], summary: "No matching players found for your query." };
+    } catch (parseError) {
+      console.error("Failed to parse AI content:", parseError, "Content:", content.slice(0, 300));
+      searchResults = { matches: [], summary: "Could not process your search. Please try rephrasing." };
     }
-    
+
     // Map results to player data
     const matchedPlayers = searchResults.matches
       .map((match: { player_id: string; match_score: number; match_reason: string }) => {
