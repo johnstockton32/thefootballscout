@@ -179,37 +179,46 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     console.log("Sending request to AI gateway with insight type:", insightType);
     console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
     
-    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-nano"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
     
     let response: Response | null = null;
     let lastError = "";
 
     for (const model of models) {
-      console.log(`Trying model: ${model}`);
-      response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          max_tokens: 2000,
-          temperature: 0.7,
-        }),
-      });
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (attempt > 0) {
+          await new Promise((r) => setTimeout(r, 1000));
+          console.log(`Retrying model ${model}, attempt ${attempt + 1}`);
+        }
+        
+        console.log(`Trying model: ${model}`);
+        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            max_tokens: 2000,
+            temperature: 0.7,
+          }),
+        });
 
-      console.log(`Model ${model} response status:`, response.status);
+        console.log(`Model ${model} response status:`, response.status);
 
-      if (response.ok) break;
+        if (response.ok) break;
 
-      lastError = await response.text();
-      console.warn(`Model ${model} failed:`, response.status, lastError);
-      response = null;
+        lastError = await response.text();
+        console.warn(`Model ${model} failed (attempt ${attempt + 1}):`, response.status, lastError);
+        response = null;
+      }
+      
+      if (response?.ok) break;
     }
 
     if (!response || !response.ok) {
