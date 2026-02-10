@@ -168,6 +168,13 @@ export default function Auth() {
     if (isCompletingSignup && !user) {
       navigate('/auth', { replace: true });
     }
+    // Auto-trigger OAuth if redirected from custom domain with provider param
+    const providerParam = searchParams.get('provider');
+    if (providerParam === 'apple' && !user && !isAppleLoading) {
+      handleAppleSignIn();
+    } else if (providerParam === 'google' && !user && !isGoogleLoading) {
+      handleGoogleSignIn();
+    }
   }, [user, navigate, isCompletingSignup]);
 
   const validateForm = () => {
@@ -440,6 +447,13 @@ export default function Auth() {
 
     setIsAppleLoading(true);
     try {
+      // OAuth endpoints only work on *.lovable.app domains, not custom domains
+      // If on a custom domain, redirect to the lovable.app domain for OAuth
+      const isCustomDomain = !window.location.origin.includes('lovable.app') && !window.location.origin.includes('lovableproject.com') && !window.location.origin.includes('localhost');
+      if (isCustomDomain) {
+        window.location.href = `https://thefootballscout.lovable.app/auth?mode=${mode}&provider=apple`;
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: "https://thefootballscout.lovable.app",
       });
@@ -481,6 +495,11 @@ export default function Auth() {
 
     setIsGoogleLoading(true);
     try {
+      const isCustomDomain = !window.location.origin.includes('lovable.app') && !window.location.origin.includes('lovableproject.com') && !window.location.origin.includes('localhost');
+      if (isCustomDomain) {
+        window.location.href = `https://thefootballscout.lovable.app/auth?mode=${mode}&provider=google`;
+        return;
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: "https://thefootballscout.lovable.app",
       });
