@@ -471,6 +471,10 @@ export default function Auth() {
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: getOAuthRedirectUri(),
       });
+      if (result.redirected) {
+        // Browser is navigating to OAuth provider — keep loading state
+        return;
+      }
       if (result.error) {
         toast.error(result.error.message || 'Apple sign-in failed');
         localStorage.removeItem('pending_pro_signup');
@@ -478,7 +482,7 @@ export default function Auth() {
         localStorage.removeItem('pending_is_annual');
         setIsAppleLoading(false);
       }
-      // Don't reset loading on success — page will redirect away
+      // Success with tokens — page will re-render via auth state change
     } catch (err) {
       toast.error('Apple sign-in failed. Please try again.');
       localStorage.removeItem('pending_pro_signup');
@@ -517,15 +521,18 @@ export default function Auth() {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: getOAuthRedirectUri(),
       });
+      if (result.redirected) {
+        // Browser is navigating to OAuth provider — keep loading state
+        return;
+      }
       if (result.error) {
         toast.error(result.error.message || 'Google sign-in failed');
-        // Clear flags on error
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
         localStorage.removeItem('pending_is_annual');
         setIsGoogleLoading(false);
       }
-      // Don't reset loading on success — page will redirect away
+      // Success with tokens — page will re-render via auth state change
     } catch (err) {
       toast.error('Google sign-in failed. Please try again.');
       localStorage.removeItem('pending_pro_signup');

@@ -21,10 +21,14 @@ export function isCustomDomain(): boolean {
 }
 
 /**
- * Get the redirect URI for OAuth. Always use the lovable.app domain
- * since OAuth callbacks need to go through that domain.
+ * Get the redirect URI for OAuth. Use the current origin when on lovable.app/lovableproject.com,
+ * otherwise use the lovable.app domain since OAuth callbacks need to go through that domain.
  */
 export function getOAuthRedirectUri(): string {
+  const origin = window.location.origin;
+  if (origin.includes('lovable.app') || origin.includes('lovableproject.com') || origin.includes('localhost')) {
+    return origin;
+  }
   return LOVABLE_APP_URL;
 }
 
