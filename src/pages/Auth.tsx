@@ -9,7 +9,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2, WifiOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2, WifiOff, Clock } from 'lucide-react';
+import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
@@ -84,6 +85,7 @@ export default function Auth() {
   const [showFreeConfirm, setShowFreeConfirm] = useState(false);
   const [freeConfirmSource, setFreeConfirmSource] = useState<'manual' | 'google'>('manual');
   const oauthTriggered = useRef(false);
+  const rateLimit = useAuthRateLimit();
 
   // Check for mode and tier from URL params (from pricing page)
   useEffect(() => {
@@ -245,6 +247,12 @@ export default function Auth() {
     }
     
     if (!validateForm()) return;
+
+    // Rate limit check for sign-in
+    if (mode === 'signIn' && rateLimit.isLocked) {
+      toast.error(`Too many failed attempts. Please wait ${rateLimit.remainingSeconds}s before trying again.`);
+      return;
+    }
     
     if (mode === 'signUp' && !gdprConsent) {
       toast.error('Please accept the data processing agreement to continue');
@@ -376,13 +384,17 @@ export default function Auth() {
       } else {
         const { error } = await signIn(email, password);
         if (error) {
+          const attemptsLeft = rateLimit.recordFailedAttempt();
           if (error.message.includes('Invalid login')) {
-            toast.error('Invalid email or password. Please try again.');
+            toast.error(attemptsLeft > 0 
+              ? `Invalid email or password. ${attemptsLeft} attempt${attemptsLeft === 1 ? '' : 's'} remaining.`
+              : 'Too many failed attempts. Please wait 1 minute.');
           } else {
             toast.error(error.message);
           }
           return;
         }
+        rateLimit.resetAttempts();
         toast.success('Welcome back!');
         navigate('/dashboard');
       }
@@ -737,6 +749,13 @@ export default function Auth() {
                 </div>
               ) : (
               <>
+              {/* Rate Limit Warning */}
+              {rateLimit.isLocked && mode === 'signIn' && (
+                <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-sm flex items-center gap-2">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  <p>Too many failed attempts. Try again in <strong>{rateLimit.remainingSeconds}s</strong></p>
+                </div>
+              )}
               {/* Form Error Banner */}
               {formError && (
                 <div className="mb-4 p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm flex items-start gap-2">
