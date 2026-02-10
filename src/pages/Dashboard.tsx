@@ -147,7 +147,16 @@ export default function Dashboard() {
           });
 
           if (!error && data?.url) {
-            window.location.href = data.url;
+            // Clear flags before redirect to prevent loop
+            localStorage.removeItem('pending_pro_signup');
+            localStorage.removeItem('pending_promo_code');
+            localStorage.removeItem('pending_is_annual');
+            // Try direct redirect first, fall back to new tab for iframe environments
+            try {
+              window.location.href = data.url;
+            } catch {
+              window.open(data.url, '_blank');
+            }
           } else {
             console.error('Pending checkout failed:', error);
             localStorage.removeItem('pending_pro_signup');
