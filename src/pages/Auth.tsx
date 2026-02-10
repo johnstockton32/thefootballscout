@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Eye, EyeOff, ArrowRight, Shield, User, Mail, Lock, ArrowLeft, Crown, Users, Sparkles, Check, Tag, CheckCircle, XCircle, Loader2, WifiOff } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -78,6 +79,8 @@ export default function Auth() {
   const [promoCodeStatus, setPromoCodeStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
   const [promoCodeMessage, setPromoCodeMessage] = useState<string>('');
   const [promoCodeBenefits, setPromoCodeBenefits] = useState<{ tierUpgrade?: string; discountPercent?: number } | null>(null);
+  const [showFreeConfirm, setShowFreeConfirm] = useState(false);
+  const [freeConfirmSource, setFreeConfirmSource] = useState<'manual' | 'google'>('manual');
 
   // Check for mode and tier from URL params (from pricing page)
   useEffect(() => {
@@ -216,6 +219,17 @@ export default function Auth() {
       return;
     }
 
+    // Show upsell confirmation for free tier signups
+    if (mode === 'signUp' && selectedTier === 'free' && !(promoCode.trim() && promoCodeStatus === 'valid')) {
+      setFreeConfirmSource('manual');
+      setShowFreeConfirm(true);
+      return;
+    }
+
+    await proceedWithSubmit();
+  };
+
+  const proceedWithSubmit = async () => {
     setIsLoading(true);
     setFormError(null);
 
@@ -357,6 +371,17 @@ export default function Auth() {
       return;
     }
 
+    // Show upsell confirmation for free tier Google signups
+    if (mode === 'signUp' && selectedTier === 'free' && !(promoCode.trim() && promoCodeStatus === 'valid')) {
+      setFreeConfirmSource('google');
+      setShowFreeConfirm(true);
+      return;
+    }
+
+    await proceedWithGoogleSignIn();
+  };
+
+  const proceedWithGoogleSignIn = async () => {
     // If in signup mode, store pending flags so Dashboard handles post-auth flow
     if (mode === 'signUp') {
       // Store GDPR consent flag for post-OAuth application
@@ -838,6 +863,57 @@ export default function Auth() {
           </div>
         </div>
       </main>
+
+      {/* Free Plan Upsell Confirmation */}
+      <AlertDialog open={showFreeConfirm} onOpenChange={setShowFreeConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Are you sure about the Free plan?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                The Free plan limits you to <strong>10 players</strong> and <strong>5 reports per month</strong>. 
+                With Pro, you get unlimited access plus powerful features:
+              </p>
+              <ul className="list-disc pl-5 space-y-1 text-sm">
+                <li>Unlimited players & reports</li>
+                <li>AI-powered scouting insights</li>
+                <li>PDF export & bulk import</li>
+                <li>Advanced analytics & comparison</li>
+              </ul>
+              <p className="font-medium text-foreground">
+                Pro includes a 14-day free trial — no charge until the trial ends!
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setShowFreeConfirm(false);
+                if (freeConfirmSource === 'manual') {
+                  proceedWithSubmit();
+                } else {
+                  proceedWithGoogleSignIn();
+                }
+              }}
+            >
+              Continue with Free
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setShowFreeConfirm(false);
+                setSelectedTier('pro');
+              }}
+              className="bg-primary text-primary-foreground"
+            >
+              <Crown className="w-4 h-4 mr-1" />
+              Try Pro Free for 14 Days
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
