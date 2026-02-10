@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { SwipeableReportCard } from '@/components/reports/SwipeableReportCard';
@@ -12,7 +12,7 @@ import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { FloatingActionButton } from '@/components/ui/floating-action-button';
 import { SwipeHint, useSwipeHint } from '@/components/ui/swipe-hint';
 import { toast } from 'sonner';
-import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff, UserPlus } from 'lucide-react';
+import { Plus, Search, FileText, ArrowLeft, BarChart3, WifiOff, UserPlus, X } from 'lucide-react';
 
 const reportRowVariants = {
   hidden: { opacity: 0, x: -20 },
@@ -33,10 +33,12 @@ const reportRowVariants = {
 
 export default function Reports() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isMobile = useIsMobile();
   const { reports, isLoading, isOnline, deleteReport, refetch } = useOfflineReports();
   const [filteredReports, setFilteredReports] = useState<ReportWithPlayer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const recommendationFilter = searchParams.get('recommendation');
 
   // Swipe hint for first-time mobile users
   const { showHint: showSwipeHint, dismissHint } = useSwipeHint('reports');
@@ -67,20 +69,28 @@ export default function Reports() {
   });
 
   useEffect(() => {
-    if (!searchQuery) {
-      setFilteredReports(reports);
-      return;
+    let result = reports;
+
+    // Apply recommendation filter from query params
+    if (recommendationFilter) {
+      result = result.filter(
+        (r) => r.recommendation?.toLowerCase() === recommendationFilter.toLowerCase()
+      );
     }
 
-    const query = searchQuery.toLowerCase();
-    const filtered = reports.filter(
-      (r) =>
-        r.players?.full_name?.toLowerCase().includes(query) ||
-        r.opposition?.toLowerCase().includes(query) ||
-        r.recommendation?.toLowerCase().includes(query)
-    );
-    setFilteredReports(filtered);
-  }, [reports, searchQuery]);
+    // Apply search query filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.players?.full_name?.toLowerCase().includes(query) ||
+          r.opposition?.toLowerCase().includes(query) ||
+          r.recommendation?.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredReports(result);
+  }, [reports, searchQuery, recommendationFilter]);
 
   const handleDeleteReport = async (reportId: string) => {
     try {
@@ -141,6 +151,20 @@ export default function Reports() {
             </Button>
           </div>
         </div>
+
+        {/* Active filter badge */}
+        {recommendationFilter && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Filtered by:</span>
+            <button
+              onClick={() => setSearchParams({})}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium hover:bg-primary/20 transition-colors"
+            >
+              {recommendationFilter}
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        )}
 
         {/* Search */}
         <div className="relative max-w-md">
