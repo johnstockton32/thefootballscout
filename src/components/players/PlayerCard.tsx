@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { POSITION_ABBREV, POSITION_LABELS, calculateAge, getRatingColor, PlayerPosition } from '@/lib/supabase';
@@ -19,12 +20,12 @@ interface PlayerCardProps {
   reportsCount?: number;
 }
 
-export function PlayerCard({ player, latestRating, reportsCount = 0 }: PlayerCardProps) {
+export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(function PlayerCard({ player, latestRating, reportsCount = 0 }, ref) {
   const age = player.date_of_birth ? calculateAge(player.date_of_birth) : null;
   const photoUrl = usePlayerPhotoUrl(player.photo_url);
 
   return (
-    <Link to={`/players/${player.id}`} className="block">
+    <Link ref={ref} to={`/players/${player.id}`} className="block">
       <Card className="card-glass player-card-shine overflow-hidden group hover:border-primary/30 transition-all duration-300 hover-scale active:scale-[0.98]">
         <div className="p-3 sm:p-4">
           <div className="flex items-start gap-4">
@@ -103,4 +104,4 @@ export function PlayerCard({ player, latestRating, reportsCount = 0 }: PlayerCar
       </Card>
     </Link>
   );
-}
+});
