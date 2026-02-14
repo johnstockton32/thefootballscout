@@ -44,6 +44,73 @@ interface ReportData {
   weaknesses: string | null;
 }
 
+// Local text-matching fallback when AI gateway is unavailable
+function localFallbackSearch(
+  query: string,
+  players: PlayerData[],
+  corsHeaders: Record<string, string>
+): Response {
+  const q = query.toLowerCase().trim();
+  const tokens = q.split(/\s+/);
+
+  const scored = players.map((player) => {
+    let score = 0;
+    const reasons: string[] = [];
+    const name = (player.full_name || "").toLowerCase();
+    const pos = (player.position || "").toLowerCase().replace(/_/g, " ");
+    const club = (player.current_club || "").toLowerCase();
+    const nat = (player.nationality || "").toLowerCase();
+    const foot = (player.preferred_foot || "").toLowerCase();
+
+    for (const token of tokens) {
+      if (name.includes(token)) { score += 3; reasons.push("name match"); }
+      if (pos.includes(token)) { score += 2; reasons.push("position match"); }
+      if (club.includes(token)) { score += 2; reasons.push("club match"); }
+      if (nat.includes(token)) { score += 2; reasons.push("nationality match"); }
+      if (foot.includes(token)) { score += 1; reasons.push("foot match"); }
+    }
+
+    // Age-based keywords
+    if (player.date_of_birth) {
+      const age = Math.floor((Date.now() - new Date(player.date_of_birth).getTime()) / 31557600000);
+      if ((q.includes("young") || q.includes("youth")) && age < 23) { score += 2; reasons.push("young player"); }
+      if ((q.includes("experienced") || q.includes("senior")) && age >= 28) { score += 2; reasons.push("experienced player"); }
+    }
+
+    // Height keywords
+    if (player.height_cm) {
+      if ((q.includes("tall") || q.includes("aerial")) && player.height_cm >= 185) { score += 2; reasons.push("tall player"); }
+    }
+
+    return {
+      id: player.id,
+      full_name: player.full_name,
+      position: player.position,
+      current_club: player.current_club,
+      nationality: player.nationality,
+      date_of_birth: player.date_of_birth,
+      photo_url: player.photo_url,
+      match_score: Math.min(score / 6, 1),
+      match_reason: [...new Set(reasons)].join(", ") || "partial match",
+    };
+  });
+
+  const results = scored
+    .filter((p) => p.match_score > 0)
+    .sort((a, b) => b.match_score - a.match_score)
+    .slice(0, 10);
+
+  return new Response(
+    JSON.stringify({
+      players: results,
+      summary: results.length > 0
+        ? `Found ${results.length} player(s) matching "${query}" (basic search — AI unavailable).`
+        : `No players matched "${query}". Try different keywords.`,
+    }),
+    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
 Deno.serve(async (req) => {
   const corsResponse = handleCorsPreflightRequest(req);
   if (corsResponse) return corsResponse;
@@ -158,10 +225,11 @@ Deno.serve(async (req) => {
       };
     });
 
-    // Call AI with optimized prompt
+    // Call AI with optimized prompt - fall back to local search if unavailable
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+      console.warn("LOVABLE_API_KEY not configured, using local search fallback");
+      return localFallbackSearch(query, players, corsHeaders);
     }
 
     const systemPrompt = `You are a football scout assistant. Match players from the database to the search query.
@@ -232,11 +300,8 @@ Return up to 10 matches.`;
     }
 
     if (!aiResponse || !aiResponse.ok) {
-      console.error("All AI models failed. Last error:", lastError);
-      return new Response(
-        JSON.stringify({ error: "AI service temporarily unavailable. Please try again in a moment." }),
-        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.warn("All AI models failed, using local search fallback. Last error:", lastError);
+      return localFallbackSearch(query, players, corsHeaders);
     }
 
     const aiData = await aiResponse.json();
