@@ -10,128 +10,128 @@
 
 @layer base {
   :root {
-    /* Core — Apple-clean whites */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 11%;
+    /* Core */
+    --background: 140 8% 98%;
+    --foreground: 150 10% 10%;
 
-    /* Cards — barely tinted warm white */
+    /* Cards — hint of green warmth */
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 11%;
+    --card-foreground: 150 10% 10%;
 
     /* Popover */
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 11%;
+    --popover-foreground: 150 10% 10%;
 
-    /* Primary — refined teal, slightly desaturated for elegance */
-    --primary: 162 48% 42%;
+    /* Primary — rich football green */
+    --primary: 152 55% 38%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — warm neutral gray */
-    --secondary: 220 10% 96%;
-    --secondary-foreground: 0 0% 18%;
+    /* Secondary */
+    --secondary: 140 8% 95%;
+    --secondary-foreground: 150 10% 18%;
 
-    /* Muted — soft neutral */
-    --muted: 220 10% 96%;
-    --muted-foreground: 0 0% 46%;
+    /* Muted */
+    --muted: 140 6% 94%;
+    --muted-foreground: 150 5% 45%;
 
-    /* Accent — subtle warm amber */
-    --accent: 38 75% 52%;
-    --accent-foreground: 0 0% 7%;
+    /* Accent — warm gold (like a trophy) */
+    --accent: 42 85% 50%;
+    --accent-foreground: 30 30% 10%;
 
-    /* Destructive */
-    --destructive: 0 65% 51%;
+    /* Destructive — red card */
+    --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders — barely visible, Apple-style */
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
-    --ring: 162 48% 42%;
+    /* Borders */
+    --border: 140 6% 90%;
+    --input: 140 6% 90%;
+    --ring: 152 55% 38%;
 
     --radius: 0.75rem;
 
-    /* Custom tokens */
-    --pitch-green: 162 48% 42%;
-    --pitch-green-light: 162 40% 52%;
-    --pitch-green-dark: 162 52% 32%;
+    /* Football tokens */
+    --pitch-green: 152 55% 38%;
+    --pitch-green-light: 150 45% 50%;
+    --pitch-green-dark: 155 60% 28%;
     
-    --rating-gold: 38 75% 52%;
-    --rating-gold-light: 40 80% 60%;
+    --rating-gold: 42 85% 50%;
+    --rating-gold-light: 44 90% 60%;
     
-    --danger-red: 0 65% 51%;
-    --warning-orange: 25 80% 52%;
-    --success-green: 150 50% 42%;
+    --danger-red: 0 72% 50%;
+    --warning-orange: 28 85% 52%;
+    --success-green: 148 55% 40%;
     
-    --energy: 260 45% 55%;
+    --energy: 260 50% 55%;
     
-    /* Shadow tokens — whisper-thin Apple shadows */
-    --shadow-card: 0 1px 2px hsla(0, 0%, 0%, 0.03), 0 1px 3px hsla(0, 0%, 0%, 0.04);
-    --shadow-glow-green: 0 0 0 transparent;
-    --shadow-glow-gold: 0 0 0 transparent;
+    /* Shadows */
+    --shadow-card: 0 1px 3px hsla(150, 10%, 10%, 0.04), 0 1px 2px hsla(150, 10%, 10%, 0.06);
+    --shadow-glow-green: 0 4px 14px hsla(152, 55%, 38%, 0.08);
+    --shadow-glow-gold: 0 4px 14px hsla(42, 85%, 50%, 0.08);
     --shadow-glow-energy: 0 0 0 transparent;
 
-    /* Sidebar — barely off-white */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 22%;
-    --sidebar-primary: 162 48% 42%;
+    /* Sidebar */
+    --sidebar-background: 140 8% 97%;
+    --sidebar-foreground: 150 10% 20%;
+    --sidebar-primary: 152 55% 38%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 22%;
-    --sidebar-border: 0 0% 93%;
-    --sidebar-ring: 162 48% 42%;
+    --sidebar-accent: 140 8% 94%;
+    --sidebar-accent-foreground: 150 10% 20%;
+    --sidebar-border: 140 6% 91%;
+    --sidebar-ring: 152 55% 38%;
   }
 
-  /* Dark theme — true black, Apple Dark Mode inspired */
+  /* Dark theme — stadium night */
   .dark {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 94%;
+    --background: 160 12% 4%;
+    --foreground: 140 5% 93%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 94%;
+    --card: 158 10% 8%;
+    --card-foreground: 140 5% 93%;
 
-    --popover: 0 0% 8%;
-    --popover-foreground: 0 0% 94%;
+    --popover: 158 10% 8%;
+    --popover-foreground: 140 5% 93%;
 
-    --primary: 162 45% 50%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 152 50% 48%;
+    --primary-foreground: 160 12% 4%;
 
-    --secondary: 0 0% 12%;
-    --secondary-foreground: 0 0% 88%;
+    --secondary: 158 8% 13%;
+    --secondary-foreground: 140 5% 88%;
 
-    --muted: 0 0% 12%;
-    --muted-foreground: 0 0% 50%;
+    --muted: 158 8% 13%;
+    --muted-foreground: 140 4% 50%;
 
-    --accent: 38 75% 52%;
-    --accent-foreground: 0 0% 4%;
+    --accent: 42 85% 52%;
+    --accent-foreground: 160 12% 4%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 0 0% 14%;
-    --input: 0 0% 12%;
-    --ring: 162 45% 50%;
+    --border: 158 8% 15%;
+    --input: 158 8% 13%;
+    --ring: 152 50% 48%;
 
-    --pitch-green: 162 45% 50%;
-    --pitch-green-light: 162 40% 58%;
-    --pitch-green-dark: 162 50% 35%;
+    --pitch-green: 152 50% 48%;
+    --pitch-green-light: 150 45% 56%;
+    --pitch-green-dark: 155 55% 34%;
 
-    --rating-gold: 38 75% 52%;
-    --rating-gold-light: 40 80% 62%;
+    --rating-gold: 42 85% 52%;
+    --rating-gold-light: 44 90% 62%;
 
-    --energy: 260 45% 58%;
+    --energy: 260 50% 58%;
 
-    --shadow-card: 0 1px 2px hsla(0, 0%, 0%, 0.25), 0 1px 3px hsla(0, 0%, 0%, 0.15);
-    --shadow-glow-green: 0 0 0 transparent;
-    --shadow-glow-gold: 0 0 0 transparent;
+    --shadow-card: 0 1px 3px hsla(0, 0%, 0%, 0.3), 0 1px 2px hsla(0, 0%, 0%, 0.2);
+    --shadow-glow-green: 0 4px 20px hsla(152, 50%, 48%, 0.12);
+    --shadow-glow-gold: 0 4px 20px hsla(42, 85%, 52%, 0.1);
     --shadow-glow-energy: 0 0 0 transparent;
 
-    --sidebar-background: 0 0% 6%;
-    --sidebar-foreground: 0 0% 86%;
-    --sidebar-primary: 162 45% 50%;
-    --sidebar-primary-foreground: 0 0% 4%;
-    --sidebar-accent: 0 0% 10%;
-    --sidebar-accent-foreground: 0 0% 86%;
-    --sidebar-border: 0 0% 12%;
-    --sidebar-ring: 162 45% 50%;
+    --sidebar-background: 160 10% 6%;
+    --sidebar-foreground: 140 5% 85%;
+    --sidebar-primary: 152 50% 48%;
+    --sidebar-primary-foreground: 160 12% 4%;
+    --sidebar-accent: 158 8% 11%;
+    --sidebar-accent-foreground: 140 5% 85%;
+    --sidebar-border: 158 8% 13%;
+    --sidebar-ring: 152 50% 48%;
   }
 }
 
@@ -357,12 +357,34 @@
     @apply rating-badge text-2xl px-4 py-2;
   }
 
-  /* Pitch pattern background - very subtle */
+  /* Pitch pattern background — subtle stadium grass lines */
   .pitch-pattern {
     background-image: 
-      linear-gradient(90deg, hsl(var(--border) / 0.3) 1px, transparent 1px),
-      linear-gradient(180deg, hsl(var(--border) / 0.3) 1px, transparent 1px);
+      linear-gradient(90deg, hsl(var(--primary) / 0.04) 1px, transparent 1px),
+      linear-gradient(180deg, hsl(var(--primary) / 0.04) 1px, transparent 1px);
     background-size: 48px 48px;
+  }
+
+  /* Football card accent — subtle green left stripe */
+  .card-football {
+    @apply bg-card border border-border relative overflow-hidden;
+    box-shadow: var(--shadow-card);
+  }
+  .card-football::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 rounded-l-lg;
+    background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--pitch-green-dark)));
+  }
+
+  /* Gold highlight card — for ratings/achievements */
+  .card-trophy {
+    @apply bg-card border border-accent/20 relative overflow-hidden;
+    box-shadow: var(--shadow-glow-gold);
+  }
+  .card-trophy::before {
+    content: '';
+    @apply absolute left-0 top-0 bottom-0 w-1 rounded-l-lg;
+    background: linear-gradient(180deg, hsl(var(--accent)), hsl(var(--rating-gold-light)));
   }
 
   /* Stat bars */
