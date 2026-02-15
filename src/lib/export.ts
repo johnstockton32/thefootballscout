@@ -191,6 +191,15 @@ function drawRoundedRect(doc: jsPDF, x: number, y: number, w: number, h: number,
   doc.roundedRect(x, y, w, h, r, r, 'F');
 }
 
+// Helper to draw a card with border (dark theme style)
+function drawCardWithBorder(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fillColor: [number, number, number], borderCol: [number, number, number]) {
+  doc.setFillColor(...fillColor);
+  doc.roundedRect(x, y, w, h, r, r, 'F');
+  doc.setDrawColor(...borderCol);
+  doc.setLineWidth(0.4);
+  doc.roundedRect(x, y, w, h, r, r, 'S');
+}
+
 // Helper to draw a progress bar
 function drawProgressBar(doc: jsPDF, x: number, y: number, width: number, height: number, value: number, maxValue: number, bgColor: [number, number, number], fillColor: [number, number, number]) {
   const percentage = Math.min(value / maxValue, 1);
@@ -252,26 +261,27 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const margin = 12;
   const contentWidth = pageWidth - margin * 2;
   
-  // Color scheme — professional football green palette
+  // Color scheme — dark football theme matching the app
   const brandPrimary = branding?.primary_color ? hexToRgb(branding.primary_color) : null;
   
-  const bgDark: [number, number, number] = [255, 255, 255]; // White background
-  const bgCard: [number, number, number] = [245, 247, 250]; // Light gray card
-  const bgMuted: [number, number, number] = [228, 232, 238]; // Muted gray
-  const primaryColor: [number, number, number] = brandPrimary || [38, 140, 105]; // Football green (hsl 152 55% 38%)
+  const bgDark: [number, number, number] = [18, 24, 20]; // Dark background matching app
+  const bgCard: [number, number, number] = [28, 36, 30]; // Card background
+  const bgMuted: [number, number, number] = [45, 55, 48]; // Muted elements
+  const borderColor: [number, number, number] = [55, 70, 58]; // Card borders
+  const primaryColor: [number, number, number] = brandPrimary || [38, 140, 105]; // Football green
   const primaryLight: [number, number, number] = brandPrimary 
     ? [Math.min(brandPrimary[0] + 31, 255), Math.min(brandPrimary[1] + 16, 255), Math.min(brandPrimary[2] + 20, 255)]
-    : [64, 163, 128]; // Lighter green
+    : [64, 163, 128];
   const primaryDark: [number, number, number] = brandPrimary
     ? [Math.max(brandPrimary[0] - 20, 0), Math.max(brandPrimary[1] - 20, 0), Math.max(brandPrimary[2] - 20, 0)]
-    : [25, 110, 80]; // Dark green
-  const accentColor: [number, number, number] = [210, 155, 15]; // Gold
-  const blueColor: [number, number, number] = [59, 130, 246]; // Blue for tactical
-  const purpleColor: [number, number, number] = [140, 70, 210]; // Purple for mental
-  const destructiveColor: [number, number, number] = [200, 45, 45]; // Red
-  const white: [number, number, number] = [18, 22, 28]; // Dark text
-  const textMuted: [number, number, number] = [100, 110, 125]; // Muted text
-  const textLight: [number, number, number] = [60, 65, 75]; // Medium text
+    : [25, 110, 80];
+  const accentColor: [number, number, number] = [210, 170, 40]; // Gold/trophy
+  const blueColor: [number, number, number] = [70, 140, 255]; // Blue for tactical
+  const purpleColor: [number, number, number] = [155, 90, 220]; // Purple for mental
+  const destructiveColor: [number, number, number] = [220, 60, 60]; // Red
+  const white: [number, number, number] = [240, 245, 242]; // Light text on dark
+  const textMuted: [number, number, number] = [140, 155, 148]; // Muted text
+  const textLight: [number, number, number] = [180, 195, 188]; // Medium text
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
@@ -343,12 +353,12 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     }
   }
 
-  // Team/club name below or beside logo
-  const teamName = player?.current_club || branding?.company_name || '';
+  // Team/club name
+  const teamName = player?.current_club || '';
   const infoStartX = margin + headerPhotoWidth;
   
   if (teamName) {
-    doc.setTextColor(...primaryDark);
+    doc.setTextColor(...primaryColor);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.text(teamName.toUpperCase(), infoStartX, y + 5);
@@ -379,7 +389,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     const badgeY = y + 2;
     const rating = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
     
-    // Rating circle
+    // Rating circle with green bg
     drawRoundedRect(doc, badgeX, badgeY, 18, 18, 4, primaryColor);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
@@ -392,25 +402,26 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     doc.text('RATING', badgeX + 9, badgeY + 22, { align: 'center' });
   }
 
-  // Branding company name (top right if different from team)
-  if (branding?.company_name && branding.company_name !== teamName) {
+  // Scout's organization/branding name (top right, below rating)
+  const scoutOrg = branding?.company_name || '';
+  if (scoutOrg) {
     doc.setTextColor(...textMuted);
     doc.setFontSize(6);
     doc.setFont('helvetica', 'italic');
-    doc.text(branding.company_name, pageWidth - margin, y + 28, { align: 'right' });
+    doc.text(scoutOrg, pageWidth - margin, y + 28, { align: 'right' });
   }
 
   y += 30;
 
   // Separator line
-  doc.setDrawColor(...bgMuted);
-  doc.setLineWidth(0.5);
+  doc.setDrawColor(...borderColor);
+  doc.setLineWidth(0.4);
   doc.line(margin, y, pageWidth - margin, y);
   y += 4;
 
   // ========== MATCH DETAILS CARD ==========
   const matchCardHeight = 22;
-  drawRoundedRect(doc, margin, y, contentWidth, matchCardHeight, 3, bgCard);
+  drawCardWithBorder(doc, margin, y, contentWidth, matchCardHeight, 3, bgCard, borderColor);
   
   // Match info row
   const matchDate = format(new Date(report.match_date), 'MMM d, yyyy');
@@ -439,7 +450,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // ========== OVERALL RATING CARD ==========
   const ratingCardHeight = 32;
-  drawRoundedRect(doc, margin, y, contentWidth, ratingCardHeight, 4, bgCard);
+  drawCardWithBorder(doc, margin, y, contentWidth, ratingCardHeight, 4, bgCard, borderColor);
   
   // Left side - rating info
   doc.setTextColor(...textMuted);
@@ -486,13 +497,13 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const circleR = 10;
   
   // Background circle
-  doc.setDrawColor(...bgMuted);
+  doc.setDrawColor(...borderColor);
   doc.setLineWidth(2);
   doc.circle(circleX, circleY, circleR, 'S');
   
-  // Progress arc
+  // Progress arc overlay
   doc.setDrawColor(...primaryColor);
-  doc.setLineWidth(2);
+  doc.setLineWidth(2.5);
   doc.circle(circleX, circleY, circleR, 'S');
   
   // Score in circle
@@ -516,7 +527,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   
   categories.forEach((cat, i) => {
     const cardX = margin + i * (cardWidth + 3);
-    drawRoundedRect(doc, cardX, y, cardWidth, cardHeight, 3, bgCard);
+    drawCardWithBorder(doc, cardX, y, cardWidth, cardHeight, 3, bgCard, borderColor);
     
     // Color indicator bar at top
     doc.setFillColor(...cat.color);
@@ -543,7 +554,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // ========== DETAILED ATTRIBUTES SECTION ==========
   const attrSectionHeight = 90;
-  drawRoundedRect(doc, margin, y, contentWidth, attrSectionHeight, 4, bgCard);
+  drawCardWithBorder(doc, margin, y, contentWidth, attrSectionHeight, 4, bgCard, borderColor);
   
   doc.setTextColor(...white);
   doc.setFontSize(9);
@@ -674,7 +685,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const observationCardHeight = 28;
   
   // Strengths card (left)
-  drawRoundedRect(doc, margin, y, halfWidth, observationCardHeight, 3, bgCard);
+  drawCardWithBorder(doc, margin, y, halfWidth, observationCardHeight, 3, bgCard, borderColor);
   doc.setFillColor(...primaryColor);
   doc.roundedRect(margin, y, 2.5, observationCardHeight, 3, 0, 'F');
   doc.rect(margin + 1.5, y, 1, observationCardHeight, 'F');
@@ -692,7 +703,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.text(strengthLines.slice(0, 5).join('\n'), margin + 6, y + 13);
   
   // Areas to Improve card (right)
-  drawRoundedRect(doc, margin + halfWidth + 4, y, halfWidth, observationCardHeight, 3, bgCard);
+  drawCardWithBorder(doc, margin + halfWidth + 4, y, halfWidth, observationCardHeight, 3, bgCard, borderColor);
   doc.setFillColor(...destructiveColor);
   doc.roundedRect(margin + halfWidth + 4, y, 2.5, observationCardHeight, 3, 0, 'F');
   doc.rect(margin + halfWidth + 5.5, y, 1, observationCardHeight, 'F');
@@ -713,7 +724,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // ========== RECOMMENDATION ==========
   const recCardHeight = 18;
-  drawRoundedRect(doc, margin, y, contentWidth, recCardHeight, 3, bgCard);
+  drawCardWithBorder(doc, margin, y, contentWidth, recCardHeight, 3, bgCard, borderColor);
   doc.setFillColor(...primaryLight);
   doc.roundedRect(margin, y, 2.5, recCardHeight, 3, 0, 'F');
   doc.rect(margin + 1.5, y, 1, recCardHeight, 'F');
