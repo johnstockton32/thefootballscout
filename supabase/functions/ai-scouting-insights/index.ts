@@ -235,9 +235,12 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      const errorText = lastError || (response ? await response.text() : "No response");
-      console.error("AI gateway error:", status, errorText);
-      throw new Error(`AI service temporarily unavailable. Please try again.`);
+      console.warn("AI gateway unavailable, using local fallback insights");
+      const fallbackInsight = generateLocalInsight(playerData, reportsData, insightType);
+      return new Response(
+        JSON.stringify({ insight: fallbackInsight, insightType, fallback: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const data = await response.json();
@@ -255,3 +258,45 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     );
   }
 });
+
+function generateLocalInsight(player: PlayerData, reports: ReportData[], type: string): string {
+  if (!reports.length) return `No scouting reports available for ${player.full_name} to generate insights.`;
+
+  const latest = reports[reports.length - 1];
+  const avg = (vals: (number | null)[]) => {
+    const nums = vals.filter((v): v is number => v !== null);
+    return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+  };
+
+  const techAvg = avg([latest.technical_first_touch, latest.technical_passing, latest.technical_dribbling, latest.technical_shooting, latest.technical_crossing, latest.technical_heading]);
+  const tactAvg = avg([latest.tactical_positioning, latest.tactical_decision_making, latest.tactical_awareness, latest.tactical_off_ball_movement, latest.tactical_defensive_contribution]);
+  const physAvg = avg([latest.physical_pace, latest.physical_agility, latest.physical_strength, latest.physical_stamina, latest.physical_balance]);
+  const mentAvg = avg([latest.mental_composure, latest.mental_concentration, latest.mental_work_rate, latest.mental_leadership, latest.mental_aggression]);
+
+  const categories = [
+    { name: "Technical", avg: techAvg },
+    { name: "Tactical", avg: tactAvg },
+    { name: "Physical", avg: physAvg },
+    { name: "Mental", avg: mentAvg },
+  ].sort((a, b) => b.avg - a.avg);
+
+  const strongest = categories[0];
+  const weakest = categories[categories.length - 1];
+  const rating = latest.overall_rating ?? 0;
+  const potential = latest.potential_rating ?? 0;
+
+  switch (type) {
+    case "development":
+      return `${player.full_name} shows the most room for growth in ${weakest.name.toLowerCase()} attributes (avg ${weakest.avg.toFixed(1)}/20). Their strongest area is ${strongest.name.toLowerCase()} (avg ${strongest.avg.toFixed(1)}/20). With an overall rating of ${rating} and potential of ${potential}, focused training on ${weakest.name.toLowerCase()} skills could unlock significant improvement. ${latest.weaknesses ? "Key areas to address: " + latest.weaknesses : ""} ${latest.strengths ? "Building on existing strengths: " + latest.strengths : ""}`;
+
+    case "comparison":
+      return `${player.full_name} plays as a ${player.position.replace(/_/g, " ")} with a ${strongest.name.toLowerCase()}-first profile (avg ${strongest.avg.toFixed(1)}/20). Their overall rating of ${rating} with ${potential} potential suggests a player who could develop into a solid performer at this level. ${latest.strengths ? "Standout qualities include: " + latest.strengths : ""} A more detailed AI comparison will be available when the service recovers.`;
+
+    case "transfer":
+      const tierLabel = rating >= 75 ? "upper-tier" : rating >= 60 ? "mid-tier" : "development-level";
+      return `${player.full_name} profiles as a ${tierLabel} ${player.position.replace(/_/g, " ")}${player.current_club ? " currently at " + player.current_club : ""}. With an overall rating of ${rating} and potential of ${potential}, they could suit clubs looking for ${strongest.name.toLowerCase()} quality. ${latest.strengths ? "Key selling points: " + latest.strengths : ""} ${latest.weaknesses ? "Considerations: " + latest.weaknesses : ""} Full market analysis will be available when the AI service recovers.`;
+
+    default:
+      return `${player.full_name} is a ${player.position.replace(/_/g, " ")}${player.current_club ? " at " + player.current_club : ""} rated ${rating}/100 with ${potential} potential. Their strongest category is ${strongest.name.toLowerCase()} (${strongest.avg.toFixed(1)}/20) while ${weakest.name.toLowerCase()} (${weakest.avg.toFixed(1)}/20) could use improvement. ${latest.strengths ? latest.strengths : ""} Based on ${reports.length} report(s) observed.`;
+  }
+}
