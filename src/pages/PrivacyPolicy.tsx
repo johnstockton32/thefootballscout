@@ -149,7 +149,7 @@ const PrivacyPolicy = () => {
               <div className="mt-4 p-4 rounded-lg bg-muted/50">
                 <p><strong>Data Protection Officer</strong></p>
                 <p>The Football Scout</p>
-                <p>Email: privacy@thefootballscout.com</p>
+                <p>Email: support@thefootballscout.app</p>
               </div>
             </CardContent>
           </Card>
