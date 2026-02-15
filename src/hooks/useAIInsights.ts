@@ -46,6 +46,7 @@ interface ReportData {
 export function useAIInsights() {
   const [isLoading, setIsLoading] = useState(false);
   const [insight, setInsight] = useState<string | null>(null);
+  const [isFallback, setIsFallback] = useState(false);
 
   const calculateAge = (dob: string | null): number | null => {
     if (!dob) return null;
@@ -71,6 +72,7 @@ export function useAIInsights() {
 
     setIsLoading(true);
     setInsight(null);
+    setIsFallback(false);
 
     try {
       const { data, error } = await supabase.functions.invoke('ai-scouting-insights', {
@@ -93,6 +95,7 @@ export function useAIInsights() {
       }
 
       setInsight(data.insight);
+      setIsFallback(!!data.fallback);
       return data.insight;
     } catch (error) {
       console.error('AI insight error:', error);
@@ -131,8 +134,9 @@ export function useAIInsights() {
   return {
     isLoading,
     insight,
+    isFallback,
     generateInsight,
     saveInsight,
-    clearInsight: () => setInsight(null),
+    clearInsight: () => { setInsight(null); setIsFallback(false); },
   };
 }

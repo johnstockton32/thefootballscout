@@ -323,8 +323,15 @@ Return up to 10 matches.`;
       searchResults = { matches: [], summary: "Could not process your search. Please try rephrasing." };
     }
 
+    // Validate JSON structure before using
+    if (!searchResults.matches || !Array.isArray(searchResults.matches)) {
+      console.warn("AI returned invalid structure, missing 'matches' array:", JSON.stringify(searchResults).slice(0, 200));
+      searchResults = { matches: [], summary: searchResults.summary || "Could not process search results. Please try again." };
+    }
+
     // Map results to player data
     const matchedPlayers = searchResults.matches
+      .filter((match: any) => match && typeof match.player_id === 'string' && typeof match.match_score === 'number')
       .map((match: { player_id: string; match_score: number; match_reason: string }) => {
         const player = players.find((p) => p.id === match.player_id);
         if (!player) return null;

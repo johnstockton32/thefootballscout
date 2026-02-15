@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { handleError } from '@/lib/errorUtils';
+import { useSignedUrl } from '@/hooks/useSignedUrl';
 
 interface ProfilePhotoUploadProps {
   userId: string;
@@ -26,6 +27,12 @@ export function ProfilePhotoUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Resolve avatar path to signed URL (handles both legacy full URLs and bare paths)
+  const avatarPath = currentPhotoUrl && !currentPhotoUrl.startsWith('http')
+    ? currentPhotoUrl
+    : currentPhotoUrl?.match(/avatars\/(.+?)(?:\?|$)/)?.[1] || null;
+  const signedAvatarUrl = useSignedUrl('avatars', avatarPath);
 
   const getInitials = (name: string | null) => {
     if (!name) return 'U';
@@ -83,23 +90,16 @@ export function ProfilePhotoUpload({
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(fileName);
-
-      // Add cache-busting query param
-      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
-
-      // Update profile with new photo URL
+      // Store only the bare path (not a full URL) so we can use signed URLs
+      // Update profile with the storage path
       const { error: updateError } = await supabase
         .from('profiles')
-        .update({ photo_url: urlWithCacheBust })
+        .update({ photo_url: fileName })
         .eq('id', userId);
 
       if (updateError) throw updateError;
 
-      onPhotoUpdated(urlWithCacheBust);
+      onPhotoUpdated(fileName);
       
       toast({
         title: 'Photo uploaded',
@@ -159,7 +159,7 @@ export function ProfilePhotoUpload({
   return (
     <div className="flex items-center gap-6">
       <Avatar className="h-24 w-24 border-2 border-border">
-        <AvatarImage src={currentPhotoUrl || undefined} alt={fullName || 'Profile'} />
+        <AvatarImage src={signedAvatarUrl || undefined} alt={fullName || 'Profile'} />
         <AvatarFallback className="text-2xl bg-primary/10 text-primary">
           {getInitials(fullName)}
         </AvatarFallback>
