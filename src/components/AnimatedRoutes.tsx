@@ -31,6 +31,7 @@ const ContactFeedback = lazy(() => import('@/pages/ContactFeedback'));
 
 const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
+const Changelog = lazy(() => import('@/pages/Changelog'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 function PageLoader() {
@@ -54,6 +55,7 @@ export function AnimatedRoutes() {
         <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
         <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
         <Route path="/gdpr-consent" element={<PageTransition><GdprConsent /></PageTransition>} />
+        <Route path="/changelog" element={<PageTransition><Changelog /></PageTransition>} />
         
         {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />

@@ -186,7 +186,7 @@ const TermsOfService = () => {
 
           <div className="text-center text-sm text-muted-foreground mt-8">
             <p>
-              Questions about these terms? Contact us at legal@thefootballscout.com
+              Questions about these terms? Contact us at support@thefootballscout.app
             </p>
           </div>
         </div>
