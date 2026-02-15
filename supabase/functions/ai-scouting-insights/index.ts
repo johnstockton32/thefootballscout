@@ -179,7 +179,7 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     console.log("Sending request to AI gateway with insight type:", insightType);
     console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
     
-    const models = ["openai/gpt-5.2", "google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
     
     let response: Response | null = null;
     let lastError = "";
@@ -187,35 +187,39 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     for (const model of models) {
       for (let attempt = 0; attempt < 2; attempt++) {
         if (attempt > 0) {
-          await new Promise((r) => setTimeout(r, 1000));
+          await new Promise((r) => setTimeout(r, 1500));
           console.log(`Retrying model ${model}, attempt ${attempt + 1}`);
         }
         
         console.log(`Trying model: ${model}`);
-        response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            max_tokens: 2000,
-            temperature: 0.7,
-          }),
-        });
+        try {
+          response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userPrompt },
+              ],
+              temperature: 0.7,
+            }),
+          });
 
-        console.log(`Model ${model} response status:`, response.status);
+          console.log(`Model ${model} response status:`, response.status);
 
-        if (response.ok) break;
+          if (response.ok) break;
 
-        lastError = await response.text();
-        console.warn(`Model ${model} failed (attempt ${attempt + 1}):`, response.status, lastError);
-        response = null;
+          lastError = await response.text();
+          console.warn(`Model ${model} failed (attempt ${attempt + 1}):`, response.status, lastError);
+          response = null;
+        } catch (fetchError) {
+          console.warn(`Model ${model} fetch error (attempt ${attempt + 1}):`, fetchError);
+          response = null;
+        }
       }
       
       if (response?.ok) break;
@@ -297,6 +301,6 @@ function generateLocalInsight(player: PlayerData, reports: ReportData[], type: s
       return `${player.full_name} profiles as a ${tierLabel} ${player.position.replace(/_/g, " ")}${player.current_club ? " currently at " + player.current_club : ""}. With an overall rating of ${rating} and potential of ${potential}, they could suit clubs looking for ${strongest.name.toLowerCase()} quality. ${latest.strengths ? "Key selling points: " + latest.strengths : ""} ${latest.weaknesses ? "Considerations: " + latest.weaknesses : ""} Full market analysis will be available when the AI service recovers.`;
 
     default:
-      return `${player.full_name} is a ${player.position.replace(/_/g, " ")}${player.current_club ? " at " + player.current_club : ""} rated ${rating}/100 with ${potential} potential. Their strongest category is ${strongest.name.toLowerCase()} (${strongest.avg.toFixed(1)}/20) while ${weakest.name.toLowerCase()} (${weakest.avg.toFixed(1)}/20) could use improvement. ${latest.strengths ? latest.strengths : ""} Based on ${reports.length} report(s) observed.`;
+      return `${player.full_name} is a ${player.position.replace(/_/g, " ")}${player.current_club ? " at " + player.current_club : ""} rated ${rating}/20 with ${potential}/20 potential. Their strongest category is ${strongest.name.toLowerCase()} (${strongest.avg.toFixed(1)}/20) while ${weakest.name.toLowerCase()} (${weakest.avg.toFixed(1)}/20) could use improvement. ${latest.strengths ? latest.strengths : ""} Based on ${reports.length} report(s) observed.`;
   }
 }
