@@ -235,7 +235,8 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
         current_club,
         height_cm,
         weight_kg,
-        preferred_foot
+        preferred_foot,
+        photo_url
       )
     `)
     .eq('id', reportId)
@@ -296,16 +297,46 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   let y = 8;
 
-  // ========== HEADER — Logo + Team on left, Player info center-right ==========
+  // ========== HEADER — Player photo + Team on left, Player info center-right ==========
   const logoUrl = teamLogoUrl || branding?.logo_url;
-  let headerLogoWidth = 0;
+  let headerPhotoWidth = 0;
   
-  if (logoUrl) {
+  // Try to load player photo first, fall back to team logo
+  let playerPhotoUrl: string | null = null;
+  if (player?.photo_url) {
+    // Get signed URL for the player photo
+    const storagePath = player.photo_url.startsWith('http') 
+      ? player.photo_url.match(/player-photos\/(.+?)(?:\?|$)/)?.[1] || null
+      : player.photo_url;
+    
+    if (storagePath) {
+      const { data: signedData } = await supabase.storage
+        .from('player-photos')
+        .createSignedUrl(storagePath, 300);
+      playerPhotoUrl = signedData?.signedUrl || null;
+    }
+  }
+
+  // Add player photo
+  if (playerPhotoUrl) {
+    const photoBase64 = await loadImageAsBase64(playerPhotoUrl);
+    if (photoBase64) {
+      try {
+        doc.addImage(photoBase64, 'JPEG', margin, y, 18, 18);
+        headerPhotoWidth = 22;
+      } catch (e) {
+        console.warn('Could not add player photo to PDF:', e);
+      }
+    }
+  }
+
+  // Add team/branding logo (smaller, beside or below player photo)
+  if (logoUrl && !playerPhotoUrl) {
     const logoBase64 = await loadImageAsBase64(logoUrl);
     if (logoBase64) {
       try {
         doc.addImage(logoBase64, 'PNG', margin, y, 16, 16);
-        headerLogoWidth = 20;
+        headerPhotoWidth = 20;
       } catch (e) {
         console.warn('Could not add logo to PDF:', e);
       }
@@ -314,7 +345,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
 
   // Team/club name below or beside logo
   const teamName = player?.current_club || branding?.company_name || '';
-  const infoStartX = margin + headerLogoWidth;
+  const infoStartX = margin + headerPhotoWidth;
   
   if (teamName) {
     doc.setTextColor(...primaryDark);
