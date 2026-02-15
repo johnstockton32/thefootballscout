@@ -39,20 +39,20 @@ Deno.serve(async (req) => {
       // No body or invalid JSON — self-deletion
     }
 
-    // Verify caller identity using getClaims
+    // Verify caller identity using getUser
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsError } = await supabaseAuth.auth.getClaims(token);
-    if (claimsError || !claims?.claims?.sub) {
+    const { data: { user: callerUser }, error: userError } = await supabaseAuth.auth.getUser();
+    if (userError || !callerUser) {
+      console.error("Auth verification failed:", userError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid or expired token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const callerId = claims.claims.sub as string;
+    const callerId = callerUser.id;
 
     // If admin is deleting another user, verify admin status
     if (targetUserId && targetUserId !== callerId) {
