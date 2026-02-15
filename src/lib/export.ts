@@ -251,28 +251,26 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const margin = 12;
   const contentWidth = pageWidth - margin * 2;
   
-  // App color scheme (converted from HSL to RGB)
-  // Primary: hsl(158 64% 45%) = Emerald green
-  // Background: hsl(220 20% 8%) = Dark charcoal
-  // Card: hsl(220 18% 12%) = Slightly lighter charcoal
-  // Accent: hsl(38 92% 50%) = Amber gold
-  // Determine accent color from branding or default
+  // Color scheme — professional football green palette
   const brandPrimary = branding?.primary_color ? hexToRgb(branding.primary_color) : null;
   
   const bgDark: [number, number, number] = [255, 255, 255]; // White background
   const bgCard: [number, number, number] = [245, 247, 250]; // Light gray card
   const bgMuted: [number, number, number] = [228, 232, 238]; // Muted gray
-  const primaryColor: [number, number, number] = brandPrimary || [41, 171, 135]; // --primary: 158 64% 45% (emerald)
+  const primaryColor: [number, number, number] = brandPrimary || [38, 140, 105]; // Football green (hsl 152 55% 38%)
   const primaryLight: [number, number, number] = brandPrimary 
     ? [Math.min(brandPrimary[0] + 31, 255), Math.min(brandPrimary[1] + 16, 255), Math.min(brandPrimary[2] + 20, 255)]
-    : [72, 187, 155]; // Lighter emerald
-  const accentColor: [number, number, number] = [243, 172, 18]; // --accent: 38 92% 50% (amber)
+    : [64, 163, 128]; // Lighter green
+  const primaryDark: [number, number, number] = brandPrimary
+    ? [Math.max(brandPrimary[0] - 20, 0), Math.max(brandPrimary[1] - 20, 0), Math.max(brandPrimary[2] - 20, 0)]
+    : [25, 110, 80]; // Dark green
+  const accentColor: [number, number, number] = [210, 155, 15]; // Gold
   const blueColor: [number, number, number] = [59, 130, 246]; // Blue for tactical
-  const purpleColor: [number, number, number] = [168, 85, 247]; // Purple for mental
-  const destructiveColor: [number, number, number] = [220, 50, 50]; // Slightly darker red for contrast on white
-  const white: [number, number, number] = [20, 25, 30]; // Dark text on white bg
+  const purpleColor: [number, number, number] = [140, 70, 210]; // Purple for mental
+  const destructiveColor: [number, number, number] = [200, 45, 45]; // Red
+  const white: [number, number, number] = [18, 22, 28]; // Dark text
   const textMuted: [number, number, number] = [100, 110, 125]; // Muted text
-  const textLight: [number, number, number] = [60, 65, 75]; // Slightly lighter dark text
+  const textLight: [number, number, number] = [60, 65, 75]; // Medium text
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
@@ -285,7 +283,6 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const physAvg = physValues.length > 0 ? Math.round(physValues.reduce((a, b) => a + b, 0) / physValues.length) : 0;
   const mentAvg = mentValues.length > 0 ? Math.round(mentValues.reduce((a, b) => a + b, 0) / mentValues.length) : 0;
 
-  // Calculate overall score (0-100)
   const categoryCount = [techAvg, tactAvg, physAvg, mentAvg].filter(v => v > 0).length;
   const overallScore = categoryCount > 0 ? Math.round(((techAvg + tactAvg + physAvg + mentAvg) / categoryCount) * 5) : 0;
 
@@ -293,45 +290,92 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.setFillColor(...bgDark);
   doc.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  let y = margin;
+  // ========== TOP ACCENT BAR ==========
+  doc.setFillColor(...primaryColor);
+  doc.rect(0, 0, pageWidth, 3, 'F');
 
-  // ========== HEADER SECTION ==========
-  // Team logo or branding logo (if available)
+  let y = 8;
+
+  // ========== HEADER — Logo + Team on left, Player info center-right ==========
   const logoUrl = teamLogoUrl || branding?.logo_url;
+  let headerLogoWidth = 0;
+  
   if (logoUrl) {
     const logoBase64 = await loadImageAsBase64(logoUrl);
     if (logoBase64) {
       try {
-        doc.addImage(logoBase64, 'PNG', pageWidth - margin - 15, y, 14, 14);
+        doc.addImage(logoBase64, 'PNG', margin, y, 16, 16);
+        headerLogoWidth = 20;
       } catch (e) {
         console.warn('Could not add logo to PDF:', e);
       }
     }
   }
 
-  // Branding company name (top-right, below logo)
-  if (branding?.company_name) {
-    doc.setTextColor(...textMuted);
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'normal');
-    doc.text(branding.company_name, pageWidth - margin, y + 18, { align: 'right' });
+  // Team/club name below or beside logo
+  const teamName = player?.current_club || branding?.company_name || '';
+  const infoStartX = margin + headerLogoWidth;
+  
+  if (teamName) {
+    doc.setTextColor(...primaryDark);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(teamName.toUpperCase(), infoStartX, y + 5);
   }
 
-  // Player name
-  doc.setTextColor(...white);
-  doc.setFontSize(22);
-  doc.setFont('helvetica', 'bold');
-  doc.text(player?.full_name || 'Unknown Player', margin, y + 8);
-  
-  // Position and club
-  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
-  const club = player?.current_club || 'Unknown Club';
+  // "SCOUTING REPORT" label
   doc.setTextColor(...textMuted);
-  doc.setFontSize(10);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text(`${position} • ${club}`, margin, y + 16);
+  doc.text('SCOUTING REPORT', infoStartX, y + (teamName ? 10 : 5));
 
-  y += 24;
+  // Player name — large
+  doc.setTextColor(...white);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text(player?.full_name || 'Unknown Player', infoStartX, y + (teamName ? 18 : 13));
+  
+  // Position
+  const position = player?.position ? POSITION_LABELS[player.position as PlayerPosition] : 'Unknown';
+  doc.setTextColor(...primaryColor);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text(position, infoStartX, y + (teamName ? 24 : 19));
+
+  // Overall rating badge — right side
+  if (report.overall_rating || overallScore > 0) {
+    const badgeX = pageWidth - margin - 18;
+    const badgeY = y + 2;
+    const rating = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
+    
+    // Rating circle
+    drawRoundedRect(doc, badgeX, badgeY, 18, 18, 4, primaryColor);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(rating.toString(), badgeX + 9, badgeY + 12, { align: 'center' });
+    
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(5);
+    doc.setFont('helvetica', 'normal');
+    doc.text('RATING', badgeX + 9, badgeY + 22, { align: 'center' });
+  }
+
+  // Branding company name (top right if different from team)
+  if (branding?.company_name && branding.company_name !== teamName) {
+    doc.setTextColor(...textMuted);
+    doc.setFontSize(6);
+    doc.setFont('helvetica', 'italic');
+    doc.text(branding.company_name, pageWidth - margin, y + 28, { align: 'right' });
+  }
+
+  y += 30;
+
+  // Separator line
+  doc.setDrawColor(...bgMuted);
+  doc.setLineWidth(0.5);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 4;
 
   // ========== MATCH DETAILS CARD ==========
   const matchCardHeight = 22;
@@ -661,24 +705,23 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.text(recBadge, margin + 6, y + 14);
 
   // ========== FOOTER ==========
-  doc.setTextColor(...textMuted);
+  // Bottom accent bar
+  const footerAccentColor = branding?.primary_color ? hexToRgb(branding.primary_color) || primaryColor : primaryColor;
+  doc.setFillColor(...footerAccentColor);
+  doc.rect(0, pageHeight - 6, pageWidth, 6, 'F');
+
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
 
-  // Show branding company name or default branding
   const showDefault = branding?.show_default_branding !== false;
   const footerLeft = branding?.company_name || (showDefault ? 'The Football Scout' : '');
   if (footerLeft) {
-    doc.text(footerLeft, margin, pageHeight - 8);
+    doc.text(footerLeft, margin, pageHeight - 2);
   }
   
-  const reportInfo = `Report: ${report.id.substring(0, 8)} • ${format(new Date(), 'MMM d, yyyy')}`;
-  doc.text(reportInfo, pageWidth - margin, pageHeight - 8, { align: 'right' });
-  
-  // Accent line at bottom - use branding primary color if set
-  const footerAccentColor = branding?.primary_color ? hexToRgb(branding.primary_color) || primaryColor : primaryColor;
-  doc.setFillColor(...footerAccentColor);
-  doc.rect(margin, pageHeight - 5, contentWidth, 0.8, 'F');
+  const reportInfo = `${format(new Date(), 'MMM d, yyyy')} • Confidential`;
+  doc.text(reportInfo, pageWidth - margin, pageHeight - 2, { align: 'right' });
 
   // Save
   const filename = `scouting_report_${player?.full_name?.replace(/\s+/g, '_') || 'unknown'}_${format(new Date(report.match_date), 'yyyy-MM-dd')}.pdf`;
