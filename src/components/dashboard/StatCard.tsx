@@ -32,52 +32,45 @@ export function StatCard({ title, value, subtitle, icon, trend, variant = 'defau
   return (
     <div
       className={cn(
-        'rounded-2xl p-5 transition-all duration-300 cursor-pointer group relative overflow-hidden',
-        variant === 'default' && 'card-glass hover:border-primary/30 hover:-translate-y-1 hover:shadow-lg',
-        variant === 'primary' && 'card-glow hover:border-primary/50 hover:-translate-y-1',
-        variant === 'gold' && 'card-gold-glow hover:border-accent/50 hover:-translate-y-1'
+        'rounded-2xl p-5 transition-all duration-200 cursor-pointer group bg-card border border-border',
+        'hover:shadow-md'
       )}
     >
-      {/* Shimmer overlay on hover */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-gradient-to-r from-transparent via-foreground/[0.02] to-transparent" />
-      
-      <div className="relative">
-        <div className="flex items-start justify-between mb-4">
-          <div
+      <div className="flex items-start justify-between mb-4">
+        <div
+          className={cn(
+            'p-2.5 rounded-xl',
+            variant === 'default' && 'bg-secondary',
+            variant === 'primary' && 'bg-primary/10',
+            variant === 'gold' && 'bg-accent/10'
+          )}
+        >
+          <span
             className={cn(
-              'p-3 rounded-xl transition-transform duration-300 group-hover:scale-110',
-              variant === 'default' && 'bg-muted',
-              variant === 'primary' && 'bg-primary/15',
-              variant === 'gold' && 'bg-accent/15'
+              variant === 'default' && 'text-muted-foreground',
+              variant === 'primary' && 'text-primary',
+              variant === 'gold' && 'text-accent'
             )}
           >
-            <span
-              className={cn(
-                variant === 'default' && 'text-muted-foreground',
-                variant === 'primary' && 'text-primary',
-                variant === 'gold' && 'text-accent'
-              )}
-            >
-              {icon}
-            </span>
+            {icon}
+          </span>
+        </div>
+        {trend && (
+          <div className={cn('flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-secondary', getTrendColor())}>
+            {getTrendIcon()}
+            <span>{Math.abs(trend.value)}%</span>
           </div>
-          {trend && (
-            <div className={cn('flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full bg-muted/50', getTrendColor())}>
-              {getTrendIcon()}
-              <span>{Math.abs(trend.value)}%</span>
-            </div>
-          )}
-        </div>
-        <div>
-          <p className="text-sm text-muted-foreground mb-1 font-medium">{title}</p>
-          <p className="text-4xl font-bold tabular-nums font-heading tracking-tight">{value}</p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>
-          )}
-          {trend && (
-            <p className="text-xs text-muted-foreground mt-2">{trend.label}</p>
-          )}
-        </div>
+        )}
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground mb-1">{title}</p>
+        <p className="text-3xl font-semibold tabular-nums tracking-tight">{value}</p>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+        )}
+        {trend && (
+          <p className="text-xs text-muted-foreground mt-2">{trend.label}</p>
+        )}
       </div>
     </div>
   );

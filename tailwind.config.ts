@@ -92,9 +92,9 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        heading: ["Space Grotesk", "Inter", "sans-serif"],
-        display: ["Bebas Neue", "sans-serif"],
+        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        heading: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
+        display: ["Inter", "-apple-system", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {
@@ -138,9 +138,9 @@ export default {
       backgroundImage: {
         "gradient-pitch": "linear-gradient(135deg, hsl(var(--pitch-green)), hsl(var(--pitch-green-dark)))",
         "gradient-gold": "linear-gradient(135deg, hsl(var(--rating-gold)), hsl(var(--rating-gold-light)))",
-        "gradient-card": "linear-gradient(145deg, hsl(225 22% 12%), hsl(225 22% 8%))",
-        "gradient-energy": "linear-gradient(135deg, hsl(var(--pitch-green)), hsl(var(--energy)))",
-        "shimmer-gradient": "linear-gradient(90deg, transparent 0%, hsla(0,0%,100%,0.05) 50%, transparent 100%)",
+        "gradient-card": "linear-gradient(145deg, hsl(var(--card)), hsl(var(--secondary)))",
+        "gradient-energy": "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--energy)))",
+        "shimmer-gradient": "linear-gradient(90deg, transparent 0%, hsla(0,0%,100%,0.02) 50%, transparent 100%)",
       },
     },
   },

@@ -19,7 +19,6 @@ import {
   BarChart3,
   Settings,
   LogOut,
-  ChevronRight,
   Plus,
   Shield,
   Crown,
@@ -32,14 +31,12 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-// Base navigation items available to all tiers
 const baseNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard', minTier: 'free' as const },
   { icon: Users, label: 'Players', href: '/players', minTier: 'free' as const },
   { icon: FileText, label: 'Reports', href: '/reports', minTier: 'free' as const },
 ];
 
-// Feature-gated navigation items
 const featureNavItems = [
   { icon: Sparkles, label: 'Analysis', href: '/analysis', minTier: 'pro' as const, feature: 'hasAdvancedAnalytics' as const },
   { icon: BarChart3, label: 'Compare', href: '/players/compare', minTier: 'free' as const },
@@ -52,8 +49,8 @@ const adminNavItems = [
 ];
 
 const tierConfig = {
-  free: { label: 'Free', icon: Sparkles, className: 'bg-muted text-muted-foreground' },
-  pro: { label: 'Pro', icon: Crown, className: 'bg-primary/20 text-primary' },
+  free: { label: 'Free', icon: Sparkles, className: 'bg-secondary text-muted-foreground' },
+  pro: { label: 'Pro', icon: Crown, className: 'bg-primary/10 text-primary' },
 };
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
@@ -77,46 +74,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return email?.charAt(0).toUpperCase() || 'U';
   };
 
-  // Define tier hierarchy for comparison
   const tierHierarchy = { free: 0, pro: 1 };
   const currentTierLevel = tierHierarchy[tier] || 0;
 
-  // Build navigation items based on user's subscription tier and role
   const allNavItems = [
     ...baseNavItems,
     ...featureNavItems.filter(item => {
-      // Check tier level
       const requiredTierLevel = tierHierarchy[item.minTier] || 0;
       if (currentTierLevel < requiredTierLevel) return false;
-      
-      // Check specific feature if defined
       if (item.feature && !limits[item.feature]) return false;
-      
       return true;
     }),
-    // Add admin items if applicable
     ...(isAdmin ? adminNavItems : []),
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Offline Banner */}
       <OfflineBanner />
 
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - clean and minimal */}
       <aside data-tour="navigation" className="hidden lg:flex lg:fixed lg:inset-y-0 lg:left-0 lg:z-50 lg:w-64 lg:flex-col bg-sidebar border-r border-sidebar-border">
         <div className="flex flex-col h-full">
-          {/* Logo Header */}
-          <div className="p-6">
+          {/* Logo */}
+          <div className="p-6 pb-4">
             <Logo size="md" />
           </div>
 
           {/* Tier Badge */}
-          <div className="px-4 mb-4">
+          <div className="px-4 mb-3">
             <Link
               to="/settings?tab=plan"
               className={cn(
-                'flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:opacity-80 hover-scale',
+                'flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors',
                 currentTier.className
               )}
             >
@@ -128,7 +117,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Link>
           </div>
 
-          {/* Header Controls */}
+          {/* Controls */}
           <div className="px-4 mb-2 flex items-center justify-between">
             <SyncStatusIndicator />
             <div className="flex items-center gap-1">
@@ -145,8 +134,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Quick Action */}
           <div className="px-4 mb-4">
             <Button
-              variant="hero"
-              className="w-full justify-start hover-lift"
+              className="w-full justify-start"
               onClick={() => navigate('/players/new')}
             >
               <Plus className="w-4 h-4" />
@@ -154,37 +142,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
           </div>
 
-          {/* Navigation - Scrollable */}
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-sidebar-accent scrollbar-track-transparent">
+          {/* Navigation */}
+          <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto scrollbar-thin">
             {allNavItems.map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group hover-lift',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors duration-150',
                   location.pathname === item.href
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
+                    ? 'bg-primary/10 text-primary font-medium'
                     : 'text-sidebar-foreground hover:bg-sidebar-accent'
                 )}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-                <ChevronRight 
-                  className={cn(
-                    'w-4 h-4 ml-auto opacity-0 -translate-x-2 transition-all',
-                    location.pathname === item.href && 'opacity-100 translate-x-0'
-                  )} 
-                />
+                <item.icon className="w-[18px] h-[18px]" />
+                <span className="text-sm">{item.label}</span>
               </Link>
             ))}
           </nav>
 
           {/* User Section */}
           <div className="p-4 border-t border-sidebar-border">
-            <Link to="/settings" className="flex items-center gap-3 mb-4 group">
-              <Avatar className="h-10 w-10 border-2 border-border group-hover:border-primary transition-colors">
+            <Link to="/settings" className="flex items-center gap-3 mb-3 group">
+              <Avatar className="h-9 w-9 border border-border">
                 <AvatarImage src={profile?.photo_url || undefined} alt={profile?.full_name || 'Profile'} />
-                <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
+                <AvatarFallback className="bg-secondary text-muted-foreground text-sm font-medium">
                   {getInitials(profile?.full_name, profile?.email)}
                 </AvatarFallback>
               </Avatar>
@@ -201,7 +183,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex-1 justify-start text-muted-foreground hover:text-foreground"
+                className="flex-1 justify-start text-muted-foreground"
                 onClick={() => navigate('/settings')}
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -209,8 +191,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
               <Button
                 variant="ghost"
-                size="icon"
-                className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                size="icon-sm"
+                className="text-muted-foreground hover:text-destructive"
                 onClick={handleSignOut}
               >
                 <LogOut className="w-4 h-4" />
@@ -220,16 +202,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
       </aside>
 
-      {/* Main Content - iOS optimized padding */}
+      {/* Main Content */}
       <main className="lg:pl-64 lg:pt-0 min-h-screen pb-24 sm:pb-28 lg:pb-0 safe-area-bottom safe-area-top scroll-ios">
-        <div className="responsive-padding py-3 sm:py-4 md:py-6 lg:py-8">
+        <div className="responsive-padding py-4 sm:py-6 md:py-8 lg:py-10">
           <div className="content-container-lg">
             {children}
           </div>
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
     </div>
   );

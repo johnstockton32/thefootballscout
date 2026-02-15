@@ -25,12 +25,12 @@ export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(functio
   const photoUrl = usePlayerPhotoUrl(player.photo_url);
 
   return (
-    <Link ref={ref} to={`/players/${player.id}`} className="block">
-      <Card className="card-glass player-card-shine overflow-hidden group hover:border-primary/30 transition-all duration-300 hover-scale active:scale-[0.98]">
-        <div className="p-3 sm:p-4">
+    <Link ref={ref} to={`/players/${player.id}`} className="block group">
+      <Card className="overflow-hidden transition-all duration-200 hover:shadow-md active:scale-[0.98]">
+        <div className="p-4">
           <div className="flex items-start gap-4">
             {/* Player Photo/Avatar */}
-            <div className="relative w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-secondary flex-shrink-0">
               {photoUrl ? (
                 <img
                   src={photoUrl}
@@ -38,26 +38,25 @@ export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(functio
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                  <User className="w-8 h-8 text-primary/50" />
+                <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                  <User className="w-7 h-7 text-primary/40" />
                 </div>
               )}
-              {/* Position Badge Overlay */}
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-md bg-primary flex items-center justify-center">
-                <span className="text-[10px] font-bold text-primary-foreground">
-                  {POSITION_ABBREV[player.position]}
-                </span>
-              </div>
             </div>
 
             {/* Player Info */}
             <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+              <h3 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                 {player.full_name}
               </h3>
-              <p className="text-sm text-muted-foreground truncate">
-                {POSITION_LABELS[player.position]}
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-xs font-medium text-primary bg-primary/8 px-2 py-0.5 rounded-md">
+                  {POSITION_ABBREV[player.position]}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {POSITION_LABELS[player.position]}
+                </span>
+              </div>
               <div className="flex flex-wrap gap-3 mt-2 text-xs text-muted-foreground">
                 {age && (
                   <span className="flex items-center gap-1">
@@ -78,10 +77,10 @@ export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(functio
             {latestRating !== undefined && latestRating !== null && (
               <div className="flex flex-col items-end">
                 <div className={cn(
-                  'rating-badge-lg',
-                  latestRating >= 70 && 'bg-gradient-to-br from-rating to-rating-light',
-                  latestRating < 70 && latestRating >= 50 && 'bg-primary',
-                  latestRating < 50 && 'bg-muted text-foreground'
+                  'w-12 h-12 rounded-xl flex items-center justify-center text-lg font-semibold',
+                  latestRating >= 70 && 'bg-primary/10 text-primary',
+                  latestRating < 70 && latestRating >= 50 && 'bg-accent/10 text-accent',
+                  latestRating < 50 && 'bg-secondary text-muted-foreground'
                 )}>
                   {Math.round(latestRating)}
                 </div>
@@ -94,7 +93,7 @@ export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(functio
 
           {/* Club Info */}
           {player.current_club && (
-            <div className="mt-3 pt-3 border-t border-border/50">
+            <div className="mt-3 pt-3 border-t border-border">
               <p className="text-xs text-muted-foreground truncate">
                 {player.current_club}
               </p>
