@@ -1,9 +1,10 @@
+import { forwardRef } from 'react';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 
-export function NotificationToggle() {
+export const NotificationToggle = forwardRef<HTMLDivElement>(function NotificationToggle(_props, ref) {
   const { isSupported, isSubscribed, isLoading, toggleSubscription, permission } = usePushNotifications();
 
   if (!isSupported) {
@@ -45,4 +46,4 @@ export function NotificationToggle() {
       </Tooltip>
     </TooltipProvider>
   );
-}
+});

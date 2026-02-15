@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
-export function SyncStatusIndicator() {
+export const SyncStatusIndicator = forwardRef<HTMLDivElement>(function SyncStatusIndicator(_props, ref) {
   const { 
     isOnline, 
     isSyncing, 
@@ -32,7 +33,7 @@ export function SyncStatusIndicator() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <div ref={ref} className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
               <span className="hidden sm:inline">Synced</span>
             </div>
@@ -55,7 +56,7 @@ export function SyncStatusIndicator() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5">
+            <div ref={ref} className="flex items-center gap-1.5">
               <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 gap-1">
                 <CloudOff className="w-3 h-3" />
                 <span>Offline</span>
@@ -82,7 +83,7 @@ export function SyncStatusIndicator() {
 
   if (isSyncing) {
     return (
-      <div className="flex items-center gap-1.5">
+      <div ref={ref} className="flex items-center gap-1.5">
         <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/30 gap-1">
           <Loader2 className="w-3 h-3 animate-spin" />
           <span>Syncing...</span>
@@ -97,6 +98,7 @@ export function SyncStatusIndicator() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              ref={ref as any}
               variant="ghost"
               size="sm"
               onClick={syncNow}
@@ -123,6 +125,7 @@ export function SyncStatusIndicator() {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              ref={ref as any}
               variant="ghost"
               size="sm"
               onClick={syncNow}
@@ -145,4 +148,4 @@ export function SyncStatusIndicator() {
   }
 
   return null;
-}
+});
