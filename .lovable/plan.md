@@ -1,28 +1,32 @@
 
 
-## Fix: Admin User Deletion
+## Fix: AI Edge Functions Not Working in Production
 
-### Problem
-The delete-account backend function has two issues:
-1. It may not have been properly deployed (redeployment already done during investigation)
-2. It's missing cleanup for 3 tables: `feature_feedback`, `contact_messages`, and `player_development_notes` -- these won't block deletion (no FK constraints) but leave orphaned data
+### Root Cause
+
+The CORS configuration in `supabase/functions/_shared/cors.ts` is missing required headers that the Supabase JS client sends with every request. When the browser makes a preflight (OPTIONS) request, the server responds saying it only allows `authorization, x-client-info, apikey, content-type` -- but the Supabase client also sends additional platform headers. The browser blocks the actual request, so the AI functions never execute.
 
 ### Changes
 
-**1. Update `supabase/functions/delete-account/index.ts`**
+**1. Update `supabase/functions/_shared/cors.ts`**
 
-Add the 3 missing tables to the deletion steps array:
-- `feature_feedback` (column: `user_id`)
-- `contact_messages` (column: `user_id`)
-- `player_development_notes` (column: `scout_id`)
+Update the `Access-Control-Allow-Headers` to include all headers sent by the Supabase JS client:
 
-Add better error logging so if deletion fails again, the exact cause will be visible in the function logs.
+```
+authorization, x-client-info, apikey, content-type,
+x-supabase-client-platform, x-supabase-client-platform-version,
+x-supabase-client-runtime, x-supabase-client-runtime-version
+```
 
-Pin the Supabase JS import to a specific recent version (e.g., `@2.49.4`) to ensure `getClaims` is always available and avoid potential breaking changes from unpinned imports.
+This is the standard set recommended for Supabase edge functions. No other files need to change since both `ai-scouting-insights` and `smart-discovery` import from this shared file.
 
-### Technical Details
+**2. Redeploy both AI edge functions**
 
-The database has `ON DELETE CASCADE` on all foreign keys referencing `auth.users`, so deleting the auth user cascades to: `profiles`, `user_roles`, `players`, `scouting_reports`, `custom_attribute_weights`, `branding_settings`, and their child tables. The manual deletion in the edge function is a belt-and-suspenders approach using the service role client.
+After the CORS fix, redeploy `ai-scouting-insights` and `smart-discovery` so the updated headers take effect in production.
 
-Tables like `watchlists`, `push_subscriptions`, `saved_searches`, `report_templates`, and `promo_code_redemptions` have no FK to `auth.users` -- the edge function already handles these manually. The fix adds the 3 remaining tables that were overlooked.
+### Why This Fixes It
 
+- The Supabase JS v2 client automatically attaches `x-supabase-client-*` headers to every request
+- Browsers enforce CORS strictly: if a preflight response doesn't list a header the request will use, the browser silently blocks the request
+- This explains why there are no error logs in the functions -- the requests never reach them
+- Adding the missing headers to the CORS config allows the preflight to succeed, letting the actual AI requests go through
