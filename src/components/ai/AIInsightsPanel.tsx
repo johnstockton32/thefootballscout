@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAIInsights, InsightType } from '@/hooks/useAIInsights';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { 
@@ -43,7 +44,7 @@ const insightTypes: { type: InsightType; label: string; icon: React.ReactNode; d
 export function AIInsightsPanel({ player, reports, className }: AIInsightsPanelProps) {
   const { user } = useAuth();
   const { limits } = useSubscription();
-  const { isLoading, insight, generateInsight, saveInsight, clearInsight } = useAIInsights();
+  const { isLoading, insight, isFallback, generateInsight, saveInsight, clearInsight } = useAIInsights();
   const [selectedType, setSelectedType] = useState<InsightType>('summary');
   const [lastType, setLastType] = useState<InsightType | null>(null);
 
@@ -143,11 +144,23 @@ export function AIInsightsPanel({ player, reports, className }: AIInsightsPanelP
         {/* Insight Display */}
         {insight && (
           <div className="space-y-3">
+            {isFallback && (
+              <Alert variant="default" className="border-destructive/30 bg-destructive/10">
+                <AlertDescription className="text-xs text-destructive">
+                  AI service temporarily unavailable — showing basic analysis based on your scouting data.
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="p-4 rounded-lg bg-muted/50 border border-border">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="outline" className="text-xs">
                   {insightTypes.find(t => t.type === lastType)?.label}
                 </Badge>
+                {isFallback && (
+                  <Badge variant="outline" className="text-xs border-destructive/30 text-destructive">
+                    Basic
+                  </Badge>
+                )}
               </div>
               <div className="prose prose-sm dark:prose-invert max-w-none">
                 <p className="text-sm whitespace-pre-wrap">{insight}</p>

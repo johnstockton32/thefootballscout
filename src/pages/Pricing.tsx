@@ -150,7 +150,14 @@ export default function Pricing() {
             <Logo size="sm" className="hidden sm:flex" />
           </button>
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => navigate('/install')}>
+            <Button variant="ghost" size="sm" className="hidden sm:inline-flex" onClick={() => {
+              // Trigger native PWA install prompt or scroll to download section
+              if ((window as any).deferredPrompt) {
+                (window as any).deferredPrompt.prompt();
+              } else {
+                toast.info('To install the app, use your browser\'s "Add to Home Screen" option.');
+              }
+            }}>
               <Download className="w-4 h-4 mr-1" />
               Install
             </Button>
@@ -274,7 +281,7 @@ export default function Pricing() {
             <div className="card-glass p-6 rounded-xl">
               <h3 className="font-semibold mb-2">Is there a free trial for Pro?</h3>
               <p className="text-sm text-muted-foreground">
-                Yes, Pro comes with a 14-day free trial. No credit card required to start.
+                Yes, Pro comes with a 14-day free trial. You'll enter your payment details at signup, but you won't be charged until the trial ends. Cancel anytime during the trial at no cost.
               </p>
             </div>
             <div className="card-glass p-6 rounded-xl">
