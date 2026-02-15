@@ -261,27 +261,38 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const margin = 12;
   const contentWidth = pageWidth - margin * 2;
   
-  // Color scheme — dark football theme matching the app
+  // Color scheme — matching app's dark theme CSS variables exactly
+  // Dark theme: --background: 160 12% 4%, --card: 158 10% 8%, --border: 158 8% 15%
+  // --primary: 152 50% 48%, --accent: 42 85% 52%, --muted-foreground: 140 4% 50%
   const brandPrimary = branding?.primary_color ? hexToRgb(branding.primary_color) : null;
   
-  const bgDark: [number, number, number] = [18, 24, 20]; // Dark background matching app
-  const bgCard: [number, number, number] = [28, 36, 30]; // Card background
-  const bgMuted: [number, number, number] = [45, 55, 48]; // Muted elements
-  const borderColor: [number, number, number] = [55, 70, 58]; // Card borders
-  const primaryColor: [number, number, number] = brandPrimary || [38, 140, 105]; // Football green
+  const bgDark: [number, number, number] = [8, 12, 10];       // --background: 160 12% 4%
+  const bgCard: [number, number, number] = [17, 23, 20];      // --card: 158 10% 8%
+  const bgMuted: [number, number, number] = [30, 40, 35];     // --muted: 158 8% 13%
+  const borderColor: [number, number, number] = [33, 43, 38]; // --border: 158 8% 15%
+  const primaryColor: [number, number, number] = brandPrimary || [61, 184, 138];  // --primary: 152 50% 48%
   const primaryLight: [number, number, number] = brandPrimary 
     ? [Math.min(brandPrimary[0] + 31, 255), Math.min(brandPrimary[1] + 16, 255), Math.min(brandPrimary[2] + 20, 255)]
-    : [64, 163, 128];
+    : [85, 200, 155];
   const primaryDark: [number, number, number] = brandPrimary
     ? [Math.max(brandPrimary[0] - 20, 0), Math.max(brandPrimary[1] - 20, 0), Math.max(brandPrimary[2] - 20, 0)]
-    : [25, 110, 80];
-  const accentColor: [number, number, number] = [210, 170, 40]; // Gold/trophy
-  const blueColor: [number, number, number] = [70, 140, 255]; // Blue for tactical
-  const purpleColor: [number, number, number] = [155, 90, 220]; // Purple for mental
-  const destructiveColor: [number, number, number] = [220, 60, 60]; // Red
-  const white: [number, number, number] = [240, 245, 242]; // Light text on dark
-  const textMuted: [number, number, number] = [140, 155, 148]; // Muted text
-  const textLight: [number, number, number] = [180, 195, 188]; // Medium text
+    : [35, 130, 90];
+  const accentColor: [number, number, number] = [230, 180, 20];  // --accent: 42 85% 52%
+  const blueColor: [number, number, number] = [70, 140, 255];    // Tactical blue
+  const purpleColor: [number, number, number] = [150, 100, 210]; // Mental purple (--energy: 260 50% 58%)
+  const destructiveColor: [number, number, number] = [215, 75, 75]; // --destructive: 0 70% 55%
+  const white: [number, number, number] = [230, 237, 232];       // --foreground: 140 5% 93%
+  const textMuted: [number, number, number] = [120, 132, 126];   // --muted-foreground: 140 4% 50%
+  const textLight: [number, number, number] = [180, 195, 188];
+
+  // Rating color helper — matches getRatingColor from the app
+  const getRatingColorRgb = (rating: number): [number, number, number] => {
+    if (rating >= 85) return [61, 184, 138];      // success green
+    if (rating >= 70) return [61, 184, 138];       // pitch green (primary)
+    if (rating >= 55) return [230, 180, 20];       // rating gold (accent)
+    if (rating >= 40) return [215, 150, 40];       // warning orange
+    return [215, 75, 75];                           // danger red
+  };
 
   // Calculate category averages
   const techValues = [report.technical_first_touch, report.technical_passing, report.technical_dribbling, report.technical_shooting, report.technical_crossing, report.technical_heading].filter(v => v != null);
@@ -388,9 +399,10 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     const badgeX = pageWidth - margin - 18;
     const badgeY = y + 2;
     const rating = report.overall_rating ? Math.round(report.overall_rating) : overallScore;
+    const ratingBadgeColor = getRatingColorRgb(rating);
     
-    // Rating circle with green bg
-    drawRoundedRect(doc, badgeX, badgeY, 18, 18, 4, primaryColor);
+    // Rating circle with color based on score
+    drawRoundedRect(doc, badgeX, badgeY, 18, 18, 4, ratingBadgeColor);
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
@@ -458,8 +470,9 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.setFont('helvetica', 'normal');
   doc.text('OVERALL RATING', margin + 8, y + 8);
   
-  // Large score number
-  doc.setTextColor(...white);
+  // Large score number — colored by rating
+  const overallRatingColor = getRatingColorRgb(overallScore);
+  doc.setTextColor(...overallRatingColor);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
   doc.text(overallScore.toString(), margin + 8, y + 24);
@@ -470,7 +483,7 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   doc.text('/100', margin + 28, y + 24);
   
   // Score label
-  doc.setTextColor(...primaryColor);
+  doc.setTextColor(...overallRatingColor);
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text(getScoreLabel(overallScore), margin + 48, y + 24);
@@ -481,7 +494,8 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
     doc.setTextColor(...textMuted);
     doc.setFontSize(7);
     doc.text('POTENTIAL', potX, y + 8);
-    doc.setTextColor(...accentColor);
+    const potentialColor = getRatingColorRgb(report.potential_rating);
+    doc.setTextColor(...potentialColor);
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
     doc.text(report.potential_rating.toString(), potX, y + 22);
@@ -497,17 +511,18 @@ export async function exportReportPDF(reportId: string, teamLogoUrl?: string | n
   const circleR = 10;
   
   // Background circle
-  doc.setDrawColor(...borderColor);
+  doc.setDrawColor(...bgMuted);
   doc.setLineWidth(2);
   doc.circle(circleX, circleY, circleR, 'S');
   
-  // Progress arc overlay
-  doc.setDrawColor(...primaryColor);
+  // Progress arc overlay — colored by rating
+  const circleRatingColor = getRatingColorRgb(overallScore);
+  doc.setDrawColor(...circleRatingColor);
   doc.setLineWidth(2.5);
   doc.circle(circleX, circleY, circleR, 'S');
   
   // Score in circle
-  doc.setTextColor(...primaryColor);
+  doc.setTextColor(...circleRatingColor);
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text(overallScore.toString(), circleX, circleY + 3, { align: 'center' });
