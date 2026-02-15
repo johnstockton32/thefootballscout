@@ -27,7 +27,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isOfflineMode: boolean;
-  signUp: (email: string, password: string, fullName?: string, organization?: string, promoCode?: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName?: string, organization?: string, promoCode?: string, selectedTier?: string, isAnnual?: boolean) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   updateGdprConsent: (consent: boolean) => Promise<{ error: Error | null }>;
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [loadUserData]);
 
-  const signUp = async (email: string, password: string, fullName?: string, organization?: string, promoCode?: string) => {
+  const signUp = async (email: string, password: string, fullName?: string, organization?: string, promoCode?: string, selectedTier?: string, isAnnual?: boolean) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
@@ -122,6 +122,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: fullName,
           organization: organization,
           promo_code: promoCode?.trim() || null,
+          selected_tier: selectedTier || 'free',
+          is_annual: isAnnual || false,
         },
       },
     });

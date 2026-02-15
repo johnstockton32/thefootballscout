@@ -255,7 +255,7 @@ export default function Auth() {
           localStorage.removeItem('pending_is_annual');
         }
 
-        const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined);
+        const { error } = await signUp(email, password, fullName, organization, promoCode.trim() || undefined, selectedTier, isAnnual);
         if (error) {
           if (error.message.includes('already registered') || error.message.includes('already been registered')) {
             setFormError('An account with this email already exists. Please use a different email address or sign in to your existing account.');

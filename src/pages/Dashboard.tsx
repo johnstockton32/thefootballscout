@@ -97,65 +97,69 @@ export default function Dashboard() {
 
 
   // Handle pending Pro signup: redirect to Stripe checkout after email confirmation
+  // Works for same-device (localStorage) AND cross-device (user_metadata) scenarios
   useEffect(() => {
-    const pendingPro = localStorage.getItem('pending_pro_signup');
-    if (pendingPro === 'true' && user) {
-      // Check if subscription is already active (payment was completed)
-      if (subscription.tier === 'pro' || subscription.isSubscribedViaStripe) {
+    if (!user) return;
+    // Skip if already Pro
+    if (subscription.tier === 'pro' || subscription.isSubscribedViaStripe) {
+      localStorage.removeItem('pending_pro_signup');
+      localStorage.removeItem('pending_promo_code');
+      localStorage.removeItem('pending_is_annual');
+      return;
+    }
+
+    // Don't auto-redirect if we just came back from a cancelled checkout
+    const subscriptionStatus = searchParams.get('subscription');
+    if (subscriptionStatus === 'cancelled') return;
+
+    // Check same-device localStorage flag OR cross-device user_metadata
+    const pendingPro = localStorage.getItem('pending_pro_signup') === 'true';
+    const metadataTier = user.user_metadata?.selected_tier;
+    const hasCrossDeviceProIntent = metadataTier === 'pro' && subscription.tier === 'free';
+
+    if (!pendingPro && !hasCrossDeviceProIntent) return;
+
+    const redirectToCheckout = async () => {
+      try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) return;
+
+        toast.info('Completing your Pro setup...');
+        
+        // Prefer localStorage values, fallback to user_metadata
+        const promoCode = localStorage.getItem('pending_promo_code') || user.user_metadata?.promo_code || undefined;
+        const isAnnual = localStorage.getItem('pending_is_annual') === 'true' || user.user_metadata?.is_annual === true;
+        
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: { tier: 'pro', isAnnual, promoCode },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        // Clear flags before redirect to prevent loop
         localStorage.removeItem('pending_pro_signup');
         localStorage.removeItem('pending_promo_code');
         localStorage.removeItem('pending_is_annual');
-        return;
-      }
+        // Clear user_metadata intent to prevent future re-triggers
+        await supabase.auth.updateUser({ data: { selected_tier: 'free' } });
 
-      // Don't auto-redirect if we just came back from a cancelled checkout
-      const subscriptionStatus = searchParams.get('subscription');
-      if (subscriptionStatus === 'cancelled') {
-        return;
-      }
-
-      const redirectToCheckout = async () => {
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const accessToken = sessionData.session?.access_token;
-          if (!accessToken) return;
-
-          toast.info('Completing your Pro setup...');
-          
-          const pendingPromoCode = localStorage.getItem('pending_promo_code') || undefined;
-          const pendingIsAnnual = localStorage.getItem('pending_is_annual') === 'true';
-          
-          const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { tier: 'pro', isAnnual: pendingIsAnnual, promoCode: pendingPromoCode },
-            headers: { Authorization: `Bearer ${accessToken}` },
-          });
-
-          if (!error && data?.url) {
-            // Clear flags before redirect to prevent loop
-            localStorage.removeItem('pending_pro_signup');
-            localStorage.removeItem('pending_promo_code');
-            localStorage.removeItem('pending_is_annual');
-            // Use window.open for reliable cross-environment navigation
-            const opened = window.open(data.url, '_self');
-            if (!opened) {
-              window.open(data.url, '_blank');
-            }
-          } else {
-            console.error('Pending checkout failed:', error);
-            localStorage.removeItem('pending_pro_signup');
-            localStorage.removeItem('pending_promo_code');
-            localStorage.removeItem('pending_is_annual');
-            toast.error('Could not start Pro checkout. You can upgrade from Settings.');
+        if (!error && data?.url) {
+          const opened = window.open(data.url, '_self');
+          if (!opened) {
+            window.open(data.url, '_blank');
           }
-        } catch (err) {
-          console.error('Pending checkout error:', err);
-          localStorage.removeItem('pending_pro_signup');
-          localStorage.removeItem('pending_promo_code');
-          localStorage.removeItem('pending_is_annual');
+        } else {
+          console.error('Pending checkout failed:', error);
+          toast.error('Could not start Pro checkout. You can upgrade from Settings.');
         }
-      };
-      redirectToCheckout();
-    }
+      } catch (err) {
+        console.error('Pending checkout error:', err);
+        localStorage.removeItem('pending_pro_signup');
+        localStorage.removeItem('pending_promo_code');
+        localStorage.removeItem('pending_is_annual');
+      }
+    };
+    redirectToCheckout();
   }, [user, subscription.tier, subscription.isSubscribedViaStripe]);
 
   useEffect(() => {
