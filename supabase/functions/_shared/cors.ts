@@ -9,6 +9,8 @@ export function getCorsHeaders(request: Request): Record<string, string> {
     origin.endsWith('.lovable.app') || 
     origin.endsWith('.lovableproject.com') ||
     origin === 'https://thefootballscout.lovable.app' ||
+    origin === 'https://thefooballscout.com' ||
+    origin === 'https://www.thefooballscout.com' ||
     origin.startsWith('http://localhost:') ||
     origin.startsWith('http://127.0.0.1:');
   
