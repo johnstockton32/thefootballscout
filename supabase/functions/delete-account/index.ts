@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
@@ -82,6 +82,9 @@ Deno.serve(async (req) => {
       { table: 'branding_settings', column: 'user_id' },
       { table: 'saved_searches', column: 'user_id' },
       { table: 'promo_code_redemptions', column: 'user_id' },
+      { table: 'feature_feedback', column: 'user_id' },
+      { table: 'contact_messages', column: 'user_id' },
+      { table: 'player_development_notes', column: 'scout_id' },
       { table: 'scouting_reports', column: 'scout_id' },
       { table: 'players', column: 'scout_id' },
       { table: 'user_roles', column: 'user_id' },
