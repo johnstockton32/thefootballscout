@@ -6,6 +6,7 @@ import { AttributeRadarChart } from '@/components/charts/AttributeRadarChart';
 import { VideoClipManager } from '@/components/video/VideoClipManager';
 import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
 import { AttributeBar } from '@/components/reports/AttributeBar';
+import { PlayerPhotoAvatar } from '@/components/players/PlayerPhotoAvatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -101,6 +102,7 @@ interface Report {
     full_name: string;
     position: PlayerPosition;
     current_club: string | null;
+    photo_url: string | null;
   };
 }
 
@@ -132,7 +134,8 @@ export default function ReportDetail() {
             id,
             full_name,
             position,
-            current_club
+            current_club,
+            photo_url
           )
         `)
         .eq('id', id)
@@ -284,9 +287,13 @@ export default function ReportDetail() {
                 <div className="relative flex items-start gap-4 sm:gap-5">
                   {/* Team crest / logo area */}
                   <div className="flex flex-col items-center gap-1.5 shrink-0">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                      <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
-                    </div>
+                    <PlayerPhotoAvatar
+                      photoUrl={report.players?.photo_url || null}
+                      playerName={report.players?.full_name}
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl border border-primary/20"
+                      fallbackClassName="bg-primary/10"
+                      iconSize="w-7 h-7 sm:w-8 sm:h-8"
+                    />
                     {report.players?.current_club && (
                       <span className="text-[10px] sm:text-xs text-muted-foreground font-medium text-center max-w-[80px] leading-tight truncate">
                         {report.players.current_club}
