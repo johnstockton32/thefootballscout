@@ -271,32 +271,77 @@ export default function ReportDetail() {
               <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
               <span className="text-sm">Back</span>
             </Button>
-            <div className="flex items-start sm:items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Scouting Report</h1>
-                  {report.is_private && (
-                    <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/30">
-                      <Lock className="w-3 h-3 mr-1" />
-                      Private
-                    </Badge>
+
+            {/* Report hero banner with team info */}
+            <Card className="overflow-hidden border-border/60">
+              <div className="relative bg-gradient-to-r from-card via-card to-primary/5 p-4 sm:p-6">
+                {/* Subtle pitch lines */}
+                <div className="absolute inset-0 opacity-[0.03]" style={{
+                  backgroundImage: 'linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)',
+                  backgroundSize: '32px 32px',
+                }} />
+
+                <div className="relative flex items-start gap-4 sm:gap-5">
+                  {/* Team crest / logo area */}
+                  <div className="flex flex-col items-center gap-1.5 shrink-0">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+                      <Shield className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
+                    </div>
+                    {report.players?.current_club && (
+                      <span className="text-[10px] sm:text-xs text-muted-foreground font-medium text-center max-w-[80px] leading-tight truncate">
+                        {report.players.current_club}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Report info */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <h1 className="text-lg sm:text-2xl md:text-3xl font-bold text-foreground">Scouting Report</h1>
+                      {report.is_private && (
+                        <Badge variant="outline" className="border-amber-500/40 text-amber-600 text-[10px] sm:text-xs">
+                          <Lock className="w-3 h-3 mr-1" />
+                          Private
+                        </Badge>
+                      )}
+                    </div>
+                    <Link
+                      to={`/players/${report.players?.id}`}
+                      className="text-primary hover:text-primary/80 flex items-center gap-1.5 sm:gap-2 text-sm sm:text-base cursor-pointer transition-colors group"
+                    >
+                      <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                      <span className="font-semibold group-hover:underline truncate">{report.players?.full_name}</span>
+                      <Badge className="position-badge text-[10px] sm:text-xs">
+                        {POSITION_ABBREV[report.players?.position]}
+                      </Badge>
+                    </Link>
+                    {/* Match meta */}
+                    <div className="flex items-center gap-3 mt-2 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {format(new Date(report.match_date), 'MMM d, yyyy')}
+                      </span>
+                      {report.opposition && (
+                        <span>vs {report.opposition}</span>
+                      )}
+                      <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                        {COMPETITION_LEVEL_LABELS[report.competition_level]}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Quick rating */}
+                  {report.overall_rating && (
+                    <div className="hidden sm:flex flex-col items-center shrink-0">
+                      <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center">
+                        <span className="text-2xl font-bold text-primary-foreground">{Math.round(report.overall_rating)}</span>
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-1">Rating</span>
+                    </div>
                   )}
                 </div>
-                <Link
-                  to={`/players/${report.players?.id}`}
-                  className="text-primary hover:underline hover:text-primary/80 flex items-center gap-1 sm:gap-2 mt-1 text-sm sm:text-base flex-wrap cursor-pointer transition-colors"
-                >
-                  <User className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" />
-                  <span className="truncate">{report.players?.full_name}</span>
-                  <Badge className="position-badge text-xs">
-                    {POSITION_ABBREV[report.players?.position]}
-                  </Badge>
-                </Link>
               </div>
-            </div>
+            </Card>
           </div>
 
           <div className="flex gap-2 w-full sm:w-auto">
@@ -306,8 +351,7 @@ export default function ReportDetail() {
               className="flex-1 sm:flex-none text-sm cursor-pointer"
             >
               <Edit className="w-4 h-4 mr-1 sm:mr-2" />
-              <span className="hidden xs:inline">Edit</span>
-              <span className="xs:hidden">Edit</span>
+              Edit
             </Button>
             {limits.hasPdfExport ? (
               <Button 
@@ -317,8 +361,7 @@ export default function ReportDetail() {
                 className="flex-1 sm:flex-none text-sm cursor-pointer"
               >
                 <Download className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">{isExporting ? 'Exporting...' : 'Export PDF'}</span>
-                <span className="xs:hidden">{isExporting ? '...' : 'PDF'}</span>
+                {isExporting ? 'Exporting...' : 'Export PDF'}
               </Button>
             ) : (
               <Button 
@@ -327,8 +370,7 @@ export default function ReportDetail() {
                 className="flex-1 sm:flex-none text-sm cursor-pointer"
               >
                 <Lock className="w-4 h-4 mr-1 sm:mr-2" />
-                <span className="hidden xs:inline">PDF Export (Pro)</span>
-                <span className="xs:hidden">Pro</span>
+                PDF Export (Pro)
               </Button>
             )}
             <AlertDialog>
@@ -508,7 +550,7 @@ export default function ReportDetail() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4 }}
                       >
-                        <Card className="card-glass border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+                        <Card className="card-glass border-border">
                           <CardContent className="py-4 sm:py-6">
                             <div className="flex items-center justify-between gap-4">
                               <div className="min-w-0 flex-1">
@@ -540,7 +582,7 @@ export default function ReportDetail() {
                                     cy="50"
                                     r="40"
                                     fill="none"
-                                    stroke="hsl(158, 64%, 45%)"
+                                    stroke="hsl(var(--primary))"
                                     strokeWidth="8"
                                     strokeLinecap="round"
                                     strokeDasharray={251.2}
