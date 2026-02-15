@@ -191,13 +191,10 @@ function drawRoundedRect(doc: jsPDF, x: number, y: number, w: number, h: number,
   doc.roundedRect(x, y, w, h, r, r, 'F');
 }
 
-// Helper to draw a card with border (dark theme style)
-function drawCardWithBorder(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fillColor: [number, number, number], borderCol: [number, number, number]) {
+// Helper to draw a card (no visible border — blends with dark bg)
+function drawCardWithBorder(doc: jsPDF, x: number, y: number, w: number, h: number, r: number, fillColor: [number, number, number], _borderCol: [number, number, number]) {
   doc.setFillColor(...fillColor);
   doc.roundedRect(x, y, w, h, r, r, 'F');
-  doc.setDrawColor(...borderCol);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(x, y, w, h, r, r, 'S');
 }
 
 // Helper to draw a progress bar
