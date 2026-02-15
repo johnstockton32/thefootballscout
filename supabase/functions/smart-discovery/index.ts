@@ -151,11 +151,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch user's players
-    const { data: players, error: playersError } = await supabase
-      .from("players")
-      .select("*")
-      .eq("scout_id", userId);
+    // Check if user is admin (admins can search all players)
+    const { data: isAdminResult } = await supabase.rpc("is_admin", { _user_id: userId });
+    const isAdmin = isAdminResult === true;
+
+    // Fetch players - admins see all, regular users see only their own
+    let playersQuery = supabase.from("players").select("*");
+    if (!isAdmin) {
+      playersQuery = playersQuery.eq("scout_id", userId);
+    }
+    const { data: players, error: playersError } = await playersQuery;
 
     if (playersError) {
       console.error("Error fetching players:", playersError);
@@ -174,11 +179,14 @@ Deno.serve(async (req) => {
 
     // Fetch reports for all players
     const playerIds = players.map((p) => p.id);
-    const { data: reports, error: reportsError } = await supabase
+    let reportsQuery = supabase
       .from("scouting_reports")
       .select("*")
-      .in("player_id", playerIds)
-      .eq("scout_id", userId);
+      .in("player_id", playerIds);
+    if (!isAdmin) {
+      reportsQuery = reportsQuery.eq("scout_id", userId);
+    }
+    const { data: reports, error: reportsError } = await reportsQuery;
 
     if (reportsError) {
       console.error("Error fetching reports:", reportsError);
