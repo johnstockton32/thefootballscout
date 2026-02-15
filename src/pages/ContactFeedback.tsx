@@ -56,7 +56,7 @@ export default function ContactFeedback() {
     setContactSubmitting(true);
     try {
       const { error } = await supabase.from('contact_messages').insert({
-        user_id: user?.id || null,
+        user_id: user!.id,
         name: contactForm.name.trim(),
         email: contactForm.email.trim(),
         subject: contactForm.subject.trim(),
