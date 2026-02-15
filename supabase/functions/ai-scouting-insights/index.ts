@@ -65,19 +65,18 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    // Validate the JWT token using getClaims
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
+    // Validate the JWT token using getUser
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
-    if (claimsError || !claims?.claims?.sub) {
-      console.error("Auth validation failed:", claimsError);
+    if (authError || !authUser) {
+      console.error("Auth validation failed:", authError?.message);
       return new Response(
         JSON.stringify({ error: "Invalid authorization" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const userId = claims.claims.sub as string;
+    const userId = authUser.id;
     console.log("Authenticated user:", userId);
 
     const { player, reports, insightType } = await req.json();

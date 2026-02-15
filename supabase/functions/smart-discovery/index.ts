@@ -132,16 +132,16 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claims?.claims?.sub) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    if (authError || !authUser) {
+      console.error("Auth failed:", authError?.message);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claims.claims.sub;
+    const userId = authUser.id;
 
     const { query } = await req.json();
     if (!query || typeof query !== "string") {
@@ -245,7 +245,7 @@ Interpret queries naturally: "fast"=high pace, "young"=under 23, "creative"=high
 Players: ${JSON.stringify(playerProfiles)}
 Return up to 10 matches.`;
 
-    const models = ["openai/gpt-5.2", "google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "openai/gpt-5-mini"];
     let aiResponse: Response | null = null;
     let lastError = "";
 
