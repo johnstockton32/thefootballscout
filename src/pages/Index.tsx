@@ -82,7 +82,7 @@ export default function Index() {
           <motion.h1 variants={itemVariants} className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-semibold mb-5 leading-[1.08] tracking-tight">
             <span className="text-foreground">Scout Smarter.</span>
             <br />
-            <span className="text-primary">Discover Talent.</span>
+            <span className="text-gradient-pitch">Discover Talent.</span>
           </motion.h1>
           
           <motion.p variants={itemVariants} className="text-base sm:text-lg text-muted-foreground mb-10 max-w-2xl mx-auto leading-relaxed">

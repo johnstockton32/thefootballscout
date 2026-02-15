@@ -26,7 +26,9 @@ export const PlayerCard = forwardRef<HTMLAnchorElement, PlayerCardProps>(functio
 
   return (
     <Link ref={ref} to={`/players/${player.id}`} className="block group">
-      <Card className="overflow-hidden transition-all duration-200 hover:shadow-md active:scale-[0.98]">
+      <Card className="overflow-hidden transition-all duration-200 hover:shadow-md hover:border-primary/25 active:scale-[0.98] relative">
+        {/* Football accent stripe */}
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary rounded-l-lg" />
         <div className="p-4">
           <div className="flex items-start gap-4">
             {/* Player Photo/Avatar */}

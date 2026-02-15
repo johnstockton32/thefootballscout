@@ -32,10 +32,19 @@ export function StatCard({ title, value, subtitle, icon, trend, variant = 'defau
   return (
     <div
       className={cn(
-        'rounded-2xl p-5 transition-all duration-200 cursor-pointer group bg-card border border-border',
-        'hover:shadow-md'
+        'rounded-2xl p-5 transition-all duration-200 cursor-pointer group bg-card border border-border relative overflow-hidden',
+        'hover:shadow-md',
+        variant === 'primary' && 'hover:border-primary/30',
+        variant === 'gold' && 'hover:border-accent/30',
       )}
     >
+      {/* Subtle accent line */}
+      <div className={cn(
+        'absolute left-0 top-0 bottom-0 w-0.5 rounded-l-2xl',
+        variant === 'default' && 'bg-border',
+        variant === 'primary' && 'bg-primary',
+        variant === 'gold' && 'bg-accent',
+      )} />
       <div className="flex items-start justify-between mb-4">
         <div
           className={cn(
