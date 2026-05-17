@@ -38,14 +38,16 @@ serve(async (req) => {
     const body = await req.text();
     const signature = req.headers.get("stripe-signature");
 
-    if (webhookSecret && signature) {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-      logStep("Webhook signature verified");
-    } else {
-      // In development or if webhook secret not set, parse directly
-      event = JSON.parse(body) as Stripe.Event;
-      logStep("Webhook parsed without signature verification (dev mode)");
+    if (!webhookSecret) {
+      logStep("ERROR", { message: "STRIPE_WEBHOOK_SECRET not set" });
+      return new Response(JSON.stringify({ error: "Server misconfiguration" }), { status: 500 });
     }
+    if (!signature) {
+      logStep("ERROR", { message: "Missing stripe-signature header" });
+      return new Response(JSON.stringify({ error: "Missing signature" }), { status: 400 });
+    }
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    logStep("Webhook signature verified");
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     logStep("Webhook signature verification failed", { message: msg });
