@@ -45,16 +45,10 @@ export default function Index() {
         <div className="container mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between">
           <Logo size="sm" />
           <div className="flex items-center gap-2 sm:gap-3">
-            <Button variant="ghost" size="sm" className="hidden sm:inline-flex text-muted-foreground" onClick={() => navigate('/pricing')}>
-              Pricing
-            </Button>
             <Button variant="ghost" size="sm" className="text-sm" onClick={() => navigate('/auth')}>
               Sign In
             </Button>
-            <Button size="sm" className="text-sm px-4" onClick={() => navigate('/auth')}>
-              Get Started
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Button>
+
           </div>
         </div>
       </header>

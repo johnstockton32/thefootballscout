@@ -477,10 +477,6 @@ export default function Settings() {
                 <User className="h-4 w-4" />
                 <span className="hidden xs:inline text-xs sm:text-sm">Profile</span>
               </TabsTrigger>
-              <TabsTrigger value="subscription" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
-                <Crown className="h-4 w-4" />
-                <span className="hidden xs:inline text-xs sm:text-sm">Plan</span>
-              </TabsTrigger>
               <TabsTrigger value="scouting" className="gap-1.5 px-2.5 sm:px-3 shrink-0">
                 <Sliders className="h-4 w-4" />
                 <span className="hidden xs:inline text-xs sm:text-sm">Scouting</span>
