@@ -178,7 +178,7 @@ Write a 3-4 sentence summary in plain text covering the overall assessment and s
     console.log("Sending request to AI gateway with insight type:", insightType);
     console.log("Player:", playerData.full_name, "Reports count:", reportsData.length);
     
-    const models = ["openai/gpt-5", "openai/gpt-5.2", "google/gemini-2.5-pro", "google/gemini-3-pro-preview", "openai/gpt-5-mini"];
+    const models = ["google/gemini-3-flash-preview", "google/gemini-2.5-flash", "google/gemini-2.5-pro", "openai/gpt-5-mini", "openai/gpt-5"];
     
     let response: Response | null = null;
     let lastError = "";
