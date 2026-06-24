@@ -23,7 +23,7 @@ const AdminUsers = lazy(() => import('@/pages/AdminUsers'));
 const AdminData = lazy(() => import('@/pages/AdminData'));
 const GdprConsent = lazy(() => import('@/pages/GdprConsent'));
 const Settings = lazy(() => import('@/pages/Settings'));
-const Pricing = lazy(() => import('@/pages/Pricing'));
+
 const Watchlists = lazy(() => import('@/pages/Watchlists'));
 const Analysis = lazy(() => import('@/pages/Analysis'));
 
@@ -48,7 +48,7 @@ export function AnimatedRoutes() {
       <Routes>
         <Route path="/" element={<PageTransition><Index /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
-        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
+        
         
         
         <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />

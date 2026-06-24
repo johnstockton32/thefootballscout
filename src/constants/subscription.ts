@@ -1,5 +1,4 @@
-// Subscription tier limits and configuration
-// Centralized business rules for feature gating
+// Single-user mode: payments removed. Tier kept only to satisfy types.
 
 export type SubscriptionTier = 'free' | 'pro';
 
@@ -16,48 +15,27 @@ export interface SubscriptionLimits {
   hasCustomAttributeWeights: boolean;
 }
 
-export const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
-  free: {
-    maxPlayers: 10,
-    maxReportsPerMonth: 5,
-    maxComparisonPlayers: 2,
-    hasAdvancedAnalytics: false,
-    hasPdfExport: false,
-    hasAIInsights: false,
-    hasBulkImportExport: false,
-    hasVoiceToText: false,
-    hasSmartDiscovery: false,
-    hasCustomAttributeWeights: false,
-  },
-  pro: {
-    maxPlayers: Infinity,
-    maxReportsPerMonth: Infinity,
-    maxComparisonPlayers: 5,
-    hasAdvancedAnalytics: true,
-    hasPdfExport: true,
-    hasAIInsights: true,
-    hasBulkImportExport: true,
-    hasVoiceToText: true,
-    hasSmartDiscovery: true,
-    hasCustomAttributeWeights: true,
-  },
+const UNLIMITED: SubscriptionLimits = {
+  maxPlayers: Infinity,
+  maxReportsPerMonth: Infinity,
+  maxComparisonPlayers: 10,
+  hasAdvancedAnalytics: true,
+  hasPdfExport: true,
+  hasAIInsights: true,
+  hasBulkImportExport: true,
+  hasVoiceToText: true,
+  hasSmartDiscovery: true,
+  hasCustomAttributeWeights: true,
 };
 
-// Pricing configuration (in GBP)
-export const PRICING = {
-  pro: {
-    monthly: 10,
-    annual: 96, // £8/month
-  },
-} as const;
+export const TIER_LIMITS: Record<SubscriptionTier, SubscriptionLimits> = {
+  free: UNLIMITED,
+  pro: UNLIMITED,
+};
 
-// Trial configuration
-export const TRIAL_CONFIG = {
-  durationDays: 14,
-  tier: 'pro' as SubscriptionTier,
-} as const;
+export const PRICING = { pro: { monthly: 0, annual: 0 } } as const;
+export const TRIAL_CONFIG = { durationDays: 0, tier: 'pro' as SubscriptionTier } as const;
 
-// Feature display names for UI
 export const FEATURE_NAMES: Record<keyof SubscriptionLimits, string> = {
   maxPlayers: 'Player Profiles',
   maxReportsPerMonth: 'Monthly Reports',
