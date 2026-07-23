@@ -362,7 +362,9 @@ export default function Auth() {
         }
         rateLimit.resetAttempts();
         toast.success('Welcome back!');
-        navigate('/dashboard');
+        const nextParam = searchParams.get('next');
+        const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard';
+        navigate(safeNext);
       }
     } finally {
       setIsLoading(false);
