@@ -145,9 +145,11 @@ export default function Auth() {
 
   useEffect(() => {
     if (user && !isCompletingSignup) {
-      navigate('/dashboard', { replace: true });
+      const nextParam = searchParams.get('next');
+      const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard';
+      navigate(safeNext, { replace: true });
     }
-  }, [user, navigate, isCompletingSignup]);
+  }, [user, navigate, isCompletingSignup, searchParams]);
 
 
   const validateForm = () => {
@@ -362,7 +364,9 @@ export default function Auth() {
         }
         rateLimit.resetAttempts();
         toast.success('Welcome back!');
-        navigate('/dashboard');
+        const nextParam = searchParams.get('next');
+        const safeNext = nextParam && nextParam.startsWith('/') && !nextParam.startsWith('//') ? nextParam : '/dashboard';
+        navigate(safeNext);
       }
     } finally {
       setIsLoading(false);

@@ -33,6 +33,7 @@ const PrivacyPolicy = lazy(() => import('@/pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('@/pages/TermsOfService'));
 const Changelog = lazy(() => import('@/pages/Changelog'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
+const OAuthConsent = lazy(() => import('@/pages/OAuthConsent'));
 
 function PageLoader() {
   return (
@@ -56,6 +57,7 @@ export function AnimatedRoutes() {
         <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
         <Route path="/gdpr-consent" element={<PageTransition><GdprConsent /></PageTransition>} />
         <Route path="/changelog" element={<PageTransition><Changelog /></PageTransition>} />
+        <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
         
         {/* Protected Routes */}
         <Route path="/dashboard" element={<ProtectedRoute><PageTransition><Dashboard /></PageTransition></ProtectedRoute>} />

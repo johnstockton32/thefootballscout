@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://uhzrwimvyjwhzhgybgsu.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "the-football-scout-mcp",
+      "version": "0.1.0",
+      "title": "The Football Scout"
+    },
+    "tools": [
+      {
+        "name": "list_players",
+        "title": "List players",
+        "description": "List scouted players belonging to the signed-in user. Supports optional filters by position, nationality, and current club, and a result limit.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "position": {
+              "type": "string",
+              "description": "Filter by exact position (e.g. striker, winger, centre_back)."
+            },
+            "nationality": {
+              "type": "string",
+              "description": "Filter by nationality."
+            },
+            "current_club": {
+              "type": "string",
+              "description": "Filter by current club (partial match)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Maximum number of players to return (default 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_player",
+        "title": "Get player",
+        "description": "Get the full profile of a single scouted player (owned by the signed-in user) by id, including all scouting reports.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "player_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID of the player."
+            }
+          },
+          "required": [
+            "player_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_reports",
+        "title": "List scouting reports",
+        "description": "List scouting reports for the signed-in user. Optionally filter by player_id and limit the count.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "player_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter reports to a specific player."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Maximum number of reports to return (default 25)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_players",
+        "title": "Search players",
+        "description": "Free-text search across the signed-in user's players by name, club, or nationality.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Text to search across full_name, current_club, and nationality."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "description": "Max results (default 20)."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
